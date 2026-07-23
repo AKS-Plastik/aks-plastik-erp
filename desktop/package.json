@@ -8,7 +8,8 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "package": "npm run build && electron-builder",
-    "release": "npm run build && electron-builder --publish always"
+    "release": "npm run build && electron-builder --publish never",
+    "build:exe": "npm run build && electron-builder"
   },
   "build": {
     "appId": "com.aks.erp",
@@ -26,7 +27,7 @@
           ]
         }
       ],
-      "icon": "src/main/plan_s_icon_dark.png",
+      "icon": "src/main/aks_logo_dark.png",
       "publisherName": "AKS",
       "requestedExecutionLevel": "asInvoker",
       "signingHashAlgorithms": null,
@@ -36,8 +37,8 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "allowElevation": true,
-      "installerIcon": "src/main/plan_s_dark.ico",
-      "uninstallerIcon": "src/main/plan_s_dark.ico",
+      "installerIcon": "src/main/convertico-plan_s_48_48.ico",
+      "uninstallerIcon": "src/main/convertico-plan_s_48_48.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "AKS CRM Dashboard",
