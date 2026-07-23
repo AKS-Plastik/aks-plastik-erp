@@ -50,11 +50,11 @@
       "target": [
         "dmg"
       ],
-      "icon": "src/main/aks_logo_dark.png"
+      "icon": "src/main/aks_logo_mac.png"
     },
     "dmg": {
       "title": "AKS CRM Dashboard ${version}",
-      "icon": "src/main/aks_logo_dark.png",
+      "icon": "src/main/aks_logo_mac.png",
       "contents": [
         {
           "x": 130,
