@@ -62,10 +62,10 @@ class ReadlineParser extends parser_delimiter_1.DelimiterParser {
   }
 }
 ReadlineParser_1 = dist$1.ReadlineParser = ReadlineParser;
-const KEYCLOAK_URL = "http://localhost:8080";
+const KEYCLOAK_URL = "http://172.18.0.1:8080";
 const REALM = "AKS";
-const CLIENT_ID = "aks-erp";
-const REDIRECT_URI = "aks-erp://auth/callback";
+const CLIENT_ID = "aks-erp-app";
+const REDIRECT_URI = "aks-erp-app://auth/callback";
 const BASE = `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect`;
 function buildAuthRequest() {
   const verifier = crypto.randomBytes(32).toString("base64url");

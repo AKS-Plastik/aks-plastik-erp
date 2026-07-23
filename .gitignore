@@ -40,3 +40,5 @@ desktop/developments/
 desktop/backend/test-*.js
 desktop/backend/tests/
 *.test.js
+
+/.history
