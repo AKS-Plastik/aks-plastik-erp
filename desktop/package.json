@@ -9,7 +9,8 @@
     "preview": "electron-vite preview",
     "package": "npm run build && electron-builder",
     "release": "npm run build && electron-builder --publish never",
-    "build:exe": "npm run build && electron-builder"
+    "build:exe": "npm run build && electron-builder --win",
+    "build:mac": "npm run build && electron-builder --mac"
   },
   "build": {
     "appId": "com.aks.erp",
@@ -46,7 +47,26 @@
       "deleteAppDataOnUninstall": false
     },
     "mac": {
-      "target": "dmg"
+      "target": [
+        "dmg"
+      ],
+      "icon": "src/main/aks_logo_dark.png"
+    },
+    "dmg": {
+      "title": "AKS CRM Dashboard ${version}",
+      "icon": "src/main/aks_logo_dark.png",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
     },
     "linux": {
       "target": "AppImage"
