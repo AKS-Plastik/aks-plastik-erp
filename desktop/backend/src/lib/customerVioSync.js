@@ -27,6 +27,7 @@ function getCrutUrl() {
   const sessionBase64 = Buffer.from(JSON.stringify(session)).toString('base64url');
   
   // Kullanıcının Postman'de kullandığı orijinal URL'de sql parametresi bulunmuyor
+  console.log(`${origin}/${wsPath}/${api}/?session=${sessionBase64}`);
   return `${origin}/${wsPath}/${api}/?session=${sessionBase64}`;
 }
 

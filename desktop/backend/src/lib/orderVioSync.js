@@ -24,6 +24,7 @@ function getVioRestUrl(endpoint, params = {}) {
       searchParams.append(key, value);
     }
   }
+  console.log(`${origin}/${wsPath}/${api}/?session=${sessionBase64}`);
   
   return `${origin}/${wsPath}/${endpoint}/?${searchParams.toString()}`;
 }
