@@ -1,31 +1,22 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-// Utility for fetching Vio session
-function getVioSessionStr() {
-  const session = {
-    loginTipi: 'login',
-    user: process.env.VIO_USER,
-    pass: process.env.VIO_PASS || ''
-  };
-  return Buffer.from(JSON.stringify(session)).toString('base64url');
-}
-
 // REST URL generator
 function getVioRestUrl(endpoint, params = {}) {
   const origin = process.env.VIO_ORIGIN;
   const wsPath = process.env.VIO_WS_PATH;
-  
+
   const searchParams = new URLSearchParams();
-  searchParams.append('session', getVioSessionStr());
-  
+  searchParams.append('loginTipi', 'login');
+  searchParams.append('user', process.env.VIO_USER || '');
+  searchParams.append('pass', process.env.VIO_PASS || '');
+
   for (const [key, value] of Object.entries(params)) {
     if (value !== undefined && value !== null) {
       searchParams.append(key, value);
     }
   }
-  console.log(`${origin}/${wsPath}/${api}/?session=${sessionBase64}`);
-  
+
   return `${origin}/${wsPath}/${endpoint}/?${searchParams.toString()}`;
 }
 

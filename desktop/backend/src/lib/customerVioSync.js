@@ -16,19 +16,14 @@ function getCrutUrl() {
   const wsPath = process.env.VIO_WS_PATH;
   const api = process.env.VIO_API;
 
-  const session = {
-    loginTipi: 'login',
-    user: process.env.VIO_USER,
-    // Kullanıcı talebi: Şifreyi MD5 yapmadan direkt düz metin gönder
-    pass: process.env.VIO_PASS || ''
-  };
+  const loginTipi = 'login';
+  const user = process.env.VIO_USER;
+  const pass = process.env.VIO_PASS || '';
 
-  // session parametresi base64url olarak gönderiliyor
-  const sessionBase64 = Buffer.from(JSON.stringify(session)).toString('base64url');
-  
-  // Kullanıcının Postman'de kullandığı orijinal URL'de sql parametresi bulunmuyor
-  console.log(`${origin}/${wsPath}/${api}/?session=${sessionBase64}`);
-  return `${origin}/${wsPath}/${api}/?session=${sessionBase64}`;
+  const url = `${origin}/${wsPath}/${api}/?loginTipi=${encodeURIComponent(loginTipi)}&user=${encodeURIComponent(user)}&pass=${encodeURIComponent(pass)}&`;
+
+  console.log(url);
+  return url;
 }
 
 /**
