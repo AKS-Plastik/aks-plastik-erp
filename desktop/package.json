@@ -8,7 +8,9 @@
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "package": "npm run build && electron-builder",
-    "release": "npm run build && electron-builder --publish always"
+    "release": "npm run build && electron-builder --publish never",
+    "build:exe": "npm run build && electron-builder --win",
+    "build:mac": "npm run build && electron-builder --mac"
   },
   "build": {
     "appId": "com.aks.erp",
@@ -26,7 +28,7 @@
           ]
         }
       ],
-      "icon": "src/main/plan_s_icon_dark.png",
+      "icon": "src/main/aks_logo_dark.png",
       "publisherName": "AKS",
       "requestedExecutionLevel": "asInvoker",
       "signingHashAlgorithms": null,
@@ -36,8 +38,8 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "allowElevation": true,
-      "installerIcon": "src/main/plan_s_dark.ico",
-      "uninstallerIcon": "src/main/plan_s_dark.ico",
+      "installerIcon": "src/main/convertico-plan_s_48_48.ico",
+      "uninstallerIcon": "src/main/convertico-plan_s_48_48.ico",
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
       "shortcutName": "AKS CRM Dashboard",
@@ -45,7 +47,26 @@
       "deleteAppDataOnUninstall": false
     },
     "mac": {
-      "target": "dmg"
+      "target": [
+        "dmg"
+      ],
+      "icon": "src/main/aks_logo_mac.png"
+    },
+    "dmg": {
+      "title": "AKS CRM Dashboard ${version}",
+      "icon": "src/main/aks_logo_mac.png",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
     },
     "linux": {
       "target": "AppImage"
@@ -80,5 +101,6 @@
     "sharp": "^0.34.5",
     "tailwindcss": "^3.4.1",
     "vite": "^5.1.4"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

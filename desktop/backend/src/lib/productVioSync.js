@@ -16,6 +16,8 @@ function getCrutUrl() {
   };
 
   const sessionBase64 = Buffer.from(JSON.stringify(session)).toString('base64url');
+  console.log(`${origin}/${wsPath}/${api}/?session=${sessionBase64}`);
+
   return `${origin}/${wsPath}/${api}/?session=${sessionBase64}`;
 }
 
