@@ -53,7 +53,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         />
       )}
 
-      <aside className={`h-screen w-64 fixed left-0 top-0 bg-sidebar flex flex-col py-8 z-50 transform transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
+      <aside className={`h-screen w-64 fixed left-0 top-0 bg-sidebar flex flex-col pt-8 pb-4 z-50 transform transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
         {/* Logo */}
         <div className="px-6 mb-10 flex flex-col items-center">
           <img src={dark ? aksLogoDark : aksLogoLight} alt="AKS" className="w-36 object-contain" />
@@ -89,7 +89,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         <div className="mt-auto border-t border-theme-border pt-2">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-6 py-4 text-text-muted hover:text-error transition-colors w-full"
+            className="flex items-center gap-3 px-6 py-3 text-text-muted hover:text-error transition-colors w-full"
           >
             <span className="material-symbols-outlined">logout</span>
             <span className="text-sm font-medium" style={{ fontFamily: 'Manrope, sans-serif' }}>
