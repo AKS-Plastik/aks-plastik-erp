@@ -246,8 +246,8 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1440,
     height: 900,
-    minWidth: 1024,
-    minHeight: 700,
+    minWidth: 360,
+    minHeight: 600,
     show: false,
     title: 'AKS CRM Dashboard',
     icon: isDev
