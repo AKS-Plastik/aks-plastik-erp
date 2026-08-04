@@ -148,7 +148,7 @@ export default function TopBar({ setSidebarOpen }) {
             </button>
 
             {showAlarms && (
-              <div className="absolute right-0 top-full mt-2 w-96 bg-surface-container-lowest rounded-2xl shadow-2xl shadow-inverse-surface/20 border border-surface-container-low overflow-hidden z-50">
+              <div className="absolute right-0 top-full mt-2 w-96 max-w-[calc(100vw-2rem)] bg-surface-container-lowest rounded-2xl shadow-2xl shadow-inverse-surface/20 border border-surface-container-low overflow-hidden z-50">
                 <div className="px-4 pt-4 pb-3 border-b border-surface-container-low flex items-center justify-between">
                   <span className="text-xs font-extrabold text-on-surface">{t('topbar.alerts')}</span>
                   {totalAlarms > 0 && (
@@ -347,8 +347,6 @@ export default function TopBar({ setSidebarOpen }) {
           </button>
           {showUserMenu && (
             <div className="absolute right-0 top-full mt-2 w-48 bg-surface-container-lowest rounded-xl shadow-2xl shadow-inverse-surface/20 border border-surface-container-low overflow-hidden z-50">
-
-              {/* Mobile Quick Actions (Hidden on Desktop) */}
               <div className="md:hidden border-b border-surface-container-low py-1">
                 <button className="hidden flex items-center gap-3 w-full px-4 py-3 text-sm text-on-surface hover:bg-hover-bg transition-colors">
                   <span className="material-symbols-outlined text-base text-text-muted">help_outline</span>

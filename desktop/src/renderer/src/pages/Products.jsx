@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as XLSX from 'xlsx'
 import { useData } from '../context/DataContext'
+import Pagination from '../components/Pagination'
 
 const ITEMS_PER_PAGE = 10
 
@@ -432,29 +433,33 @@ export default function Products() {
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <input ref={importRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-on-surface">{t('products.title')}</h1>
-          <p className="text-sm text-text-muted mt-0.5">{t('products.totalProducts', { count: products.length })}</p>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+        <div className="max-w-2xl">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-on-surface mb-2">
+            {t('products.title')}
+          </h1>
+          <p className="text-on-surface-variant text-xs sm:text-sm lg:text-base leading-relaxed">
+            {t('products.totalProducts', { count: products.length })}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={handleTemplate} className="flex items-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-shrink-0">
+          <button onClick={handleTemplate} className="flex items-center justify-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap">
             <span className="material-symbols-outlined text-base">download</span>
             {t('common.template')}
           </button>
-          <button onClick={() => importRef.current.click()} disabled={importing} className="flex items-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-40">
+          <button onClick={() => importRef.current.click()} disabled={importing} className="flex items-center justify-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-40 whitespace-nowrap">
             <span className="material-symbols-outlined text-base">upload</span>
             {importing ? t('products.importing') : t('common.import')}
           </button>
-          <button onClick={handleExport} className="flex items-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition">
+          <button onClick={handleExport} className="flex items-center justify-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap">
             <span className="material-symbols-outlined text-base">table_view</span>
             {t('common.export')}
           </button>
-          <button onClick={syncAndRefreshProducts} className="flex items-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition">
+          <button onClick={syncAndRefreshProducts} className="flex items-center justify-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap">
             <span className="material-symbols-outlined text-base">sync</span>
             {t('common.refresh', 'Yenile/Senkronize Et')}
           </button>
-          <button onClick={openAdd} className="flex items-center gap-2 primary-gradient text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity">
+          <button onClick={openAdd} className="flex items-center justify-center gap-2 primary-gradient text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity whitespace-nowrap">
             <span className="material-symbols-outlined text-base">add</span>
             {t('products.addProduct')}
           </button>
@@ -474,8 +479,8 @@ export default function Products() {
       </div>
 
       <div className="bg-surface-container-lowest rounded-2xl border border-theme-border overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
+        <table className="w-full text-sm block xl:table">
+          <thead className="hidden xl:table-header-group">
             <tr className="border-b border-theme-border text-text-muted text-xs uppercase tracking-wider">
               <th className="text-left px-6 py-4 font-semibold">{t('products.stockNo')}</th>
               <th className="text-left px-6 py-4 font-semibold">{t('common.name')}</th>
@@ -485,10 +490,10 @@ export default function Products() {
               <th className="text-left px-6 py-4 font-semibold">{t('common.status')}</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="block xl:table-row-group">
             {paginated.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="text-center py-16 text-text-muted">
+              <tr className="block xl:table-row">
+                <td colSpan={6} className="block xl:table-cell text-center py-16 text-text-muted">
                   {t('products.noProducts')}
                 </td>
               </tr>
@@ -496,19 +501,33 @@ export default function Products() {
               paginated.map((p) => {
                 const badge = stockBadge(p)
                 return (
-                  <tr key={p.id} onClick={() => setViewProduct(p)} className="border-b border-theme-border hover:bg-hover-bg transition-colors cursor-pointer">
-                    <td className="px-6 py-4 font-mono text-xs font-semibold text-on-surface">{p.stockNo || '—'}</td>
-                    <td className="px-6 py-4 font-semibold text-on-surface">{p.name}</td>
-                    <td className="px-6 py-4 text-text-muted">
-                      {CATEGORIES.find((c) => c.id === p.category)?.name || p.category || '—'}
+                  <tr key={p.id} onClick={() => setViewProduct(p)} className="block xl:table-row border-b border-surface-container-low xl:border-theme-border hover:bg-hover-bg transition-colors cursor-pointer p-4 xl:p-0">
+                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-2 xl:mb-0">
+                      <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-0.5">{t('products.stockNo')}</span>
+                      <span className="font-mono text-xs font-semibold text-on-surface">{p.stockNo || '—'}</span>
                     </td>
-                    <td className="px-6 py-4 text-right font-medium text-on-surface">
-                      <span className="text-xs text-text-muted mr-1">{p.currency || 'USD'}</span>
-                      {parseFloat(p.price).toFixed(2)}
-                      <span className="text-xs text-text-muted"> /{p.unit}</span>
+                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-2 xl:mb-0">
+                      <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-0.5">{t('common.name')}</span>
+                      <span className="font-semibold text-on-surface">{p.name}</span>
                     </td>
-                    <td className="px-6 py-4 text-right text-on-surface">{p.stock}<span className="text-xs text-text-muted ml-1">{p.unit || 'pcs'}</span></td>
-                    <td className="px-6 py-4">
+                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-2 xl:mb-0 text-left xl:text-left">
+                      <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-0.5">{t('common.category')}</span>
+                      <span className="text-text-muted">{CATEGORIES.find((c) => c.id === p.category)?.name || p.category || '—'}</span>
+                    </td>
+                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-2 xl:mb-0 text-left xl:text-right">
+                      <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-0.5">{t('common.price')}</span>
+                      <div className="font-medium text-on-surface">
+                        <span className="text-xs text-text-muted mr-1">{p.currency || 'USD'}</span>
+                        {parseFloat(p.price).toFixed(2)}
+                        <span className="text-xs text-text-muted"> /{p.unit}</span>
+                      </div>
+                    </td>
+                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-3 xl:mb-0 text-left xl:text-right">
+                      <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-0.5">{t('products.inStock')}</span>
+                      <span className="text-on-surface">{p.stock}</span><span className="text-xs text-text-muted ml-1">{p.unit || 'pcs'}</span>
+                    </td>
+                    <td className="block xl:table-cell xl:px-6 xl:py-4">
+                      <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1">{t('common.status')}</span>
                       <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${badge.cls}`}>
                         {badge.label}
                       </span>
@@ -521,16 +540,14 @@ export default function Products() {
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4 text-sm text-text-muted">
-          <span>{filtered.length} products</span>
-          <div className="flex gap-2">
-            <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="px-3 py-1.5 rounded-lg border border-theme-border disabled:opacity-40 hover:bg-hover-bg transition">{t('common.prev')}</button>
-            <span className="px-3 py-1.5">{page} / {totalPages}</span>
-            <button disabled={page === totalPages} onClick={() => setPage((p) => p + 1)} className="px-3 py-1.5 rounded-lg border border-theme-border disabled:opacity-40 hover:bg-hover-bg transition">{t('common.next')}</button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        setPage={setPage}
+        totalPages={totalPages}
+        totalItems={filtered.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+        label="products.showingOf"
+      />
 
       {showAdd && (
         <Modal title={t('products.addProduct')} form={form} setForm={setForm} errors={errors} onClose={() => setShowAdd(false)} onSave={handleAdd} />

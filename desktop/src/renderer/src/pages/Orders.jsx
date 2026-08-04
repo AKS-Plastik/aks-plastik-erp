@@ -85,10 +85,10 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-2xl p-8 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 sm:p-6" onClick={onClose}>
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-3xl p-4 sm:p-8 max-h-[90dvh] overflow-y-auto flex flex-col" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex flex-col sm:flex-row items-start justify-between mb-6 gap-4">
           <div>
             <p className="text-xs font-mono text-text-muted mb-1">{order.code}</p>
             <h2 className="text-xl font-bold text-on-surface">{order.customer?.name || '—'}</h2>
@@ -276,7 +276,7 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-2xl p-8 max-h-[90vh] overflow-y-auto">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-2xl p-8 max-h-[90dvh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-bold text-on-surface">{title}</h2>
           <button onClick={onClose} className="text-text-muted hover:text-error">
@@ -840,43 +840,48 @@ export default function Orders() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-on-surface">{t('orders.title')}</h1>
-          <p className="text-sm text-text-muted mt-0.5">{t('orders.totalOrders', { count: orders.length })}</p>
+    <div className="p-4 sm:p-8 max-w-7xl mx-auto">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl primary-gradient flex items-center justify-center text-white shadow-lg shadow-primary/20">
+            <span className="material-symbols-outlined text-[20px] sm:text-[24px]">shopping_bag</span>
+          </div>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-on-surface leading-tight">{t('orders.title')}</h1>
+            <p className="text-xs sm:text-sm text-text-muted mt-0.5">{t('orders.totalOrders', { count: orders.length })}</p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={syncAndRefreshOrders} className="flex items-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition">
-            <span className="material-symbols-outlined text-base">refresh</span>
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2 lg:gap-3 flex-shrink-0">
+          <button onClick={syncAndRefreshOrders} className="flex items-center justify-center gap-1.5 border border-theme-border px-3 py-1.5 lg:py-2 rounded-xl text-xs lg:text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap">
+            <span className="material-symbols-outlined text-[14px] lg:text-base">refresh</span>
             {t('common.refresh')}
           </button>
           <div className="relative" ref={exportRef}>
             <button
               onClick={() => setExportOpen((v) => !v)}
               disabled={selected.size === 0}
-              className="flex items-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-40 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-1.5 border border-theme-border w-full lg:w-auto px-3 py-1.5 lg:py-2 rounded-xl text-xs lg:text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
             >
-              <span className="material-symbols-outlined text-base">download</span>
+              <span className="material-symbols-outlined text-[14px] lg:text-base">download</span>
               Export{selected.size > 0 ? ` (${selected.size})` : ''}
-              <span className="material-symbols-outlined text-base">arrow_drop_down</span>
+              <span className="material-symbols-outlined text-[14px] lg:text-base">arrow_drop_down</span>
             </button>
             {exportOpen && (
-              <div className="absolute right-0 mt-1 w-44 bg-surface-container-lowest border border-theme-border rounded-xl shadow-lg z-20 overflow-hidden">
-                <button onClick={handleExportExcel} className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-on-surface hover:bg-hover-bg transition text-left">
-                  <span className="material-symbols-outlined text-base text-green-600">table_view</span>
+              <div className="absolute right-0 mt-1 w-full lg:w-44 bg-surface-container-lowest border border-theme-border rounded-xl shadow-lg z-20 overflow-hidden">
+                <button onClick={handleExportExcel} className="flex items-center gap-2 w-full px-4 py-2 lg:py-2.5 text-xs lg:text-sm text-on-surface hover:bg-hover-bg transition text-left">
+                  <span className="material-symbols-outlined text-[14px] lg:text-base text-green-600">table_view</span>
                   {t('common.exportExcel')}
                 </button>
-                <button onClick={handleExport} className="flex items-center gap-2 w-full px-4 py-2.5 text-sm text-on-surface hover:bg-hover-bg transition text-left">
-                  <span className="material-symbols-outlined text-base text-red-500">picture_as_pdf</span>
+                <button onClick={handleExport} className="flex items-center gap-2 w-full px-4 py-2 lg:py-2.5 text-xs lg:text-sm text-on-surface hover:bg-hover-bg transition text-left">
+                  <span className="material-symbols-outlined text-[14px] lg:text-base text-red-500">picture_as_pdf</span>
                   {t('common.exportPDF')}
                 </button>
               </div>
             )}
           </div>
           {canCreate && (
-            <button onClick={openAdd} className="flex items-center gap-2 primary-gradient text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity">
-              <span className="material-symbols-outlined text-base">add</span>
+            <button onClick={openAdd} className="flex items-center justify-center gap-1.5 lg:gap-2 primary-gradient text-white px-4 py-2 lg:py-2.5 rounded-xl text-xs lg:text-sm font-bold shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity whitespace-nowrap">
+              <span className="material-symbols-outlined text-[14px] lg:text-base">add</span>
               {t('orders.newOrder')}
             </button>
           )}
@@ -930,9 +935,9 @@ export default function Orders() {
         )}
       </div>
 
-      <div className="bg-surface-container-lowest rounded-2xl border border-theme-border overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
+      <div className="bg-transparent sm:bg-surface-container-lowest rounded-2xl sm:border border-theme-border overflow-hidden">
+        <table className="w-full text-sm block sm:table">
+          <thead className="hidden sm:table-header-group">
             <tr className="border-b border-theme-border text-text-muted text-xs uppercase tracking-wider">
               <th className="px-4 py-2 w-10">
                 <input
@@ -953,7 +958,7 @@ export default function Orders() {
               {(canDelete || canEditProcessing) && <th className="text-right px-4 py-2 font-semibold">{t('common.actions')}</th>}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="block sm:table-row-group">
             {paginated.length === 0 ? (
               <tr>
                 <td colSpan={(canDelete || canEditProcessing) ? 9 : 8} className="text-center py-16 text-text-muted">{t('orders.noOrders')}</td>
@@ -967,42 +972,78 @@ export default function Orders() {
                 return (
                   <tr
                     key={o.id}
-                    className={`border-b border-theme-border hover:bg-hover-bg transition-colors cursor-pointer ${selected.has(o.id) ? 'bg-primary/5' : ''}`}
+                    className={`block sm:table-row bg-surface-container-lowest sm:bg-transparent rounded-2xl sm:rounded-none mb-4 sm:mb-0 p-4 sm:p-0 shadow-sm sm:shadow-none border border-surface-container-low sm:border-0 sm:border-b border-theme-border hover:bg-hover-bg transition-colors cursor-pointer ${selected.has(o.id) ? 'bg-primary/5 sm:bg-primary/5 ring-2 ring-primary sm:ring-0' : ''}`}
                     onClick={() => setDetailOrder(o)}
                   >
-                    <td className="px-4 py-2" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={selected.has(o.id)}
-                        onChange={() => toggleRow(o.id)}
-                        className="w-4 h-4 rounded accent-primary cursor-pointer"
-                      />
+                    <td className="block sm:table-cell w-full sm:w-auto relative mb-2 sm:mb-0 sm:px-4 py-1 sm:py-2" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-between sm:justify-start">
+                        <span className="sm:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">Seç</span>
+                        <input
+                          type="checkbox"
+                          checked={selected.has(o.id)}
+                          onChange={() => toggleRow(o.id)}
+                          className="w-5 h-5 sm:w-4 sm:h-4 rounded accent-primary cursor-pointer"
+                        />
+                      </div>
                     </td>
-                    <td className="px-4 py-2 font-mono text-xs text-text-muted font-semibold">{o.code || '—'}</td>
-                    <td className="px-4 py-2 font-medium text-on-surface">{o.customer?.name || '—'}</td>
-                    <td className="px-4 py-2 text-text-muted">{o.salesRep?.name || o.employee?.name || '—'}</td>
-                    <td className="px-4 py-2 text-right font-semibold text-on-surface">
-                      <span className="text-xs text-text-muted mr-1">{currency}</span>
-                      {(parseFloat(o.totalAmount) || 0).toFixed(2)}
+                    <td className="block sm:table-cell w-full sm:w-auto relative mb-1.5 sm:mb-0 sm:px-4 py-1 sm:py-2">
+                      <div className="flex items-center justify-between sm:justify-start">
+                        <span className="sm:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.order')}</span>
+                        <span className="font-mono text-xs text-text-muted font-semibold">{o.code || '—'}</span>
+                      </div>
                     </td>
-                    <td className="px-4 py-2">
-                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusStyle[o.status] || statusStyle.Draft}`}>
-                        {o.status}
-                      </span>
+                    <td className="block sm:table-cell w-full sm:w-auto relative mb-1.5 sm:mb-0 sm:px-4 py-1 sm:py-2">
+                      <div className="flex items-center justify-between sm:justify-start">
+                        <span className="sm:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.customer')}</span>
+                        <span className="font-medium text-on-surface">{o.customer?.name || '—'}</span>
+                      </div>
                     </td>
-                    <td className="px-4 py-2 text-xs text-text-muted whitespace-nowrap">{dateStr}</td>
-                    <td className="px-4 py-2 text-xs text-text-muted whitespace-nowrap">{timeStr}</td>
+                    <td className="block sm:table-cell w-full sm:w-auto relative mb-1.5 sm:mb-0 sm:px-4 py-1 sm:py-2">
+                      <div className="flex items-center justify-between sm:justify-start">
+                        <span className="sm:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.salesRep')}</span>
+                        <span className="text-text-muted text-sm">{o.salesRep?.name || o.employee?.name || '—'}</span>
+                      </div>
+                    </td>
+                    <td className="block sm:table-cell w-full sm:w-auto relative mb-1.5 sm:mb-0 sm:px-4 py-1 sm:py-2">
+                      <div className="flex items-center justify-between sm:justify-end">
+                        <span className="sm:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.total')}</span>
+                        <span className="font-semibold text-on-surface">
+                          <span className="text-xs text-text-muted mr-1">{currency}</span>
+                          {(parseFloat(o.totalAmount) || 0).toFixed(2)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="block sm:table-cell w-full sm:w-auto relative mb-1.5 sm:mb-0 sm:px-4 py-1 sm:py-2">
+                      <div className="flex items-center justify-between sm:justify-start">
+                        <span className="sm:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.status')}</span>
+                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold ${statusStyle[o.status] || statusStyle.Draft}`}>
+                          {o.status}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="block sm:table-cell w-full sm:w-auto relative mb-1.5 sm:mb-0 sm:px-4 py-1 sm:py-2">
+                      <div className="flex items-center justify-between sm:justify-start">
+                        <span className="sm:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.date')}</span>
+                        <span className="text-xs text-text-muted">{dateStr}</span>
+                      </div>
+                    </td>
+                    <td className="block sm:table-cell w-full sm:w-auto relative mb-1.5 sm:mb-0 sm:px-4 py-1 sm:py-2">
+                      <div className="flex items-center justify-between sm:justify-start">
+                        <span className="sm:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('workOrders.time')}</span>
+                        <span className="text-xs text-text-muted">{timeStr}</span>
+                      </div>
+                    </td>
                     {(canDelete || (canEditProcessing && o.status === 'Processing')) && (
-                      <td className="px-4 py-2 text-right" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-1">
+                      <td className="block sm:table-cell w-full sm:w-auto relative mt-3 sm:mt-0 pt-3 sm:pt-0 border-t border-surface-container-low sm:border-0 sm:px-4 py-1 sm:py-2" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-2">
                           {(canDelete || (canEditProcessing && o.status === 'Processing')) && (
-                            <button onClick={() => openEdit(o)} className="p-1.5 rounded-lg hover:bg-hover-bg text-text-muted hover:text-primary transition">
-                              <span className="material-symbols-outlined text-base">edit</span>
+                            <button onClick={() => openEdit(o)} className="flex-1 sm:flex-none flex justify-center p-2 sm:p-1.5 rounded-lg border sm:border-0 border-theme-border hover:bg-hover-bg text-text-muted hover:text-primary transition">
+                              <span className="material-symbols-outlined text-[18px] sm:text-base">edit</span>
                             </button>
                           )}
                           {canDelete && (
-                            <button onClick={() => setConfirmDeleteId(o.id)} className="p-1.5 rounded-lg hover:bg-hover-bg text-text-muted hover:text-error transition">
-                              <span className="material-symbols-outlined text-base">delete</span>
+                            <button onClick={() => setConfirmDeleteId(o.id)} className="flex-1 sm:flex-none flex justify-center p-2 sm:p-1.5 rounded-lg border sm:border-0 border-theme-border hover:bg-hover-bg text-text-muted hover:text-error transition">
+                              <span className="material-symbols-outlined text-[18px] sm:text-base">delete</span>
                             </button>
                           )}
                         </div>

@@ -191,7 +191,9 @@ ipcMain.handle('auth:login', async () => {
     const loginWin = new BrowserWindow({
       width: 520,
       height: 700,
-      resizable: false,
+      minWidth: 320,
+      minHeight: 500,
+      resizable: true,
       title: 'AKS — Sign In',
       webPreferences: { nodeIntegration: false, contextIsolation: true },
     })

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
 import InitialsAvatar from '../components/InitialsAvatar'
+import Pagination from '../components/Pagination'
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
@@ -251,7 +252,7 @@ function FieldInput({ field, value, onChange, error }) {
 
   if (type === 'divider') {
     return (
-      <div className="col-span-2 flex items-center gap-3 pt-1">
+      <div className="col-span-1 md:col-span-2 flex items-center gap-3 pt-1">
         <div className="flex-1 h-px bg-surface-container-high" />
         <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant flex items-center gap-1.5">
           <span className="material-symbols-outlined text-[14px]">{icon}</span>
@@ -268,22 +269,22 @@ function FieldInput({ field, value, onChange, error }) {
         <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">
           {label}
         </label>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5 sm:gap-2">
           {options.map((o) => (
             <button
               key={o.value}
               type="button"
               onClick={() => onChange(o.value)}
-              className={`flex-1 flex items-center justify-center gap-2 px-3 py-2.5 rounded-lg transition-all ${
+              className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-2 py-2 sm:px-3 sm:py-2.5 rounded-lg transition-all ${
                 value === o.value
                   ? 'bg-primary/10 ring-2 ring-primary text-primary'
                   : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container'
               }`}
             >
-              <span className="material-symbols-outlined text-[18px]">
+              <span className="material-symbols-outlined text-[16px] sm:text-[18px] flex-shrink-0">
                 {value === o.value ? 'radio_button_checked' : 'radio_button_unchecked'}
               </span>
-              <span className="text-sm font-semibold">{o.label}</span>
+              <span className="text-[11px] sm:text-sm font-semibold leading-tight text-center whitespace-nowrap">{o.label}</span>
             </button>
           ))}
         </div>
@@ -301,14 +302,14 @@ function FieldInput({ field, value, onChange, error }) {
         <button
           type="button"
           onClick={() => onChange(!value)}
-          className={`flex items-center gap-2 px-3 py-2.5 rounded-lg transition-all w-full ${
+          className={`flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 px-2 py-2 sm:px-3 sm:py-2.5 rounded-lg transition-all w-full ${
             value ? 'bg-primary/10 ring-2 ring-primary' : 'bg-surface-container-high'
           }`}
         >
-          <span className={`material-symbols-outlined text-[20px] flex-shrink-0 ${value ? 'text-primary' : 'text-on-surface-variant'}`}>
+          <span className={`material-symbols-outlined text-[18px] sm:text-[20px] flex-shrink-0 ${value ? 'text-primary' : 'text-on-surface-variant'}`}>
             {value ? 'toggle_on' : 'toggle_off'}
           </span>
-          <span className={`text-sm font-semibold ${value ? 'text-primary' : 'text-on-surface-variant'}`}>
+          <span className={`text-[11px] sm:text-sm font-semibold whitespace-nowrap ${value ? 'text-primary' : 'text-on-surface-variant'}`}>
             {value ? t('common.yesActive') : t('common.noInactive')}
           </span>
         </button>
@@ -438,16 +439,16 @@ function AddCustomerModal({ onClose, onSave }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl shadow-inverse-surface/20 w-full max-w-2xl mx-4 overflow-hidden flex flex-col max-h-[92vh]">
+      <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl shadow-inverse-surface/20 w-full max-w-2xl mx-4 overflow-hidden flex flex-col max-h-[92dvh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-8 pt-7 pb-5 border-b border-surface-container-low flex-shrink-0">
+        <div className="flex items-center justify-between px-4 md:px-8 pt-7 pb-5 border-b border-surface-container-low flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 primary-gradient rounded-xl flex items-center justify-center text-white">
               <span className="material-symbols-outlined fill-icon">person_add</span>
             </div>
             <div>
-              <h2 className="text-lg font-extrabold text-on-surface">{t('customers.newCustomer')}</h2>
-              <p className="text-xs text-on-surface-variant">{t('customers.addPartner')}</p>
+              <h2 className="text-base sm:text-lg font-extrabold text-on-surface">{t('customers.newCustomer')}</h2>
+              <p className="text-[10px] sm:text-xs text-on-surface-variant">{t('customers.addPartner')}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors">
@@ -456,12 +457,12 @@ function AddCustomerModal({ onClose, onSave }) {
         </div>
 
         {/* Tab bar */}
-        <div className="flex items-center gap-1 px-6 pt-4 pb-0 flex-shrink-0">
+        <div className="flex items-center justify-start gap-1 px-4 lg:px-6 pt-4 pb-0 flex-shrink-0 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {tabDefs.map((tab, i) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(i)}
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-t-lg text-xs font-bold transition-all ${
+              className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-t-lg text-[11px] lg:text-xs font-bold transition-all flex-shrink-0 whitespace-nowrap ${
                 activeTab === i
                   ? 'bg-primary text-white shadow-sm'
                   : 'text-on-surface-variant hover:bg-surface-container-low'
@@ -474,9 +475,9 @@ function AddCustomerModal({ onClose, onSave }) {
         </div>
 
         {/* Tab content */}
-        <div className="px-8 py-5 grid grid-cols-2 gap-4 overflow-y-auto flex-1 border-t border-surface-container-low mt-0">
+        <div className="px-4 md:px-8 py-5 grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto flex-1 border-t border-surface-container-low mt-0">
           {fields.map((field) => {
-            const colClass = field.col === 2 ? 'col-span-2' : 'col-span-1'
+            const colClass = field.col === 2 ? 'col-span-1 md:col-span-2' : 'col-span-1'
             const val = form[field.id] ?? ''
             return (
               <div key={field.id} className={colClass}>
@@ -492,8 +493,9 @@ function AddCustomerModal({ onClose, onSave }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between gap-3 px-8 pb-7 pt-4 border-t border-surface-container-low flex-shrink-0">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end lg:justify-between gap-4 px-4 lg:px-8 pb-4 lg:pb-7 pt-4 border-t border-surface-container-low flex-shrink-0">
+          {/* Prev/Next (Desktop Only) */}
+          <div className="hidden lg:flex items-center gap-2">
             <button
               onClick={() => setActiveTab((t) => Math.max(0, t - 1))}
               disabled={activeTab === 0}
@@ -512,31 +514,17 @@ function AddCustomerModal({ onClose, onSave }) {
             </button>
           </div>
 
-          {/* Step dots */}
-          <div className="flex items-center gap-1.5">
-            {tabDefs.map((_, i) => (
-              <button
-                key={i}
-                onClick={() => setActiveTab(i)}
-                className={`rounded-full transition-all ${
-                  i === activeTab ? 'w-5 h-2 bg-primary' : 'w-2 h-2 bg-surface-container-high hover:bg-surface-container'
-                }`}
-              />
-            ))}
-          </div>
-
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-end gap-2 w-full lg:w-auto">
             <button
               onClick={onClose}
-              className="px-5 py-2.5 rounded-xl text-on-surface-variant text-sm font-semibold hover:bg-surface-container-low transition-colors"
+              className="flex-1 lg:flex-none px-4 py-2 lg:px-5 lg:py-2.5 rounded-xl text-on-surface-variant text-xs lg:text-sm font-semibold hover:bg-surface-container-low transition-colors flex items-center justify-center"
             >
               {t('common.cancel')}
             </button>
             <button
               onClick={handleSave}
-              className="px-6 py-2.5 rounded-xl primary-gradient text-white text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center gap-2"
+              className="flex-1 lg:flex-none px-4 py-2 lg:px-6 lg:py-2.5 rounded-xl primary-gradient text-white text-xs lg:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center"
             >
-              <span className="material-symbols-outlined text-base">save</span>
               {t('customers.saveCustomer')}
             </button>
           </div>
@@ -562,7 +550,7 @@ function DetailRow({ icon, label, value }) {
 
 function SectionHeader({ icon, label }) {
   return (
-    <div className="flex items-center gap-3 py-2 col-span-2">
+    <div className="flex items-center gap-3 py-2 col-span-1 md:col-span-2">
       <div className="flex-1 h-px bg-surface-container-high" />
       <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant flex items-center gap-1.5">
         <span className="material-symbols-outlined text-[14px]">{icon}</span>
@@ -597,15 +585,24 @@ function OrdersTab({ customerOrders }) {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Summary bar */}
-      <div className="flex items-center gap-4 px-6 py-3 bg-surface-container-low border-b border-surface-container text-xs flex-shrink-0">
-        <div className="text-on-surface-variant">{t('customers.totalOrders')} <span className="font-bold text-on-surface">{customerOrders.length}</span></div>
-        <div className="text-on-surface-variant">{t('customers.openOrders')} <span className="font-bold text-on-surface">{open}</span></div>
-        <div className="text-on-surface-variant ml-auto">{t('customers.totalValue')} <span className="font-bold text-on-surface">{fmtNum(total)}</span></div>
+      <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-2 sm:py-3 bg-surface-container-low border-b border-surface-container text-[10px] sm:text-xs flex-shrink-0 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="text-on-surface-variant whitespace-nowrap">
+          <span className="hidden sm:inline">{t('customers.totalOrders')}</span>
+          <span className="sm:hidden">Top. S.</span>: <span className="font-bold text-on-surface">{customerOrders.length}</span>
+        </div>
+        <div className="text-on-surface-variant whitespace-nowrap">
+          <span className="hidden sm:inline">{t('customers.openOrders')}</span>
+          <span className="sm:hidden">Açık</span>: <span className="font-bold text-on-surface">{open}</span>
+        </div>
+        <div className="text-on-surface-variant whitespace-nowrap ml-auto">
+          <span className="hidden sm:inline">{t('customers.totalValue')}</span>
+          <span className="sm:hidden">Değer</span>: <span className="font-bold text-on-surface">{fmtNum(total)}</span>
+        </div>
       </div>
 
-      <div className="overflow-y-auto flex-1">
-        <table className="w-full text-sm">
-          <thead className="sticky top-0 bg-surface-container-lowest border-b border-surface-container-low z-10">
+      <div className="overflow-x-hidden overflow-y-auto flex-1 px-4 sm:px-0 pb-4">
+        <table className="w-full text-sm block sm:table mt-4 sm:mt-0">
+          <thead className="hidden sm:table-header-group sticky top-0 bg-surface-container-lowest border-b border-surface-container-low z-10">
             <tr className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
               <th className="w-8" />
               <th className="text-left px-4 py-3">{t('orders.order')}</th>
@@ -616,7 +613,7 @@ function OrdersTab({ customerOrders }) {
               <th className="text-right px-6 py-3">{t('orders.total')}</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="block sm:table-row-group">
             {customerOrders.map((o) => {
               const isExpanded = expandedId === o.id
               const hasItems = (o.items || []).length > 0
@@ -625,38 +622,72 @@ function OrdersTab({ customerOrders }) {
                   <tr
                     key={o.id}
                     onClick={() => hasItems && setExpandedId(isExpanded ? null : o.id)}
-                    className={`border-b border-surface-container-low transition-colors ${hasItems ? 'cursor-pointer hover:bg-surface-container-low' : ''} ${isExpanded ? 'bg-surface-container-low' : ''}`}
+                    className={`block sm:table-row border border-theme-border sm:border-0 sm:border-b sm:border-surface-container-low transition-colors ${hasItems ? 'cursor-pointer hover:bg-surface-container-low' : ''} ${isExpanded ? 'bg-surface-container-low' : ''} p-4 sm:p-0 mb-4 sm:mb-0 bg-surface-container-low/30 sm:bg-transparent rounded-xl sm:rounded-none relative`}
                   >
-                    <td className="pl-4 py-3 text-center">
+                    <td className="hidden sm:table-cell pl-4 py-3 text-center">
                       {hasItems && (
                         <span className="material-symbols-outlined text-sm text-on-surface-variant">
                           {isExpanded ? 'expand_less' : 'expand_more'}
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3">
-                      <p className="font-bold text-on-surface text-xs">{o.code}</p>
-                      <p className="text-[10px] text-on-surface-variant mt-0.5">{o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '—'}</p>
+                    <td className="block sm:table-cell p-0 sm:px-4 sm:py-3 mb-2 sm:mb-0">
+                      <div className="flex items-center justify-between sm:block pr-8 sm:pr-0">
+                        <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('orders.order')}</span>
+                        <div className="text-right sm:text-left">
+                          <p className="font-bold text-on-surface text-xs">{o.code}</p>
+                          <p className="text-[10px] text-on-surface-variant mt-0.5">{o.createdAt ? new Date(o.createdAt).toLocaleDateString() : '—'}</p>
+                        </div>
+                      </div>
                     </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${ORDER_STATUS_CLS[o.status] || 'bg-surface-container text-on-surface-variant'}`}>
-                        {o.status || 'Draft'}
-                      </span>
+                    <td className="block sm:table-cell p-0 sm:px-4 sm:py-3 mb-2 sm:mb-0">
+                      <div className="flex items-center justify-between sm:block">
+                        <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('common.status')}</span>
+                        <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-bold ${ORDER_STATUS_CLS[o.status] || 'bg-surface-container text-on-surface-variant'}`}>
+                          {o.status || 'Draft'}
+                        </span>
+                      </div>
                     </td>
-                    <td className="px-4 py-3 text-xs text-on-surface-variant">{o.paymentMethod || '—'}</td>
-                    <td className="px-4 py-3 text-right text-xs font-semibold text-on-surface">{(o.items || []).length}</td>
-                    <td className="px-4 py-3 text-xs font-semibold text-on-surface">
-                      {o.items?.[0]?.product?.currency || '—'}
+                    <td className="block sm:table-cell p-0 sm:px-4 sm:py-3 mb-2 sm:mb-0">
+                      <div className="flex items-center justify-between sm:block">
+                        <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('orders.payment')}</span>
+                        <span className="text-xs text-on-surface-variant">{o.paymentMethod || '—'}</span>
+                      </div>
                     </td>
-                    <td className="px-6 py-3 text-right font-bold text-sm text-on-surface">{fmtNum(o.totalAmount)}</td>
+                    <td className="block sm:table-cell p-0 sm:px-4 sm:py-3 mb-2 sm:mb-0">
+                      <div className="flex items-center justify-between sm:block">
+                        <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Items</span>
+                        <span className="text-right text-xs font-semibold text-on-surface">{(o.items || []).length}</span>
+                      </div>
+                    </td>
+                    <td className="block sm:table-cell p-0 sm:px-4 sm:py-3 mb-2 sm:mb-0">
+                      <div className="flex items-center justify-between sm:block">
+                        <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('common.currency')}</span>
+                        <span className="text-xs font-semibold text-on-surface text-right">{o.items?.[0]?.product?.currency || '—'}</span>
+                      </div>
+                    </td>
+                    <td className="block sm:table-cell p-0 sm:px-6 sm:py-3 mt-3 sm:mt-0 pt-3 sm:pt-0 border-t border-theme-border sm:border-0">
+                      <div className="flex items-center justify-between sm:block">
+                        <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('orders.total')}</span>
+                        <span className="text-right font-bold text-sm text-on-surface">{fmtNum(o.totalAmount)}</span>
+                      </div>
+                    </td>
+                    {hasItems && (
+                      <div className="sm:hidden absolute top-4 right-4 w-6 h-6 rounded-full bg-surface-container flex items-center justify-center">
+                        <span className="material-symbols-outlined text-sm text-on-surface-variant">
+                          {isExpanded ? 'expand_less' : 'expand_more'}
+                        </span>
+                      </div>
+                    )}
                   </tr>
 
                   {/* Expanded items */}
                   {isExpanded && (
-                    <tr key={`${o.id}-items`} className="border-b border-surface-container-low bg-surface-container-low/50">
-                      <td colSpan={7} className="px-6 pb-4 pt-1">
-                        <table className="w-full">
-                          <thead>
+                    <tr key={`${o.id}-items`} className="block sm:table-row border-b border-surface-container-low bg-surface-container-low/50 -mt-5 sm:mt-0 pt-2 sm:pt-0 rounded-b-xl sm:rounded-none relative z-0">
+                      <td colSpan={7} className="block sm:table-cell px-3 sm:px-6 pb-4 pt-4 sm:pt-1">
+                        <div className="overflow-hidden sm:overflow-x-auto rounded-xl sm:rounded-none bg-surface-container-lowest sm:bg-transparent border border-theme-border sm:border-0 p-2 sm:p-0">
+                          <table className="w-full text-xs block sm:table min-w-0 sm:min-w-[500px]">
+                          <thead className="hidden sm:table-header-group">
                             <tr className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant border-b border-surface-container">
                               <th className="text-left py-1.5 pr-4">{t('orders.product')}</th>
                               <th className="text-right py-1.5 pr-4">{t('orders.qty')}</th>
@@ -666,26 +697,43 @@ function OrdersTab({ customerOrders }) {
                               <th className="text-right py-1.5">Subtotal</th>
                             </tr>
                           </thead>
-                          <tbody>
+                          <tbody className="block sm:table-row-group">
                             {o.items.map((item) => (
-                              <tr key={item.id} className="border-b border-surface-container last:border-0 text-xs">
-                                <td className="py-1.5 pr-4 font-medium text-on-surface">{item.product?.name || '—'}</td>
-                                <td className="py-1.5 pr-4 text-right text-on-surface tabular-nums">{item.qty}</td>
-                                <td className="py-1.5 pr-4 text-on-surface-variant">{item.product?.unit || '—'}</td>
-                                <td className="py-1.5 pr-4 text-right tabular-nums text-on-surface">
-                                  {fmtNum(item.price)}
-                                  {item.product?.currency && (
-                                    <span className="text-on-surface-variant ml-1">{item.product.currency}</span>
-                                  )}
+                              <tr key={item.id} className="block sm:table-row border-b border-surface-container last:border-0 p-2 sm:p-0">
+                                <td className="block sm:table-cell py-1 sm:py-1.5 pr-0 sm:pr-4 flex justify-between items-center sm:table-cell">
+                                  <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('orders.product')}</span>
+                                  <span className="font-medium text-on-surface text-right sm:text-left">{item.product?.name || '—'}</span>
                                 </td>
-                                <td className="py-1.5 pr-4 text-right text-on-surface-variant">{item.vat ? `${item.vat}%` : '—'}</td>
-                                <td className="py-1.5 text-right font-semibold tabular-nums text-on-surface">
+                                <td className="block sm:table-cell py-1 sm:py-1.5 pr-0 sm:pr-4 flex justify-between items-center sm:table-cell text-right text-on-surface tabular-nums">
+                                  <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('orders.qty')}</span>
+                                  {item.qty}
+                                </td>
+                                <td className="block sm:table-cell py-1 sm:py-1.5 pr-0 sm:pr-4 flex justify-between items-center sm:table-cell text-on-surface-variant">
+                                  <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('common.unit')}</span>
+                                  {item.product?.unit || '—'}
+                                </td>
+                                <td className="block sm:table-cell py-1 sm:py-1.5 pr-0 sm:pr-4 flex justify-between items-center sm:table-cell text-right tabular-nums text-on-surface">
+                                  <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('orders.unitPrice')}</span>
+                                  <div>
+                                    {fmtNum(item.price)}
+                                    {item.product?.currency && (
+                                      <span className="text-on-surface-variant ml-1">{item.product.currency}</span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="block sm:table-cell py-1 sm:py-1.5 pr-0 sm:pr-4 flex justify-between items-center sm:table-cell text-right text-on-surface-variant">
+                                  <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('orders.vat')}</span>
+                                  {item.vat ? `${item.vat}%` : '—'}
+                                </td>
+                                <td className="block sm:table-cell py-1 sm:py-1.5 flex justify-between items-center sm:table-cell text-right font-semibold tabular-nums text-on-surface mt-2 sm:mt-0 pt-2 sm:pt-0 border-t border-surface-container sm:border-0">
+                                  <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Subtotal</span>
                                   {fmtNum(item.qty * item.price)}
                                 </td>
                               </tr>
                             ))}
                           </tbody>
                         </table>
+                        </div>
                       </td>
                     </tr>
                   )}
@@ -723,7 +771,7 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
 
   const customerOrders = orders.filter((o) => o.customerId === customer.id)
   const customerOrderIds = new Set(customerOrders.map((o) => o.id))
-  const customerFinance = financeRecords.filter((f) => f.orderId && customerOrderIds.has(f.orderId))
+  let customerFinance = financeRecords.filter((f) => f.orderId && customerOrderIds.has(f.orderId))
 
   const [form, setForm] = useState({
     customerType:    customer.customerType    || 'Company',
@@ -913,22 +961,22 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
   const editFields = getTabFields(tabDefs[editTab].id, form, t)
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl shadow-inverse-surface/20 w-full max-w-2xl mx-4 flex flex-col max-h-[90vh]">
+      <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl shadow-inverse-surface/20 w-full max-w-2xl flex flex-col max-h-[90dvh] overflow-hidden">
         {/* Header banner */}
-        <div className="primary-gradient px-8 pt-8 pb-6 flex-shrink-0">
+        <div className="primary-gradient px-4 md:px-8 pt-6 md:pt-8 pb-6 flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-surface-container-lowest/20 rounded-2xl flex items-center justify-center text-white font-black text-xl">
                 {customer.initials}
               </div>
               <div>
-                <h2 className="text-xl font-extrabold text-white leading-tight">
+                <h2 className="text-lg sm:text-xl font-extrabold text-white leading-tight">
                   {editing ? t('customers.editCustomer') : customer.name}
                 </h2>
-                <p className="text-blue-200 text-xs font-medium mt-0.5">ID: #{customer.id}</p>
+                <p className="text-blue-200 text-[10px] sm:text-xs font-medium mt-0.5">ID: #{customer.id}</p>
               </div>
             </div>
             <button
@@ -940,19 +988,19 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
           </div>
 
           {!editing && (
-            <div className="flex items-center gap-3 mt-5">
+            <div className="hidden lg:flex flex-wrap items-center gap-2 mt-5">
               <div className="bg-surface-container-lowest/10 rounded-lg px-3 py-1.5 text-center">
-                <p className="text-white font-black text-lg leading-none">
+                <p className="text-white font-black text-base sm:text-lg leading-none">
                   {(reports || []).filter((r) => r.customerId === customer.id).length}
                 </p>
                 <p className="text-blue-200 text-[10px] font-bold uppercase tracking-wider mt-0.5">{t('nav.tasks')}</p>
               </div>
               <div className="bg-surface-container-lowest/10 rounded-lg px-3 py-1.5 text-center">
-                <p className="text-white font-black text-lg leading-none">{customerOrders.length}</p>
+                <p className="text-white font-black text-base sm:text-lg leading-none">{customerOrders.length}</p>
                 <p className="text-blue-200 text-[10px] font-bold uppercase tracking-wider mt-0.5">{t('customers.tabOrders')}</p>
               </div>
               <div className="bg-surface-container-lowest/10 rounded-lg px-3 py-1.5 text-center">
-                <p className="text-white font-black text-lg leading-none">{customerFinance.length}</p>
+                <p className="text-white font-black text-base sm:text-lg leading-none">{customerFinance.length}</p>
                 <p className="text-blue-200 text-[10px] font-bold uppercase tracking-wider mt-0.5">{t('customers.tabFinance')}</p>
               </div>
               {customer.customerType && (
@@ -979,7 +1027,7 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
         {!editing && (
           <>
             {/* Sub-tab bar */}
-            <div className="flex items-center gap-1 px-6 pt-3 pb-0 border-b border-surface-container-low flex-shrink-0">
+            <div className="flex w-full justify-between sm:justify-start items-center gap-1 px-2 sm:px-6 pt-3 pb-0 border-b border-surface-container-low flex-shrink-0 overflow-x-auto scrollbar-thin">
               {[
                 { key: 'info',    label: t('customers.tabInfo'),    icon: 'person' },
                 { key: 'orders',  label: t('customers.tabOrders'),  icon: 'shopping_bag',           count: customerOrders.length },
@@ -988,18 +1036,23 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
                 <button
                   key={t.key}
                   onClick={() => setViewTab(t.key)}
-                  className={`flex items-center gap-1.5 px-3 py-2.5 text-xs font-bold border-b-2 -mb-px transition-all ${
+                  className={`flex flex-col sm:flex-row flex-1 sm:flex-none items-center justify-center gap-1 sm:gap-2 px-1 sm:px-4 py-2 sm:py-2.5 rounded-t-xl text-[10px] sm:text-sm font-bold transition-all relative ${
                     viewTab === t.key
-                      ? 'border-primary text-primary'
-                      : 'border-transparent text-on-surface-variant hover:text-on-surface'
+                      ? 'text-primary bg-primary/5'
+                      : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
                   }`}
                 >
-                  <span className="material-symbols-outlined text-[16px]">{t.icon}</span>
-                  {t.label}
-                  {t.count !== undefined && (
-                    <span className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${viewTab === t.key ? 'bg-primary text-white' : 'bg-surface-container-high text-on-surface-variant'}`}>
-                      {t.count}
-                    </span>
+                  <span className="material-symbols-outlined text-lg sm:text-lg">{t.icon}</span>
+                  <div className="flex items-center justify-center gap-1">
+                    <span className="text-center leading-none sm:leading-normal">{t.label}</span>
+                    {t.count !== undefined && (
+                      <span className={`px-1.5 sm:px-2 py-0.5 rounded-md text-[9px] sm:text-xs leading-none sm:leading-normal ${viewTab === t.key ? 'bg-primary text-white' : 'bg-surface-container-highest text-on-surface'}`}>
+                        {t.count}
+                      </span>
+                    )}
+                  </div>
+                  {viewTab === t.key && (
+                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-primary rounded-t-full" />
                   )}
                 </button>
               ))}
@@ -1007,7 +1060,7 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
 
             {/* Info tab */}
             {viewTab === 'info' && (
-              <div className="px-8 py-4 overflow-y-auto flex-1 space-y-0">
+              <div className="px-4 md:px-8 py-4 overflow-y-auto flex-1 space-y-0">
                 <DetailRow icon="category"    label="Customer Type"     value={customer.customerType} />
                 {customer.customerType === 'Individual' && (
                   <DetailRow icon="person"    label="Full Name"         value={customer.fullName} />
@@ -1109,6 +1162,7 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
               <div className="flex flex-col flex-1 overflow-hidden">
                 {/* Summary bar + export buttons */}
                 {(() => {
+
                   const income  = customerFinance.filter((f) => f.type === 'income').reduce((s, f) => s + (f.amount || 0), 0)
                   const expense = customerFinance.filter((f) => f.type === 'expense').reduce((s, f) => s + (f.amount || 0), 0)
                   const net = income - expense
@@ -1179,33 +1233,47 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
                   }
 
                   return (
-                    <div className="flex items-center gap-4 px-6 py-3 bg-surface-container-low border-b border-surface-container text-xs flex-shrink-0">
-                      <div className="text-on-surface-variant">{t('finance.records')}: <span className="font-bold text-on-surface">{customerFinance.length}</span></div>
-                      <div className="text-on-surface-variant">{t('finance.income')}: <span className="font-bold text-primary">{fmt2(income)}</span></div>
-                      <div className="text-on-surface-variant">{t('finance.expense')}: <span className="font-bold text-error">{fmt2(expense)}</span></div>
-                      <div className="text-on-surface-variant">{t('dashboard.net')}: <span className={`font-bold ${net >= 0 ? 'text-primary' : 'text-error'}`}>{fmt2(net)}</span></div>
-                      <div className="ml-auto flex items-center gap-1.5">
+                    <div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-surface-container-low border-b border-surface-container flex-shrink-0 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                      <div className="flex items-center gap-3 sm:gap-4 text-[10px] sm:text-xs">
+                        <div className="text-on-surface-variant whitespace-nowrap">
+                          <span className="hidden sm:inline">{t('finance.records')}:</span>
+                          <span className="sm:hidden">Kayıt:</span> <span className="font-bold text-on-surface">{customerFinance.length}</span>
+                        </div>
+                        <div className="text-on-surface-variant whitespace-nowrap">
+                          <span className="hidden sm:inline">{t('finance.income')}:</span>
+                          <span className="sm:hidden">Gelir:</span> <span className="font-bold text-primary">{fmt2(income)}</span>
+                        </div>
+                        <div className="text-on-surface-variant whitespace-nowrap">
+                          <span className="hidden sm:inline">{t('finance.expense')}:</span>
+                          <span className="sm:hidden">Gider:</span> <span className="font-bold text-error">{fmt2(expense)}</span>
+                        </div>
+                        <div className="text-on-surface-variant whitespace-nowrap">
+                          <span className="hidden sm:inline">{t('dashboard.net')}:</span>
+                          <span className="sm:hidden">Net:</span> <span className={`font-bold ${net >= 0 ? 'text-primary' : 'text-error'}`}>{fmt2(net)}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 ml-auto flex-shrink-0">
                         <button
                           onClick={exportFinanceExcel}
                           disabled={customerFinance.length === 0}
-                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-surface-container text-[10px] font-semibold text-on-surface-variant hover:bg-surface-container transition disabled:opacity-40"
+                          className="flex items-center gap-1 px-2 py-1.5 sm:px-2.5 sm:py-1 rounded-lg border border-surface-container text-[10px] font-semibold text-on-surface-variant hover:bg-surface-container transition disabled:opacity-40"
                         >
                           <span className="material-symbols-outlined text-[14px]">grid_on</span>
-                          Excel
+                          <span className="hidden sm:inline">Excel</span>
                         </button>
                         <button
                           onClick={exportFinancePDF}
                           disabled={customerFinance.length === 0}
-                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-surface-container text-[10px] font-semibold text-on-surface-variant hover:bg-surface-container transition disabled:opacity-40"
+                          className="flex items-center gap-1 px-2 py-1.5 sm:px-2.5 sm:py-1 rounded-lg border border-surface-container text-[10px] font-semibold text-on-surface-variant hover:bg-surface-container transition disabled:opacity-40"
                         >
                           <span className="material-symbols-outlined text-[14px]">picture_as_pdf</span>
-                          PDF
+                          <span className="hidden sm:inline">PDF</span>
                         </button>
                       </div>
                     </div>
                   )
                 })()}
-                <div className="overflow-y-auto flex-1">
+                <div className="overflow-auto flex-1">
                   {customerFinance.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-16 text-on-surface-variant">
                       <span className="material-symbols-outlined text-5xl mb-3 opacity-30">account_balance_wallet</span>
@@ -1213,49 +1281,79 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
                       <p className="text-xs mt-1 opacity-70">Finance records linked to this customer's orders appear here</p>
                     </div>
                   ) : (
-                    <table className="w-full text-sm">
-                      <thead className="sticky top-0 bg-surface-container-lowest border-b border-surface-container-low z-10">
-                        <tr className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
-                          <th className="text-left px-6 py-3">{t('common.code')}</th>
-                          <th className="text-left px-4 py-3">{t('common.type')}</th>
-                          <th className="text-left px-4 py-3">{t('common.category')}</th>
-                          <th className="text-left px-4 py-3">{t('orders.order')}</th>
-                          <th className="text-left px-4 py-3">{t('common.date')}</th>
-                          <th className="text-right px-6 py-3">{t('common.amount')}</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {customerFinance.map((f) => (
-                          <tr key={f.id} className="border-b border-surface-container-low hover:bg-surface-container-low transition-colors">
-                            <td className="px-6 py-3">
-                              <p className="font-bold text-on-surface text-xs">{f.code}</p>
-                              {f.reference && <p className="text-[10px] text-on-surface-variant mt-0.5">{f.reference}</p>}
-                            </td>
-                            <td className="px-4 py-3">
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${
-                                f.type === 'income'
-                                  ? 'bg-primary-fixed text-on-primary-fixed-variant'
-                                  : 'bg-error/10 text-error'
-                              }`}>
-                                <span className="material-symbols-outlined text-[12px]">
-                                  {f.type === 'income' ? 'arrow_downward' : 'arrow_upward'}
-                                </span>
-                                {f.type}
-                              </span>
-                            </td>
-                            <td className="px-4 py-3 text-xs text-on-surface-variant">{f.category || '—'}</td>
-                            <td className="px-4 py-3 text-xs font-mono text-on-surface-variant">{f.order?.code || '—'}</td>
-                            <td className="px-4 py-3 text-xs text-on-surface-variant">{f.date || '—'}</td>
-                            <td className="px-6 py-3 text-right">
-                              <span className={`font-bold text-sm ${f.type === 'income' ? 'text-primary' : 'text-error'}`}>
-                                {f.type === 'expense' ? '−' : '+'}{(f.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </span>
-                              <span className="text-[10px] text-on-surface-variant ml-1">{f.currency}</span>
-                            </td>
+                    <div className="overflow-x-hidden overflow-y-auto flex-1 px-4 sm:px-0 pb-4">
+                      <table className="w-full text-sm block sm:table mt-4 sm:mt-0">
+                        <thead className="hidden sm:table-header-group sticky top-0 bg-surface-container-lowest border-b border-surface-container-low z-10">
+                          <tr className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">
+                            <th className="text-left px-6 py-3">{t('common.code')}</th>
+                            <th className="text-left px-4 py-3">{t('common.type')}</th>
+                            <th className="text-left px-4 py-3">{t('common.category')}</th>
+                            <th className="text-left px-4 py-3">{t('orders.order')}</th>
+                            <th className="text-left px-4 py-3">{t('common.date')}</th>
+                            <th className="text-right px-6 py-3">{t('common.amount')}</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody className="block sm:table-row-group">
+                          {customerFinance.map((f) => (
+                            <tr key={f.id} className="block sm:table-row border border-theme-border sm:border-0 sm:border-b sm:border-surface-container-low p-4 sm:p-0 mb-4 sm:mb-0 bg-surface-container-low/30 sm:bg-transparent rounded-xl sm:rounded-none">
+                              <td className="block sm:table-cell p-0 sm:px-6 sm:py-3 mb-2 sm:mb-0">
+                                <div className="flex justify-between items-center sm:block">
+                                  <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('common.code')}</span>
+                                  <div className="text-right sm:text-left">
+                                    <p className="font-bold text-on-surface text-xs">{f.code}</p>
+                                    {f.reference && <p className="text-[10px] text-on-surface-variant mt-0.5">{f.reference}</p>}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="block sm:table-cell p-0 sm:px-4 sm:py-3 mb-2 sm:mb-0">
+                                <div className="flex justify-between items-center sm:block">
+                                  <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('common.type')}</span>
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${
+                                    f.type === 'income'
+                                      ? 'bg-primary-fixed text-on-primary-fixed-variant'
+                                      : 'bg-error/10 text-error'
+                                  }`}>
+                                    <span className="material-symbols-outlined text-[12px]">
+                                      {f.type === 'income' ? 'arrow_downward' : 'arrow_upward'}
+                                    </span>
+                                    {f.type}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="block sm:table-cell p-0 sm:px-4 sm:py-3 mb-2 sm:mb-0">
+                                <div className="flex justify-between items-center sm:block">
+                                  <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('common.category')}</span>
+                                  <span className="text-xs text-on-surface-variant">{f.category || '—'}</span>
+                                </div>
+                              </td>
+                              <td className="block sm:table-cell p-0 sm:px-4 sm:py-3 mb-2 sm:mb-0">
+                                <div className="flex justify-between items-center sm:block">
+                                  <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('orders.order')}</span>
+                                  <span className="text-xs font-mono text-on-surface-variant">{f.order?.code || '—'}</span>
+                                </div>
+                              </td>
+                              <td className="block sm:table-cell p-0 sm:px-4 sm:py-3 mb-2 sm:mb-0">
+                                <div className="flex justify-between items-center sm:block">
+                                  <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('common.date')}</span>
+                                  <span className="text-xs text-on-surface-variant">{f.date || '—'}</span>
+                                </div>
+                              </td>
+                              <td className="block sm:table-cell p-0 sm:px-6 sm:py-3 mt-3 sm:mt-0 pt-3 sm:pt-0 border-t border-theme-border sm:border-0">
+                                <div className="flex justify-between items-center sm:block">
+                                  <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('common.amount')}</span>
+                                  <div className="text-right">
+                                    <span className={`font-bold text-sm ${f.type === 'income' ? 'text-primary' : 'text-error'}`}>
+                                      {f.type === 'expense' ? '−' : '+'}{(f.amount || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </span>
+                                    <span className="text-[10px] text-on-surface-variant ml-1">{f.currency}</span>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   )}
                 </div>
               </div>
@@ -1266,25 +1364,25 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
         {/* Edit mode – tabbed */}
         {editing && (
           <>
-            <div className="flex items-center gap-1 px-6 pt-4 flex-shrink-0">
+            <div className="flex w-full justify-start items-center gap-1 px-2 sm:px-6 pt-4 flex-shrink-0 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               {tabDefs.map((tab, i) => (
                 <button
                   key={tab.id}
                   onClick={() => setEditTab(i)}
-                  className={`flex items-center gap-1.5 px-3 py-2 rounded-t-lg text-xs font-bold transition-all ${
+                  className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-t-lg text-xs font-bold transition-all flex-shrink-0 whitespace-nowrap ${
                     editTab === i
                       ? 'bg-primary text-white shadow-sm'
                       : 'text-on-surface-variant hover:bg-surface-container-low'
                   }`}
                 >
                   <span className="material-symbols-outlined text-[16px]">{tab.icon}</span>
-                  {tab.label}
+                  <span className="text-center">{tab.label}</span>
                 </button>
               ))}
             </div>
-            <div className="px-8 py-5 grid grid-cols-2 gap-4 overflow-y-auto flex-1 border-t border-surface-container-low">
+            <div className="px-4 md:px-8 py-5 grid grid-cols-1 md:grid-cols-2 gap-4 overflow-y-auto flex-1 border-t border-surface-container-low">
               {editFields.map((field) => {
-                const colClass = field.col === 2 ? 'col-span-2' : 'col-span-1'
+                const colClass = field.col === 2 ? 'col-span-1 md:col-span-2' : 'col-span-1'
                 const val = form[field.id] ?? ''
                 return (
                   <div key={field.id} className={colClass}>
@@ -1330,54 +1428,53 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
         )}
 
         {/* Footer */}
-        <div className="px-8 pb-8 pt-4 flex items-center justify-between flex-shrink-0 border-t border-surface-container-low">
+        <div className="px-4 lg:px-8 pb-4 lg:pb-8 pt-4 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 lg:gap-4 flex-shrink-0 border-t border-surface-container-low">
           {!editing ? (
             <>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 w-full lg:w-auto">
                 <button
                   onClick={() => { setEditing(true); setViewTab('info') }}
-                  className="px-5 py-2.5 rounded-xl border-2 border-primary text-primary text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center gap-2"
+                  className="flex-1 lg:flex-none px-4 py-2 lg:px-5 lg:py-2.5 rounded-xl border-2 border-primary text-primary text-xs lg:text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-1.5 lg:gap-2"
                 >
-                  <span className="material-symbols-outlined text-base">edit</span>
+                  <span className="material-symbols-outlined text-[14px] lg:text-base">edit</span>
                   {t('common.edit')}
                 </button>
                 {isAdmin && (
                   <button
                     onClick={() => setConfirming((v) => !v)}
-                    className={`px-5 py-2.5 rounded-xl border-2 text-sm font-bold transition-all flex items-center gap-2 ${
+                    className={`flex-1 lg:flex-none px-4 py-2 lg:px-5 lg:py-2.5 rounded-xl border-2 text-xs lg:text-sm font-bold transition-all flex items-center justify-center gap-1.5 lg:gap-2 ${
                       confirming
                         ? 'border-error bg-error text-white'
                         : 'border-error text-error hover:bg-error hover:text-white'
                     }`}
                   >
-                    <span className="material-symbols-outlined text-base">delete</span>
+                    <span className="material-symbols-outlined text-[14px] lg:text-base">delete</span>
                     {t('common.delete')}
                   </button>
                 )}
               </div>
               <button
                 onClick={onClose}
-                className="px-6 py-2.5 rounded-xl primary-gradient text-white text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity"
+                className="w-full lg:w-auto px-4 py-2 lg:px-6 lg:py-2.5 rounded-xl primary-gradient text-white text-xs lg:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity"
               >
                 {t('common.close')}
               </button>
             </>
           ) : (
-            <>
+            <div className="flex items-center justify-end gap-2 w-full">
               <button
                 onClick={handleCancel}
-                className="px-5 py-2.5 rounded-xl text-on-surface-variant text-sm font-semibold hover:bg-surface-container-low transition-colors"
+                className="flex-1 lg:flex-none px-4 py-2 lg:px-5 lg:py-2.5 rounded-xl text-on-surface-variant text-xs lg:text-sm font-semibold hover:bg-surface-container-low transition-colors flex items-center justify-center"
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={handleSave}
-                className="px-6 py-2.5 rounded-xl primary-gradient text-white text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center gap-2"
+                className="flex-1 lg:flex-none px-4 py-2 lg:px-6 lg:py-2.5 rounded-xl primary-gradient text-white text-xs lg:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center"
               >
-                <span className="material-symbols-outlined text-base">save</span>
                 {t('common.saveChanges')}
               </button>
-            </>
+            </div>
           )}
         </div>
       </div>
@@ -1418,7 +1515,7 @@ export default function Customers() {
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
 
   return (
-    <div className="p-8 min-h-screen bg-page-bg">
+    <div className="p-4 md:p-8 min-h-screen bg-page-bg">
       {showModal && (
         <AddCustomerModal onClose={() => setShowModal(false)} onSave={handleSave} />
       )}
@@ -1441,21 +1538,21 @@ export default function Customers() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
         <div className="max-w-2xl">
-          <h1 className="text-4xl font-extrabold tracking-tight text-on-surface mb-2">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-on-surface mb-2">
             {t('customers.title')}
           </h1>
-          <p className="text-on-surface-variant text-base">
+          <p className="text-on-surface-variant text-xs sm:text-sm lg:text-base leading-relaxed">
             {t('customers.subtitle')}
           </p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={syncAndRefreshCustomers} className="flex items-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-shrink-0">
+          <button onClick={syncAndRefreshCustomers} className="flex items-center justify-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap">
             <span className="material-symbols-outlined text-base">sync</span>
             {t('common.refresh', 'Yenile/Senkronize Et')}
           </button>
           <button
             onClick={() => setShowModal(true)}
-            className="px-6 py-2.5 rounded-xl primary-gradient text-white font-bold text-sm flex items-center gap-2 shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity"
+            className="px-6 py-2.5 rounded-xl primary-gradient text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity whitespace-nowrap"
           >
             <span className="material-symbols-outlined text-xl">person_add</span>
             {t('customers.addCustomer')}
@@ -1468,20 +1565,20 @@ export default function Customers() {
         const uniqueCountries = new Set(customers.map((c) => c.country).filter(Boolean)).size
         const uniqueCities    = new Set(customers.map((c) => c.city).filter(Boolean)).size
         return (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
             {[
               { label: t('nav.customers'),            value: customers.length, icon: 'groups',        color: 'bg-surface-tint'      },
               { label: t('customers.serviceCountries'), value: uniqueCountries,  icon: 'public',        color: 'bg-primary-container' },
               { label: t('customers.serviceCities'),    value: uniqueCities,     icon: 'location_city', color: 'bg-secondary'         },
             ].map(({ label, value, icon, color }) => (
-              <div key={label} className="bg-surface-container-lowest rounded-2xl p-5 flex items-center gap-4 relative overflow-hidden">
+              <div key={label} className="bg-surface-container-lowest rounded-2xl p-4 sm:p-5 flex flex-row sm:flex-col xl:flex-row items-center gap-4 sm:gap-3 xl:gap-4 relative overflow-hidden">
                 <div className={`absolute top-0 left-0 w-1 h-full ${color}`} />
                 <div className="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center flex-shrink-0">
                   <span className="material-symbols-outlined text-on-surface-variant text-[20px]">{icon}</span>
                 </div>
-                <div>
-                  <p className="text-2xl font-black text-on-surface leading-none">{value.toLocaleString()}</p>
-                  <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mt-1">{label}</p>
+                <div className="text-left sm:text-center xl:text-left">
+                  <p className="text-xl sm:text-2xl font-black text-on-surface leading-none">{value.toLocaleString()}</p>
+                  <p className="text-[10px] sm:text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mt-1.5 leading-tight">{label}</p>
                 </div>
               </div>
             ))}
@@ -1501,10 +1598,10 @@ export default function Customers() {
         />
       </div>
 
-      {/* Customer Table */}
-      <div className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm">
-        <table className="w-full text-left border-collapse">
-          <thead>
+      {/* Customer Table / List */}
+      <div className="xl:bg-surface-container-lowest xl:rounded-2xl xl:overflow-x-auto xl:shadow-sm">
+        <table className="w-full text-left block xl:table border-collapse xl:min-w-[700px]">
+          <thead className="hidden xl:table-header-group">
             <tr className="bg-surface-container-low">
               {[t('customers.colCustomer'), t('customers.colContact'), t('customers.colCity'), t('customers.colTasks'), t('customers.colDetails')].map(
                 (h, i) => (
@@ -1515,14 +1612,14 @@ export default function Customers() {
               )}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="block xl:table-row-group space-y-4 xl:space-y-0">
             {paginated.map((customer) => (
               <tr
                 key={customer.id}
-                className="group hover:bg-surface-container-low transition-colors cursor-pointer border-b border-surface-container-low"
+                className="group xl:hover:bg-surface-container-low transition-colors cursor-pointer xl:border-b xl:border-surface-container-low block xl:table-row bg-surface-container-lowest rounded-2xl xl:rounded-none p-5 xl:p-0 shadow-sm xl:shadow-none"
                 onClick={() => setSelectedCustomer(customer)}
               >
-                <td className="px-6 py-5">
+                <td className="block xl:table-cell p-0 xl:px-6 xl:py-5 mb-4 xl:mb-0 border-b border-surface-container-low pb-4 xl:border-0 xl:pb-0">
                   <div className="flex items-center gap-4">
                     <InitialsAvatar initials={customer.initials} size="lg" />
                     <div>
@@ -1533,13 +1630,18 @@ export default function Customers() {
                     </div>
                   </div>
                 </td>
-                <td className="px-6 py-5">
-                  <div className="font-semibold text-on-surface">{customer.contactName || '—'}</div>
+                <td className="flex xl:table-cell justify-between items-center p-0 xl:px-6 xl:py-5 mb-3 xl:mb-0 mt-4 xl:mt-0">
+                  <span className="xl:hidden text-xs font-bold text-on-surface-variant uppercase tracking-widest">{t('customers.colContact')}</span>
+                  <div className="font-semibold text-on-surface text-sm">{customer.contactName || '—'}</div>
                 </td>
-                <td className="px-6 py-5 text-on-surface-variant text-sm font-medium">
-                  {[customer.city, customer.country].filter(Boolean).join(', ') || customer.region}
+                <td className="flex xl:table-cell justify-between items-center p-0 xl:px-6 xl:py-5 mb-4 xl:mb-0">
+                  <span className="xl:hidden text-xs font-bold text-on-surface-variant uppercase tracking-widest">{t('customers.colCity')}</span>
+                  <div className="text-on-surface-variant text-sm font-medium text-right">
+                    {[customer.city, customer.country].filter(Boolean).join(', ') || customer.region}
+                  </div>
                 </td>
-                <td className="px-6 py-5">
+                <td className="block xl:table-cell p-0 xl:px-6 xl:py-5 mb-4 xl:mb-0">
+                  <span className="xl:hidden text-xs font-bold text-on-surface-variant uppercase tracking-widest block mb-2">{t('customers.colTasks')}</span>
                   {(() => {
                     const ct = (reports || []).filter((r) => r.customerId === customer.id)
                     const counts = [
@@ -1549,13 +1651,14 @@ export default function Customers() {
                       { label: t('customers.done'),    col: 'completed',   cls: 'status-completed-badge' },
                     ]
                     return (
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-base font-black text-on-surface w-6">{ct.length}</span>
+                      <div className="flex flex-wrap xl:flex-nowrap items-center gap-1.5 min-w-[200px]">
+                        <span className="hidden xl:inline-block text-base font-black text-on-surface w-6">{ct.length}</span>
                         {counts.map(({ label, col, cls }) => {
                           const n = ct.filter((r) => r.column === col).length
                           return (
-                            <span key={col} className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${cls}`}>
-                              {n} {label}
+                            <span key={col} className={`flex-1 xl:flex-none flex flex-col xl:flex-row items-center justify-center px-2 py-1.5 xl:py-0.5 rounded-md font-bold gap-0.5 xl:gap-1 ${cls}`}>
+                              <span className="text-xs xl:text-[10px] leading-none">{n}</span>
+                              <span className="text-[8px] xl:text-[10px] uppercase xl:normal-case tracking-wider xl:tracking-normal text-center leading-none">{label}</span>
                             </span>
                           )
                         })}
@@ -1563,12 +1666,13 @@ export default function Customers() {
                     )
                   })()}
                 </td>
-                <td className="px-6 py-5 text-right">
+                <td className="block xl:table-cell p-0 xl:px-6 xl:py-5 text-right mt-4 xl:mt-0">
                   <button
                     onClick={(e) => { e.stopPropagation(); setSelectedCustomer(customer) }}
-                    className="text-primary font-bold text-sm px-4 py-2 hover:bg-primary/5 rounded-lg transition-colors"
+                    className="w-full xl:w-auto text-primary font-bold text-sm px-4 py-2.5 xl:py-2 bg-primary/10 xl:bg-transparent hover:bg-primary/20 xl:hover:bg-primary/5 rounded-xl transition-colors flex justify-center items-center gap-2"
                   >
                     {t('customers.viewDetails')}
+                    <span className="material-symbols-outlined text-[16px] xl:hidden">arrow_forward</span>
                   </button>
                 </td>
               </tr>
@@ -1578,64 +1682,14 @@ export default function Customers() {
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-6 px-2">
-          <p className="text-sm text-on-surface-variant">
-            {t('customers.showingOf', { from: (page - 1) * ITEMS_PER_PAGE + 1, to: Math.min(page * ITEMS_PER_PAGE, filtered.length), total: filtered.length })}
-          </p>
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-surface-container-high text-on-surface-variant disabled:opacity-40 hover:bg-surface-container transition-colors"
-            >
-              <span className="material-symbols-outlined">chevron_left</span>
-            </button>
-
-            {(() => {
-              const pages = []
-              const delta = 2
-              const left  = page - delta
-              const right = page + delta
-
-              let prev = null
-              for (let p = 1; p <= totalPages; p++) {
-                if (p === 1 || p === totalPages || (p >= left && p <= right)) {
-                  if (prev !== null && p - prev > 1) pages.push('...')
-                  pages.push(p)
-                  prev = p
-                }
-              }
-
-              return pages.map((p, i) =>
-                p === '...' ? (
-                  <span key={`ellipsis-${i}`} className="w-10 h-10 flex items-center justify-center text-on-surface-variant text-sm">…</span>
-                ) : (
-                  <button
-                    key={p}
-                    onClick={() => setPage(p)}
-                    className={`w-10 h-10 flex items-center justify-center rounded-xl text-sm font-bold transition-colors ${
-                      p === page
-                        ? 'primary-gradient text-white shadow-md shadow-primary/20'
-                        : 'hover:bg-surface-container-high text-on-surface'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                )
-              )
-            })()}
-
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="w-10 h-10 flex items-center justify-center rounded-xl bg-surface-container-high text-on-surface-variant disabled:opacity-40 hover:bg-surface-container transition-colors"
-            >
-              <span className="material-symbols-outlined">chevron_right</span>
-            </button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        setPage={setPage}
+        totalPages={totalPages}
+        totalItems={filtered.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+        label="customers.showingOf"
+      />
     </div>
   )
 }
