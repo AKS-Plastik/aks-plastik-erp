@@ -85,10 +85,10 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 sm:p-6" onClick={onClose}>
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-3xl p-4 sm:p-8 max-h-[90dvh] overflow-y-auto flex flex-col" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 md:p-6" onClick={onClose}>
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-3xl p-4 md:p-8 max-h-[90dvh] overflow-y-auto flex flex-col" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start justify-between mb-6 gap-4">
+        <div className="flex flex-col sm:flex-row items-start justify-between mb-4 md:mb-6 gap-3 md:gap-4">
           <div>
             <p className="text-xs font-mono text-text-muted mb-1">{order.code}</p>
             <h2 className="text-xl font-bold text-on-surface">{order.customer?.name || '—'}</h2>
@@ -105,9 +105,9 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
         </div>
 
         {/* Line Items */}
-        <div className="rounded-xl border border-theme-border overflow-hidden mb-4">
-          <table className="w-full text-sm">
-            <thead>
+        <div className="rounded-xl border border-theme-border overflow-hidden mb-4 bg-surface-container-lowest">
+          <table className="w-full text-sm block md:table">
+            <thead className="hidden md:table-header-group">
               <tr className="bg-surface-container-high text-text-muted text-xs uppercase tracking-wider">
                 <th className="text-left px-4 py-2.5 font-semibold">{t('orders.product')}</th>
                 <th className="text-right px-4 py-2.5 font-semibold">{t('orders.qty')}</th>
@@ -117,22 +117,40 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
                 <th className="text-right px-4 py-2.5 font-semibold">{t('orders.lineTotal')}</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="block md:table-row-group">
               {(order.items || []).map((it, i) => {
                 const lineTotal = (parseFloat(it.unitPrice) || 0) * (parseInt(it.quantity) || 0) * (1 + (it.vat || 0) / 100)
                 return (
-                  <tr key={i} className="border-t border-theme-border">
-                    <td className="px-4 py-3 text-on-surface font-medium">{it.productName}</td>
-                    <td className="px-4 py-3 text-right text-text-muted">{it.quantity}</td>
-                    <td className="px-4 py-3 text-center text-text-muted">{it.product?.unit || '—'}</td>
-                    <td className="px-4 py-3 text-right text-on-surface">
-                      <span className="text-xs text-text-muted mr-1">{it.currency || 'USD'}</span>
-                      {parseFloat(it.unitPrice).toFixed(2)}
+                  <tr key={i} className="block md:table-row border-b border-surface-container-low md:border-theme-border last:border-0 p-3 md:p-0">
+                    <td className="block md:table-cell px-1 md:px-4 py-1.5 md:py-3 text-on-surface font-semibold md:font-medium text-[13px] md:text-sm">
+                      <span className="md:hidden text-[10px] font-bold uppercase text-text-muted block mb-0.5">{t('orders.product')}</span>
+                      {it.productName}
                     </td>
-                    <td className="px-4 py-3 text-right text-text-muted">{it.vat > 0 ? `${it.vat}%` : '—'}</td>
-                    <td className="px-4 py-3 text-right font-semibold text-on-surface">
-                      <span className="text-xs text-text-muted mr-1">{it.currency || 'USD'}</span>
-                      {lineTotal.toFixed(2)}
+                    <td className="flex md:table-cell justify-between items-center px-1 md:px-4 py-1 md:py-3 text-right text-text-muted text-[13px] md:text-sm">
+                      <span className="md:hidden text-[10px] font-bold uppercase text-text-muted">{t('orders.qty')}</span>
+                      <span className="font-medium text-on-surface md:text-text-muted">{it.quantity}</span>
+                    </td>
+                    <td className="flex md:table-cell justify-between items-center px-1 md:px-4 py-1 md:py-3 text-center text-text-muted text-[13px] md:text-sm">
+                      <span className="md:hidden text-[10px] font-bold uppercase text-text-muted">{t('common.unit')}</span>
+                      <span className="font-medium text-on-surface md:text-text-muted">{it.product?.unit || '—'}</span>
+                    </td>
+                    <td className="flex md:table-cell justify-between items-center px-1 md:px-4 py-1 md:py-3 text-right text-on-surface text-[13px] md:text-sm">
+                      <span className="md:hidden text-[10px] font-bold uppercase text-text-muted">{t('orders.unitPrice')}</span>
+                      <div className="font-medium">
+                        <span className="text-[11px] md:text-xs text-text-muted mr-1">{it.currency || 'USD'}</span>
+                        {parseFloat(it.unitPrice).toFixed(2)}
+                      </div>
+                    </td>
+                    <td className="flex md:table-cell justify-between items-center px-1 md:px-4 py-1 md:py-3 text-right text-text-muted text-[13px] md:text-sm">
+                      <span className="md:hidden text-[10px] font-bold uppercase text-text-muted">{t('orders.vat')}</span>
+                      <span className="font-medium text-on-surface md:text-text-muted">{it.vat > 0 ? `${it.vat}%` : '—'}</span>
+                    </td>
+                    <td className="flex md:table-cell justify-between items-center px-1 md:px-4 py-1 md:py-3 text-right font-bold md:font-semibold text-on-surface mt-2 md:mt-0 pt-2 md:pt-0 border-t border-surface-container md:border-0 text-[13px] md:text-sm">
+                      <span className="md:hidden text-[10px] font-bold uppercase text-text-muted">{t('orders.lineTotal')}</span>
+                      <div>
+                        <span className="text-[11px] md:text-xs text-text-muted mr-1">{it.currency || 'USD'}</span>
+                        {lineTotal.toFixed(2)}
+                      </div>
                     </td>
                   </tr>
                 )
@@ -142,8 +160,8 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
         </div>
 
         {/* Totals */}
-        <div className="flex flex-col items-end gap-1 text-sm mb-4">
-          <span className="font-bold text-on-surface text-base border-t border-theme-border pt-1 mt-0.5">
+        <div className="flex flex-col items-end gap-1 mb-4">
+          <span className="font-bold text-on-surface text-[14px] md:text-base border-t border-theme-border pt-1 mt-0.5">
             {t('orders.total')}: {currency} {parseFloat(order.totalAmount).toFixed(2)}
           </span>
         </div>
@@ -183,13 +201,15 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
         {canChangeStatus && (
           <div className="pt-4 border-t border-theme-border space-y-3">
             {isAdmin ? (
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-text-muted text-base">swap_horiz</span>
-                <label className="text-xs font-semibold text-text-muted whitespace-nowrap">{t('orders.changeStatus')}</label>
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
+                <div className="flex items-center gap-1.5 md:gap-3">
+                  <span className="material-symbols-outlined text-text-muted text-base">swap_horiz</span>
+                  <label className="text-xs font-semibold text-text-muted whitespace-nowrap">{t('orders.changeStatus')}</label>
+                </div>
                 <select
                   value={pendingStatus ?? localStatus}
                   onChange={(e) => setPendingStatus(e.target.value === localStatus ? null : e.target.value)}
-                  className="flex-1 bg-surface-container-lowest border border-theme-border rounded-lg px-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
+                  className="w-full md:flex-1 bg-surface-container-lowest border border-theme-border rounded-lg px-3 py-2 text-[13px] md:text-sm text-on-surface outline-none focus:border-primary"
                 >
                   {ORDER_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
@@ -200,18 +220,18 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
                   <span className="text-xs text-text-muted">{t('orders.current')} {localStatus}</span>
                   <button
                     onClick={() => setPendingStatus(nextStatus)}
-                    className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-xl text-sm font-semibold hover:opacity-90 transition"
+                    className="flex items-center gap-1.5 md:gap-2 bg-primary text-white px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-xs md:text-sm font-semibold hover:opacity-90 transition"
                   >
-                    <span className="material-symbols-outlined text-base">arrow_forward</span>
+                    <span className="material-symbols-outlined text-[16px] md:text-base">arrow_forward</span>
                     {t('orders.markAs', { status: nextStatus })}
                   </button>
                 </div>
               )
             )}
             {pendingStatus && (
-              <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                <span className="material-symbols-outlined text-amber-500 text-base">warning</span>
-                <p className="text-xs text-amber-700 flex-1">
+              <div className="flex flex-wrap md:flex-nowrap items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 md:px-4 py-2 md:py-3 mt-3 md:mt-0">
+                <span className="material-symbols-outlined text-amber-500 text-[16px] md:text-base">warning</span>
+                <p className="text-[11px] md:text-xs text-amber-700 flex-1 min-w-[200px] md:min-w-0">
                   {t('orders.changeFrom', { from: localStatus, to: pendingStatus })}
                 </p>
                 <button onClick={() => setPendingStatus(null)} className="text-xs text-text-muted hover:text-on-surface px-2 py-1 rounded transition">
@@ -237,7 +257,7 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
   const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
 
   const inputCls = (err) =>
-    `w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary transition ${err ? 'border-error' : 'border-theme-border'}`
+    `w-full bg-surface-container-lowest border rounded px-2.5 md:px-3 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary transition ${err ? 'border-error' : 'border-theme-border'}`
 
   function setItem(idx, field, value) {
     setForm((f) => {
@@ -275,9 +295,9 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
   const displayCurrency = form.items.find((it) => it.currency)?.currency || 'TRY'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-2xl p-8 max-h-[90dvh] overflow-y-auto">
-        <div className="flex items-center justify-between mb-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 md:p-6">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-2xl p-4 md:p-8 max-h-[90dvh] overflow-y-auto">
+        <div className="flex items-center justify-between mb-4 md:mb-6">
           <h2 className="text-lg font-bold text-on-surface">{title}</h2>
           <button onClick={onClose} className="text-text-muted hover:text-error">
             <span className="material-symbols-outlined">close</span>
@@ -285,7 +305,7 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
         </div>
 
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             <div>
               <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.customer')} *</label>
               <select className={inputCls(errors.customerId)} value={form.customerId} onChange={set('customerId')}>
@@ -333,7 +353,7 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
               </button>
             </div>
             {errors.items && <p className="text-xs text-error mb-2">{errors.items}</p>}
-            <div className="flex items-center gap-2 mb-1 px-0.5">
+            <div className="hidden md:flex items-center gap-2 mb-1 px-0.5">
               <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted flex-1">{t('orders.product')}</span>
               <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted w-14 text-center">{t('orders.qty')}</span>
               <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted w-12 text-center">{t('common.unit')}</span>
@@ -342,66 +362,90 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
               <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted w-24 text-right">{t('orders.total')}</span>
               <span className="w-5" />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-3 md:space-y-2">
               {form.items.map((item, idx) => {
                 const itemErr = errors.items && item.productName && (!item.unitPrice || parseInt(item.quantity) < 1)
                 const itemTotal = (parseFloat(item.unitPrice) || 0) * (parseInt(item.quantity) || 0) * (1 + (parseFloat(item.vat) || 0) / 100)
                 return (
-                <div key={idx} className="flex items-center gap-2">
-                  <select
-                    className={`flex-1 border rounded px-2 py-1.5 text-xs bg-surface-container-lowest text-on-surface outline-none focus:border-primary ${errors.items && !item.productName ? 'border-error' : 'border-theme-border'}`}
-                    value={item.productId || ''}
-                    onChange={(e) => fillFromProduct(idx, e.target.value)}
-                  >
-                    <option value="">{t('orders.selectProduct')}</option>
-                    {products.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.stockNo ? `${p.stockNo} — ${p.name}` : p.name}
-                      </option>
-                    ))}
-                  </select>
-                  <input
-                    type="number" min="1"
-                    className={`w-14 border rounded px-2 py-1.5 text-xs bg-surface-container-lowest text-on-surface outline-none focus:border-primary text-center ${itemErr && parseInt(item.quantity) < 1 ? 'border-error' : 'border-theme-border'}`}
-                    placeholder="1"
-                    value={item.quantity}
-                    onChange={(e) => setItem(idx, 'quantity', e.target.value)}
-                  />
-                  <div className="w-12 flex items-center justify-center">
-                    {item.unit ? (
-                      <span className="text-[11px] font-semibold text-text-muted bg-surface-container-high border border-theme-border rounded px-1.5 py-1 leading-none">{item.unit}</span>
-                    ) : (
-                      <span className="text-[11px] text-text-muted/40">—</span>
+                <div key={idx} className="flex flex-col md:flex-row md:items-center gap-3 md:gap-2 border border-theme-border md:border-0 rounded-xl md:rounded-none p-3 md:p-0 bg-surface-container-high/30 md:bg-transparent">
+                  <div className="flex-1 w-full md:w-auto">
+                    <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.product')}</span>
+                    <select
+                      className={`w-full border rounded px-2 py-1.5 md:py-1.5 text-xs md:text-sm bg-surface-container-lowest text-on-surface outline-none focus:border-primary ${errors.items && !item.productName ? 'border-error' : 'border-theme-border'}`}
+                      value={item.productId || ''}
+                      onChange={(e) => fillFromProduct(idx, e.target.value)}
+                    >
+                      <option value="">{t('orders.selectProduct')}</option>
+                      {products.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.stockNo ? `${p.stockNo} — ${p.name}` : p.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="flex flex-wrap md:flex-nowrap items-end gap-2 w-full md:w-auto">
+                    <div className="w-[calc(50%-4px)] md:w-14">
+                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.qty')}</span>
+                      <input
+                        type="number" min="1"
+                        className={`w-full border rounded px-2 py-1.5 text-xs md:text-sm bg-surface-container-lowest text-on-surface outline-none focus:border-primary text-center ${itemErr && parseInt(item.quantity) < 1 ? 'border-error' : 'border-theme-border'}`}
+                        placeholder="1"
+                        value={item.quantity}
+                        onChange={(e) => setItem(idx, 'quantity', e.target.value)}
+                      />
+                    </div>
+                    <div className="w-[calc(50%-4px)] md:w-12 flex flex-col">
+                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('common.unit')}</span>
+                      <div className="h-[28px] md:h-auto flex items-center justify-center">
+                        {item.unit ? (
+                          <span className="text-[11px] font-semibold text-text-muted bg-surface-container-high border border-theme-border rounded px-1.5 py-1 leading-none w-full text-center">{item.unit}</span>
+                        ) : (
+                          <span className="text-[11px] text-text-muted/40 w-full text-center">—</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="w-[calc(50%-4px)] md:w-28 flex flex-col">
+                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.unitPrice')}</span>
+                      <div className={`flex items-center border rounded overflow-hidden bg-surface-container-lowest ${itemErr && !item.unitPrice ? 'border-error' : 'border-theme-border'}`}>
+                        <span className="px-1.5 text-[10px] text-text-muted border-r border-theme-border bg-surface-container-high">{item.currency || 'USD'}</span>
+                        <input
+                          type="number" min="0" step="0.01"
+                          className="w-full px-2 py-1.5 text-xs md:text-sm text-on-surface outline-none bg-transparent"
+                          placeholder="0.00"
+                          value={item.unitPrice}
+                          onChange={(e) => setItem(idx, 'unitPrice', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                    <div className="w-[calc(50%-4px)] md:w-16 flex flex-col">
+                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.vat')}</span>
+                      <div className="flex items-center border border-theme-border rounded overflow-hidden bg-surface-container-lowest">
+                        <input
+                          type="number" min="0" max="100" step="0.1"
+                          className="w-full px-2 py-1.5 text-xs md:text-sm text-on-surface outline-none bg-transparent text-center"
+                          placeholder="0"
+                          value={item.vat}
+                          onChange={(e) => setItem(idx, 'vat', e.target.value)}
+                        />
+                        <span className="px-1.5 text-[10px] text-text-muted border-l border-theme-border bg-surface-container-high">%</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center justify-between w-full md:w-auto mt-1 md:mt-0 pt-2 md:pt-0 border-t border-theme-border md:border-0">
+                    <div className="flex flex-col md:items-end">
+                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-0.5 block">{t('orders.total')}</span>
+                      <span className="text-xs md:text-sm font-semibold text-on-surface md:w-24 md:text-right">
+                        {item.currency || 'USD'} {itemTotal.toFixed(2)}
+                      </span>
+                    </div>
+                    {form.items.length > 1 && (
+                      <button onClick={() => removeItem(idx)} className="text-text-muted hover:text-error flex items-center justify-center p-1.5 rounded-lg hover:bg-error/10 transition">
+                        <span className="material-symbols-outlined text-base">remove_circle</span>
+                      </button>
                     )}
                   </div>
-                  <div className={`w-28 flex items-center border rounded overflow-hidden bg-surface-container-lowest ${itemErr && !item.unitPrice ? 'border-error' : 'border-theme-border'}`}>
-                    <span className="px-1.5 text-[10px] text-text-muted border-r border-theme-border bg-surface-container-high">{item.currency || 'USD'}</span>
-                    <input
-                      type="number" min="0" step="0.01"
-                      className="flex-1 px-2 py-1.5 text-xs text-on-surface outline-none bg-transparent"
-                      placeholder="0.00"
-                      value={item.unitPrice}
-                      onChange={(e) => setItem(idx, 'unitPrice', e.target.value)}
-                    />
-                  </div>
-                  <div className="w-16 flex items-center border border-theme-border rounded overflow-hidden bg-surface-container-lowest">
-                    <input
-                      type="number" min="0" max="100" step="0.1"
-                      className="flex-1 px-2 py-1.5 text-xs text-on-surface outline-none bg-transparent text-center"
-                      placeholder="0"
-                      value={item.vat}
-                      onChange={(e) => setItem(idx, 'vat', e.target.value)}
-                    />
-                    <span className="px-1.5 text-[10px] text-text-muted border-l border-theme-border bg-surface-container-high">%</span>
-                  </div>
-                  <span className="text-xs font-semibold text-on-surface w-24 text-right">
-                    {item.currency || 'USD'} {itemTotal.toFixed(2)}
-                  </span>
-                  {form.items.length > 1 && (
-                    <button onClick={() => removeItem(idx)} className="text-text-muted hover:text-error">
-                      <span className="material-symbols-outlined text-base">remove_circle</span>
-                    </button>
-                  )}
                 </div>
               )})}
             </div>
@@ -412,7 +456,7 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             <div>
               <label className="block text-xs font-semibold text-text-muted mb-1">{t('orders.shipmentType')} *</label>
               <select className={inputCls(errors.shipmentType)} value={form.shipmentType} onChange={set('shipmentType')}>
@@ -440,11 +484,11 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
             {saveError}
           </div>
         )}
-        <div className="flex gap-3 mt-4">
-          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition">
+        <div className="flex gap-2 md:gap-3 mt-4 md:mt-6">
+          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition">
             {t('common.cancel')}
           </button>
-          <button onClick={onSave} className="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition">
+          <button onClick={onSave} className="flex-1 bg-primary text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition">
             {t('common.save')}
           </button>
         </div>
@@ -843,12 +887,12 @@ export default function Orders() {
     <div className="p-2 sm:p-4 lg:p-8 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl primary-gradient flex items-center justify-center text-white shadow-lg shadow-primary/20">
-            <span className="material-symbols-outlined text-[20px] sm:text-[24px]">shopping_bag</span>
+          <div className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl primary-gradient flex items-center justify-center text-white shadow-lg shadow-primary/20">
+            <span className="material-symbols-outlined text-[16px] sm:text-[24px]">shopping_bag</span>
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-on-surface leading-tight">{t('orders.title')}</h1>
-            <p className="text-xs sm:text-sm text-text-muted mt-0.5">{t('orders.totalOrders', { count: orders.length })}</p>
+            <h1 className="text-lg sm:text-2xl font-bold text-on-surface leading-tight">{t('orders.title')}</h1>
+            <p className="text-[10px] sm:text-sm text-text-muted sm:mt-0.5">{t('orders.totalOrders', { count: orders.length })}</p>
           </div>
         </div>
         <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full md:w-auto max-w-full pb-2 md:pb-0">
@@ -888,46 +932,48 @@ export default function Orders() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2 mb-4">
+      <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-end gap-2 mb-4">
         <div className="relative flex-1 min-w-[180px]">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-lg">search</span>
+          <span className="material-symbols-outlined absolute left-2.5 md:left-3 top-1/2 -translate-y-1/2 text-text-muted text-[16px] md:text-lg">search</span>
           <input
-            className="w-full bg-surface-container-lowest border border-theme-border rounded-xl pl-9 pr-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
+            className="w-full bg-surface-container-lowest border border-theme-border rounded-xl pl-8 md:pl-9 pr-2 md:pr-3 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary"
             placeholder={t('common.search')}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
           />
         </div>
         <select
-          className="bg-surface-container-lowest border border-theme-border rounded-xl px-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
+          className="w-full md:w-auto bg-surface-container-lowest border border-theme-border rounded-xl px-2.5 md:px-3 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary"
           value={filterStatus}
           onChange={(e) => { setFilterStatus(e.target.value); setPage(1) }}
         >
           <option value="">{t('orders.allStatuses')}</option>
           {ORDER_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-text-muted whitespace-nowrap">{t('common.from')}</span>
-          <input
-            type="date"
-            className="bg-surface-container-lowest border border-theme-border rounded-xl px-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
-            value={filterDateFrom}
-            onChange={(e) => { setFilterDateFrom(e.target.value); setPage(1) }}
-          />
-        </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-xs text-text-muted whitespace-nowrap">{t('common.to')}</span>
-          <input
-            type="date"
-            className="bg-surface-container-lowest border border-theme-border rounded-xl px-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
-            value={filterDateTo}
-            onChange={(e) => { setFilterDateTo(e.target.value); setPage(1) }}
-          />
+        <div className="grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-end gap-2 w-full md:w-auto">
+          <div className="flex flex-col items-start gap-1 flex-1 md:flex-none">
+            <span className="text-[10px] md:text-xs text-text-muted whitespace-nowrap ml-1">{t('common.from')}</span>
+            <input
+              type="date"
+              className="w-full md:w-auto bg-surface-container-lowest border border-theme-border rounded-xl px-2.5 md:px-3 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary"
+              value={filterDateFrom}
+              onChange={(e) => { setFilterDateFrom(e.target.value); setPage(1) }}
+            />
+          </div>
+          <div className="flex flex-col items-start gap-1 flex-1 md:flex-none">
+            <span className="text-[10px] md:text-xs text-text-muted whitespace-nowrap ml-1">{t('common.to')}</span>
+            <input
+              type="date"
+              className="w-full md:w-auto bg-surface-container-lowest border border-theme-border rounded-xl px-2.5 md:px-3 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary"
+              value={filterDateTo}
+              onChange={(e) => { setFilterDateTo(e.target.value); setPage(1) }}
+            />
+          </div>
         </div>
         {(search || filterStatus || filterDateFrom || filterDateTo) && (
           <button
             onClick={() => { setSearch(''); setFilterStatus(''); setFilterDateFrom(''); setFilterDateTo(''); setPage(1) }}
-            className="flex items-center gap-1 text-xs text-text-muted hover:text-error transition"
+            className="flex items-center justify-center md:justify-start gap-1 text-xs text-text-muted hover:text-error transition w-full md:w-auto"
           >
             <span className="material-symbols-outlined text-base">close</span>
             {t('common.clear')}
@@ -935,9 +981,9 @@ export default function Orders() {
         )}
       </div>
 
-      <div className="bg-transparent sm:bg-surface-container-lowest rounded-2xl sm:border border-theme-border overflow-hidden">
-        <table className="w-full text-sm block sm:table">
-          <thead className="hidden sm:table-header-group">
+      <div className="bg-transparent xl:bg-surface-container-lowest rounded-2xl xl:border border-theme-border overflow-hidden">
+        <table className="w-full text-sm block xl:table">
+          <thead className="hidden xl:table-header-group">
             <tr className="border-b border-theme-border text-text-muted text-xs uppercase tracking-wider">
               <th className="px-4 py-2 w-10">
                 <input
@@ -958,7 +1004,7 @@ export default function Orders() {
               {(canDelete || canEditProcessing) && <th className="text-right px-4 py-2 font-semibold">{t('common.actions')}</th>}
             </tr>
           </thead>
-          <tbody className="block sm:table-row-group">
+          <tbody className="block xl:table-row-group">
             {paginated.length === 0 ? (
               <tr>
                 <td colSpan={(canDelete || canEditProcessing) ? 9 : 8} className="text-center py-16 text-text-muted">{t('orders.noOrders')}</td>
@@ -972,78 +1018,78 @@ export default function Orders() {
                 return (
                   <tr
                     key={o.id}
-                    className={`block sm:table-row bg-surface-container-lowest sm:bg-transparent rounded-2xl sm:rounded-none mb-4 sm:mb-0 p-4 sm:p-0 shadow-sm sm:shadow-none border border-surface-container-low sm:border-0 sm:border-b border-theme-border hover:bg-hover-bg transition-colors cursor-pointer ${selected.has(o.id) ? 'bg-primary/5 sm:bg-primary/5 ring-2 ring-primary sm:ring-0' : ''}`}
+                    className={`block xl:table-row bg-surface-container-lowest xl:bg-transparent rounded-2xl xl:rounded-none mb-3 xl:mb-0 p-3 xl:p-0 shadow-sm xl:shadow-none border border-surface-container-low xl:border-0 xl:border-b border-theme-border hover:bg-hover-bg transition-colors cursor-pointer ${selected.has(o.id) ? 'bg-primary/5 xl:bg-primary/5 ring-2 ring-primary xl:ring-0' : ''}`}
                     onClick={() => setDetailOrder(o)}
                   >
-                    <td className="block sm:table-cell w-full sm:w-auto relative mb-2 sm:mb-0 sm:px-4 py-1 sm:py-2" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-between sm:justify-start">
-                        <span className="sm:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">Seç</span>
+                    <td className="block xl:table-cell w-full xl:w-auto relative mb-2 xl:mb-0 xl:px-4 py-1 xl:py-2" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-between xl:justify-start">
+                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">Seç</span>
                         <input
                           type="checkbox"
                           checked={selected.has(o.id)}
                           onChange={() => toggleRow(o.id)}
-                          className="w-5 h-5 sm:w-4 sm:h-4 rounded accent-primary cursor-pointer"
+                          className="w-4 h-4 rounded accent-primary cursor-pointer"
                         />
                       </div>
                     </td>
-                    <td className="block sm:table-cell w-full sm:w-auto relative mb-1.5 sm:mb-0 sm:px-4 py-1 sm:py-2">
-                      <div className="flex items-center justify-between sm:justify-start">
-                        <span className="sm:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.order')}</span>
+                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
+                      <div className="flex items-center justify-between xl:justify-start">
+                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.order')}</span>
                         <span className="font-mono text-xs text-text-muted font-semibold">{o.code || '—'}</span>
                       </div>
                     </td>
-                    <td className="block sm:table-cell w-full sm:w-auto relative mb-1.5 sm:mb-0 sm:px-4 py-1 sm:py-2">
-                      <div className="flex items-center justify-between sm:justify-start">
-                        <span className="sm:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.customer')}</span>
-                        <span className="font-medium text-on-surface">{o.customer?.name || '—'}</span>
+                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
+                      <div className="flex items-center justify-between xl:justify-start">
+                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.customer')}</span>
+                        <span className="font-medium text-xs lg:text-sm text-on-surface">{o.customer?.name || '—'}</span>
                       </div>
                     </td>
-                    <td className="block sm:table-cell w-full sm:w-auto relative mb-1.5 sm:mb-0 sm:px-4 py-1 sm:py-2">
-                      <div className="flex items-center justify-between sm:justify-start">
-                        <span className="sm:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.salesRep')}</span>
-                        <span className="text-text-muted text-sm">{o.salesRep?.name || o.employee?.name || '—'}</span>
+                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
+                      <div className="flex items-center justify-between xl:justify-start">
+                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.salesRep')}</span>
+                        <span className="text-text-muted text-xs lg:text-sm">{o.salesRep?.name || o.employee?.name || '—'}</span>
                       </div>
                     </td>
-                    <td className="block sm:table-cell w-full sm:w-auto relative mb-1.5 sm:mb-0 sm:px-4 py-1 sm:py-2">
-                      <div className="flex items-center justify-between sm:justify-end">
-                        <span className="sm:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.total')}</span>
-                        <span className="font-semibold text-on-surface">
+                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
+                      <div className="flex items-center justify-between xl:justify-end">
+                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.total')}</span>
+                        <span className="font-semibold text-xs lg:text-sm text-on-surface">
                           <span className="text-xs text-text-muted mr-1">{currency}</span>
                           {(parseFloat(o.totalAmount) || 0).toFixed(2)}
                         </span>
                       </div>
                     </td>
-                    <td className="block sm:table-cell w-full sm:w-auto relative mb-1.5 sm:mb-0 sm:px-4 py-1 sm:py-2">
-                      <div className="flex items-center justify-between sm:justify-start">
-                        <span className="sm:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.status')}</span>
-                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[11px] sm:text-xs font-semibold ${statusStyle[o.status] || statusStyle.Draft}`}>
+                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
+                      <div className="flex items-center justify-between xl:justify-start">
+                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.status')}</span>
+                        <span className={`inline-flex px-2 lg:px-2.5 py-0.5 rounded-full text-[10px] lg:text-xs font-semibold ${statusStyle[o.status] || statusStyle.Draft}`}>
                           {o.status}
                         </span>
                       </div>
                     </td>
-                    <td className="block sm:table-cell w-full sm:w-auto relative mb-1.5 sm:mb-0 sm:px-4 py-1 sm:py-2">
-                      <div className="flex items-center justify-between sm:justify-start">
-                        <span className="sm:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.date')}</span>
+                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
+                      <div className="flex items-center justify-between xl:justify-start">
+                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.date')}</span>
                         <span className="text-xs text-text-muted">{dateStr}</span>
                       </div>
                     </td>
-                    <td className="block sm:table-cell w-full sm:w-auto relative mb-1.5 sm:mb-0 sm:px-4 py-1 sm:py-2">
-                      <div className="flex items-center justify-between sm:justify-start">
-                        <span className="sm:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('workOrders.time')}</span>
+                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
+                      <div className="flex items-center justify-between xl:justify-start">
+                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('workOrders.time')}</span>
                         <span className="text-xs text-text-muted">{timeStr}</span>
                       </div>
                     </td>
                     {(canDelete || (canEditProcessing && o.status === 'Processing')) && (
-                      <td className="block sm:table-cell w-full sm:w-auto relative mt-3 sm:mt-0 pt-3 sm:pt-0 border-t border-surface-container-low sm:border-0 sm:px-4 py-1 sm:py-2" onClick={(e) => e.stopPropagation()}>
+                      <td className="block xl:table-cell w-full xl:w-auto relative mt-3 xl:mt-0 pt-3 xl:pt-0 border-t border-surface-container-low xl:border-0 xl:px-4 py-1 xl:py-2" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-2">
                           {(canDelete || (canEditProcessing && o.status === 'Processing')) && (
-                            <button onClick={() => openEdit(o)} className="flex-1 sm:flex-none flex justify-center p-2 sm:p-1.5 rounded-lg border sm:border-0 border-theme-border hover:bg-hover-bg text-text-muted hover:text-primary transition">
-                              <span className="material-symbols-outlined text-[18px] sm:text-base">edit</span>
+                            <button onClick={() => openEdit(o)} className="flex-1 xl:flex-none flex justify-center p-1.5 lg:p-1.5 rounded-lg border xl:border-0 border-theme-border hover:bg-hover-bg text-text-muted hover:text-primary transition">
+                              <span className="material-symbols-outlined text-[16px] lg:text-base">edit</span>
                             </button>
                           )}
                           {canDelete && (
-                            <button onClick={() => setConfirmDeleteId(o.id)} className="flex-1 sm:flex-none flex justify-center p-2 sm:p-1.5 rounded-lg border sm:border-0 border-theme-border hover:bg-hover-bg text-text-muted hover:text-error transition">
-                              <span className="material-symbols-outlined text-[18px] sm:text-base">delete</span>
+                            <button onClick={() => setConfirmDeleteId(o.id)} className="flex-1 xl:flex-none flex justify-center p-1.5 lg:p-1.5 rounded-lg border xl:border-0 border-theme-border hover:bg-hover-bg text-text-muted hover:text-error transition">
+                              <span className="material-symbols-outlined text-[16px] lg:text-base">delete</span>
                             </button>
                           )}
                         </div>
@@ -1069,18 +1115,18 @@ export default function Orders() {
       {detailOrder && <OrderDetailModal order={detailOrder} onClose={() => setDetailOrder(null)} currentUser={currentUser} onStatusChange={handleStatusChange} />}
 
       {confirmDeleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-sm p-8">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="material-symbols-outlined text-error text-3xl">delete_forever</span>
-              <h2 className="text-lg font-bold text-on-surface">{t('orders.deleteOrder')}</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-sm p-5 md:p-8">
+            <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+              <span className="material-symbols-outlined text-error text-2xl md:text-3xl">delete_forever</span>
+              <h2 className="text-base md:text-lg font-bold text-on-surface">{t('orders.deleteOrder')}</h2>
             </div>
-            <p className="text-sm text-text-muted mb-6">{t('orders.deleteConfirm')}</p>
-            <div className="flex gap-3">
-              <button onClick={() => setConfirmDeleteId(null)} className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition">
+            <p className="text-xs md:text-sm text-text-muted mb-4 md:mb-6">{t('orders.deleteConfirm')}</p>
+            <div className="flex gap-2 md:gap-3">
+              <button onClick={() => setConfirmDeleteId(null)} className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition">
                 {t('common.cancel')}
               </button>
-              <button onClick={handleDelete} className="flex-1 bg-error text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition">
+              <button onClick={handleDelete} className="flex-1 bg-error text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition">
                 {t('common.delete')}
               </button>
             </div>

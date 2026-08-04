@@ -968,15 +968,15 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
         {/* Header banner */}
         <div className="primary-gradient px-4 md:px-8 pt-6 md:pt-8 pb-6 flex-shrink-0">
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 bg-surface-container-lowest/20 rounded-2xl flex items-center justify-center text-white font-black text-xl">
+            <div className="flex items-center gap-2.5 sm:gap-4">
+              <div className="w-9 h-9 sm:w-14 sm:h-14 bg-surface-container-lowest/20 rounded-xl sm:rounded-2xl flex items-center justify-center text-white font-black text-base sm:text-xl">
                 {customer.initials}
               </div>
               <div>
-                <h2 className="text-lg sm:text-xl font-extrabold text-white leading-tight">
+                <h2 className="text-base sm:text-xl font-extrabold text-white leading-tight">
                   {editing ? t('customers.editCustomer') : customer.name}
                 </h2>
-                <p className="text-blue-200 text-[10px] sm:text-xs font-medium mt-0.5">ID: #{customer.id}</p>
+                <p className="text-blue-200 text-[9px] sm:text-xs font-medium mt-0.5">ID: #{customer.id}</p>
               </div>
             </div>
             <button
@@ -1565,20 +1565,20 @@ export default function Customers() {
         const uniqueCountries = new Set(customers.map((c) => c.country).filter(Boolean)).size
         const uniqueCities    = new Set(customers.map((c) => c.city).filter(Boolean)).size
         return (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-8">
             {[
               { label: t('nav.customers'),            value: customers.length, icon: 'groups',        color: 'bg-surface-tint'      },
               { label: t('customers.serviceCountries'), value: uniqueCountries,  icon: 'public',        color: 'bg-primary-container' },
               { label: t('customers.serviceCities'),    value: uniqueCities,     icon: 'location_city', color: 'bg-secondary'         },
             ].map(({ label, value, icon, color }) => (
-              <div key={label} className="bg-surface-container-lowest rounded-2xl p-4 sm:p-5 flex flex-row sm:flex-col xl:flex-row items-center gap-4 sm:gap-3 xl:gap-4 relative overflow-hidden">
+              <div key={label} className="bg-surface-container-lowest rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-row sm:flex-col xl:flex-row items-center gap-3 sm:gap-3 xl:gap-4 relative overflow-hidden">
                 <div className={`absolute top-0 left-0 w-1 h-full ${color}`} />
-                <div className="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center flex-shrink-0">
-                  <span className="material-symbols-outlined text-on-surface-variant text-[20px]">{icon}</span>
+                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-surface-container-high flex items-center justify-center flex-shrink-0">
+                  <span className="material-symbols-outlined text-on-surface-variant text-[16px] sm:text-[20px]">{icon}</span>
                 </div>
                 <div className="text-left sm:text-center xl:text-left">
-                  <p className="text-xl sm:text-2xl font-black text-on-surface leading-none">{value.toLocaleString()}</p>
-                  <p className="text-[10px] sm:text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mt-1.5 leading-tight">{label}</p>
+                  <p className="text-lg sm:text-2xl font-black text-on-surface leading-none">{value.toLocaleString()}</p>
+                  <p className="text-[9px] sm:text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mt-1 sm:mt-1.5 leading-tight">{label}</p>
                 </div>
               </div>
             ))}
@@ -1616,11 +1616,11 @@ export default function Customers() {
             {paginated.map((customer) => (
               <tr
                 key={customer.id}
-                className="group xl:hover:bg-surface-container-low transition-colors cursor-pointer xl:border-b xl:border-surface-container-low block xl:table-row bg-surface-container-lowest rounded-2xl xl:rounded-none p-4 xl:p-0 shadow-sm xl:shadow-none"
+                className="group xl:hover:bg-surface-container-low transition-colors cursor-pointer xl:border-b xl:border-surface-container-low block xl:table-row bg-surface-container-lowest rounded-xl xl:rounded-none p-3 xl:p-0 shadow-sm xl:shadow-none"
                 onClick={() => setSelectedCustomer(customer)}
               >
-                <td className="block xl:table-cell p-0 xl:px-6 xl:py-5 mb-4 xl:mb-0 border-b border-surface-container-low pb-4 xl:border-0 xl:pb-0">
-                  <div className="flex items-center gap-4">
+                <td className="block xl:table-cell p-0 xl:px-6 xl:py-5 mb-2 xl:mb-0 border-b border-surface-container-low pb-3 xl:border-0 xl:pb-0">
+                  <div className="flex items-center gap-3">
                     <InitialsAvatar initials={customer.initials} size="lg" />
                     <div>
                       <div className="font-bold text-on-surface text-sm xl:text-base">{customer.name}</div>
@@ -1630,18 +1630,18 @@ export default function Customers() {
                     </div>
                   </div>
                 </td>
-                <td className="flex xl:table-cell justify-between items-center p-0 xl:px-6 xl:py-5 mb-3 xl:mb-0 mt-4 xl:mt-0">
+                <td className="flex xl:table-cell justify-between items-center p-0 xl:px-6 xl:py-5 mb-1.5 xl:mb-0 mt-3 xl:mt-0">
                   <span className="xl:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('customers.colContact')}</span>
                   <div className="font-semibold text-on-surface text-xs xl:text-sm">{customer.contactName || '—'}</div>
                 </td>
-                <td className="flex xl:table-cell justify-between items-center p-0 xl:px-6 xl:py-5 mb-4 xl:mb-0">
+                <td className="flex xl:table-cell justify-between items-center p-0 xl:px-6 xl:py-5 mb-3 xl:mb-0">
                   <span className="xl:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('customers.colCity')}</span>
                   <div className="text-on-surface-variant text-xs xl:text-sm font-medium text-right">
                     {[customer.city, customer.country].filter(Boolean).join(', ') || customer.region}
                   </div>
                 </td>
-                <td className="block xl:table-cell p-0 xl:px-6 xl:py-5 mb-4 xl:mb-0">
-                  <span className="xl:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest block mb-2">{t('customers.colTasks')}</span>
+                <td className="block xl:table-cell p-0 xl:px-6 xl:py-5 mb-3 xl:mb-0">
+                  <span className="xl:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest block mb-1.5">{t('customers.colTasks')}</span>
                   {(() => {
                     const ct = (reports || []).filter((r) => r.customerId === customer.id)
                     const counts = [
@@ -1651,14 +1651,14 @@ export default function Customers() {
                       { label: t('customers.done'),    col: 'completed',   cls: 'status-completed-badge' },
                     ]
                     return (
-                      <div className="flex flex-wrap xl:flex-nowrap items-center gap-1.5 min-w-[200px]">
+                      <div className="flex flex-wrap xl:flex-nowrap items-center gap-1 min-w-[200px]">
                         <span className="hidden xl:inline-block text-base font-black text-on-surface w-6">{ct.length}</span>
                         {counts.map(({ label, col, cls }) => {
                           const n = ct.filter((r) => r.column === col).length
                           return (
-                            <span key={col} className={`flex-1 xl:flex-none flex flex-col xl:flex-row items-center justify-center px-2 py-1.5 xl:py-0.5 rounded-md font-bold gap-0.5 xl:gap-1 ${cls}`}>
-                              <span className="text-xs xl:text-[10px] leading-none">{n}</span>
-                              <span className="text-[9px] xl:text-[10px] uppercase xl:normal-case tracking-wider xl:tracking-normal text-center leading-none">{label}</span>
+                            <span key={col} className={`flex-1 xl:flex-none flex flex-col xl:flex-row items-center justify-center px-1.5 py-1 xl:py-0.5 rounded-md font-bold gap-0.5 xl:gap-1 ${cls}`}>
+                              <span className="text-[11px] xl:text-[10px] leading-none">{n}</span>
+                              <span className="text-[8px] xl:text-[10px] uppercase xl:normal-case tracking-wider xl:tracking-normal text-center leading-none">{label}</span>
                             </span>
                           )
                         })}
@@ -1666,10 +1666,10 @@ export default function Customers() {
                     )
                   })()}
                 </td>
-                <td className="block xl:table-cell p-0 xl:px-6 xl:py-5 text-right mt-4 xl:mt-0">
+                <td className="block xl:table-cell p-0 xl:px-6 xl:py-5 text-right mt-3 xl:mt-0">
                   <button
                     onClick={(e) => { e.stopPropagation(); setSelectedCustomer(customer) }}
-                    className="w-full xl:w-auto text-primary font-bold text-xs xl:text-sm px-3 py-2 bg-primary/10 xl:bg-transparent hover:bg-primary/20 xl:hover:bg-primary/5 rounded-xl transition-colors flex justify-center items-center gap-1.5"
+                    className="w-full xl:w-auto text-primary font-bold text-xs px-3 py-1.5 bg-primary/10 xl:bg-transparent hover:bg-primary/20 xl:hover:bg-primary/5 rounded-lg transition-colors flex justify-center items-center gap-1.5"
                   >
                     {t('customers.viewDetails')}
                     <span className="material-symbols-outlined text-[14px] xl:hidden">arrow_forward</span>

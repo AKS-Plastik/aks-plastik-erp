@@ -106,15 +106,15 @@ export default function TopBar({ setSidebarOpen }) {
   const roleBadge = user?.role === 'admin' ? t('topbar.admin') : t('topbar.user')
 
   return (
-    <header className="w-full h-16 sticky top-0 z-30 bg-surface-container-lowest flex items-center justify-between px-4 md:px-6">
+    <header className="w-full h-12 md:h-16 sticky top-0 z-30 bg-surface-container-lowest flex items-center justify-between px-3 md:px-6">
       {/* Left section: Hamburger + Date & Time */}
       <div className="flex items-center gap-2 md:gap-4">
         {/* Hamburger Menu (Mobile Only) */}
         <button
           onClick={() => setSidebarOpen(true)}
-          className="p-2 -ml-2 text-text-muted hover:text-primary transition-colors rounded-full hover:bg-hover-bg md:hidden flex items-center justify-center"
+          className="p-1.5 md:p-2 -ml-1.5 md:-ml-2 text-text-muted hover:text-primary transition-colors rounded-full hover:bg-hover-bg md:hidden flex items-center justify-center"
         >
-          <span className="material-symbols-outlined">menu</span>
+          <span className="material-symbols-outlined text-[20px] md:text-[24px]">menu</span>
         </button>
 
         {/* Date & Time */}
@@ -122,7 +122,7 @@ export default function TopBar({ setSidebarOpen }) {
           <span className="material-symbols-outlined text-primary text-xl hidden sm:block">schedule</span>
           <div>
             <div className="flex items-baseline gap-2">
-              <span className="text-sm font-bold text-on-surface" style={{ fontVariantNumeric: 'tabular-nums', minWidth: '5.5em' }}>{time}</span>
+              <span className="text-xs md:text-sm font-bold text-on-surface" style={{ fontVariantNumeric: 'tabular-nums', minWidth: '5.5em' }}>{time}</span>
             </div>
           </div>
           <p className="text-[11px] text-text-muted mt-0.5 hidden sm:block">{date}</p>
@@ -137,9 +137,9 @@ export default function TopBar({ setSidebarOpen }) {
           <div className="relative" ref={alarmsRef}>
             <button
               onClick={() => setShowAlarms((v) => !v)}
-              className="p-2 text-text-muted hover:text-primary transition-colors rounded-full hover:bg-hover-bg relative"
+              className="p-1.5 md:p-2 text-text-muted hover:text-primary transition-colors rounded-full hover:bg-hover-bg relative"
             >
-              <span className="material-symbols-outlined">notifications</span>
+              <span className="material-symbols-outlined text-[20px] md:text-[24px]">notifications</span>
               {totalAlarms > 0 && (
                 <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-error text-on-error text-[9px] font-black flex items-center justify-center">
                   {totalAlarms > 9 ? '9+' : totalAlarms}
@@ -338,10 +338,10 @@ export default function TopBar({ setSidebarOpen }) {
                 </p>
               )}
             </div>
-            <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
+            <div className="w-7 h-7 md:w-9 md:h-9 rounded-full overflow-hidden flex-shrink-0">
               {matchedEmployee?.photo
                 ? <img src={`${API_URL.replace('/api', '')}${matchedEmployee.photo}`} alt={user?.name} className="w-full h-full object-cover" />
-                : <div className="w-full h-full primary-gradient flex items-center justify-center text-white text-sm font-bold">{initials}</div>
+                : <div className="w-full h-full primary-gradient flex items-center justify-center text-white text-xs md:text-sm font-bold">{initials}</div>
               }
             </div>
           </button>

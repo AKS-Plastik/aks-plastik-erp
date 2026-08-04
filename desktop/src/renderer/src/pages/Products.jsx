@@ -190,16 +190,16 @@ function ProductDetailModal({ product, onClose, onEdit, onDelete, isAdmin }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
         {/* Header */}
-        <div className="primary-gradient px-6 pt-6 pb-5">
+        <div className="primary-gradient px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-5">
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 bg-surface-container-lowest/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-white">inventory_2</span>
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="w-9 h-9 sm:w-11 sm:h-11 bg-surface-container-lowest/20 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-white text-[18px] sm:text-[24px]">inventory_2</span>
               </div>
               <div>
-                <h2 className="text-lg font-extrabold text-white leading-tight">{product.name}</h2>
+                <h2 className="text-base sm:text-lg font-extrabold text-white leading-tight">{product.name}</h2>
                 {product.stockNo && (
-                  <p className="text-blue-200 text-xs font-mono mt-0.5">{product.stockNo}</p>
+                  <p className="text-blue-200 text-[10px] sm:text-xs font-mono mt-0.5">{product.stockNo}</p>
                 )}
               </div>
             </div>
@@ -503,34 +503,34 @@ export default function Products() {
               paginated.map((p) => {
                 const badge = stockBadge(p)
                 return (
-                  <tr key={p.id} onClick={() => setViewProduct(p)} className="block xl:table-row border-b border-surface-container-low xl:border-theme-border hover:bg-hover-bg transition-colors cursor-pointer p-4 xl:p-0">
-                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-2 xl:mb-0">
+                  <tr key={p.id} onClick={() => setViewProduct(p)} className="block xl:table-row border-b border-surface-container-low xl:border-theme-border hover:bg-hover-bg transition-colors cursor-pointer p-3 xl:p-0">
+                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-1.5 xl:mb-0">
                       <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-0.5">{t('products.stockNo')}</span>
                       <span className="font-mono text-xs font-semibold text-on-surface">{p.stockNo || '—'}</span>
                     </td>
-                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-2 xl:mb-0">
+                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-1.5 xl:mb-0">
                       <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-0.5">{t('common.name')}</span>
                       <span className="font-semibold text-on-surface">{p.name}</span>
                     </td>
-                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-2 xl:mb-0 text-left xl:text-left">
+                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-1.5 xl:mb-0 text-left xl:text-left">
                       <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-0.5">{t('common.category')}</span>
-                      <span className="text-text-muted">{CATEGORIES.find((c) => c.id === p.category)?.name || p.category || '—'}</span>
+                      <span className="text-text-muted text-xs xl:text-sm">{CATEGORIES.find((c) => c.id === p.category)?.name || p.category || '—'}</span>
                     </td>
-                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-2 xl:mb-0 text-left xl:text-right">
+                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-1.5 xl:mb-0 text-left xl:text-right">
                       <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-0.5">{t('common.price')}</span>
-                      <div className="font-medium text-on-surface">
+                      <div className="font-medium text-on-surface text-sm">
                         <span className="text-xs text-text-muted mr-1">{p.currency || 'USD'}</span>
                         {parseFloat(p.price).toFixed(2)}
-                        <span className="text-xs text-text-muted"> /{p.unit}</span>
+                        <span className="text-[10px] xl:text-xs text-text-muted"> /{p.unit}</span>
                       </div>
                     </td>
-                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-3 xl:mb-0 text-left xl:text-right">
+                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-2 xl:mb-0 text-left xl:text-right">
                       <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-0.5">{t('products.inStock')}</span>
-                      <span className="text-on-surface">{p.stock}</span><span className="text-xs text-text-muted ml-1">{p.unit || 'pcs'}</span>
+                      <span className="text-on-surface text-sm font-semibold">{p.stock}</span><span className="text-[10px] xl:text-xs text-text-muted ml-1">{p.unit || 'pcs'}</span>
                     </td>
                     <td className="block xl:table-cell xl:px-6 xl:py-4">
-                      <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-1">{t('common.status')}</span>
-                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${badge.cls}`}>
+                      <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-0.5">{t('common.status')}</span>
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] xl:text-xs font-semibold ${badge.cls}`}>
                         {badge.label}
                       </span>
                     </td>
