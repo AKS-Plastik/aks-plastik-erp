@@ -441,7 +441,7 @@ function AddCustomerModal({ onClose, onSave }) {
 
       <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl shadow-inverse-surface/20 w-full max-w-2xl mx-4 overflow-hidden flex flex-col max-h-[92dvh]">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 md:px-8 pt-7 pb-5 border-b border-surface-container-low flex-shrink-0">
+        <div className="flex items-center justify-between px-4 md:px-6 pt-5 pb-4 border-b border-surface-container-low flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 primary-gradient rounded-xl flex items-center justify-center text-white">
               <span className="material-symbols-outlined fill-icon">person_add</span>
@@ -451,13 +451,13 @@ function AddCustomerModal({ onClose, onSave }) {
               <p className="text-[10px] sm:text-xs text-on-surface-variant">{t('customers.addPartner')}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors">
-            <span className="material-symbols-outlined">close</span>
+          <button onClick={onClose} className="p-1.5 md:p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors">
+            <span className="material-symbols-outlined text-xl md:text-2xl">close</span>
           </button>
         </div>
 
         {/* Tab bar */}
-        <div className="flex items-center justify-start gap-1 px-4 lg:px-6 pt-4 pb-0 flex-shrink-0 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex items-center justify-start gap-1 px-4 lg:px-6 pt-3 md:pt-4 pb-0 flex-shrink-0 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {tabDefs.map((tab, i) => (
             <button
               key={tab.id}
@@ -493,37 +493,37 @@ function AddCustomerModal({ onClose, onSave }) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end lg:justify-between gap-4 px-4 lg:px-8 pb-4 lg:pb-7 pt-4 border-t border-surface-container-low flex-shrink-0">
+        <div className="flex items-center justify-end lg:justify-between gap-4 px-4 md:px-6 pb-4 pt-3 md:pb-6 md:pt-4 border-t border-surface-container-low flex-shrink-0">
           {/* Prev/Next (Desktop Only) */}
           <div className="hidden lg:flex items-center gap-2">
             <button
               onClick={() => setActiveTab((t) => Math.max(0, t - 1))}
               disabled={activeTab === 0}
-              className="px-4 py-2.5 rounded-xl text-on-surface-variant text-sm font-semibold hover:bg-surface-container-low transition-colors disabled:opacity-40 flex items-center gap-1"
+              className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-on-surface-variant text-[11px] md:text-sm font-semibold hover:bg-surface-container-low transition-colors disabled:opacity-40 flex items-center gap-1"
             >
-              <span className="material-symbols-outlined text-base">chevron_left</span>
+              <span className="material-symbols-outlined text-[14px] md:text-base">chevron_left</span>
               {t('common.prev')}
             </button>
             <button
               onClick={() => setActiveTab((t) => Math.min(tabDefs.length - 1, t + 1))}
               disabled={activeTab === tabDefs.length - 1}
-              className="px-4 py-2.5 rounded-xl text-on-surface-variant text-sm font-semibold hover:bg-surface-container-low transition-colors disabled:opacity-40 flex items-center gap-1"
+              className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-on-surface-variant text-[11px] md:text-sm font-semibold hover:bg-surface-container-low transition-colors disabled:opacity-40 flex items-center gap-1"
             >
               {t('common.next')}
-              <span className="material-symbols-outlined text-base">chevron_right</span>
+              <span className="material-symbols-outlined text-[14px] md:text-base">chevron_right</span>
             </button>
           </div>
 
           <div className="flex items-center justify-end gap-2 w-full lg:w-auto">
             <button
               onClick={onClose}
-              className="flex-1 lg:flex-none px-4 py-2 lg:px-5 lg:py-2.5 rounded-xl text-on-surface-variant text-xs lg:text-sm font-semibold hover:bg-surface-container-low transition-colors flex items-center justify-center"
+              className="flex-1 lg:flex-none px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-on-surface-variant text-[11px] md:text-sm font-semibold hover:bg-surface-container-low transition-colors flex items-center justify-center"
             >
               {t('common.cancel')}
             </button>
             <button
               onClick={handleSave}
-              className="flex-1 lg:flex-none px-4 py-2 lg:px-6 lg:py-2.5 rounded-xl primary-gradient text-white text-xs lg:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center"
+              className="flex-1 lg:flex-none px-3 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-[11px] md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center"
             >
               {t('customers.saveCustomer')}
             </button>
@@ -571,10 +571,10 @@ function OrdersTab({ customerOrders }) {
 
   if (customerOrders.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-on-surface-variant flex-1">
-        <span className="material-symbols-outlined text-5xl mb-3 opacity-30">shopping_bag</span>
-        <p className="text-sm font-semibold">No orders yet</p>
-        <p className="text-xs mt-1 opacity-70">Orders for this customer will appear here</p>
+      <div className="flex flex-col items-center justify-center py-12 md:py-16 text-on-surface-variant flex-1 text-center px-4">
+        <span className="material-symbols-outlined text-4xl md:text-5xl mb-3 opacity-30">shopping_bag</span>
+        <p className="text-xs md:text-sm font-semibold">No orders yet</p>
+        <p className="text-[10px] md:text-xs mt-1 opacity-70">Orders for this customer will appear here</p>
       </div>
     )
   }
@@ -966,24 +966,24 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
 
       <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl shadow-inverse-surface/20 w-full max-w-2xl flex flex-col max-h-[90dvh] overflow-hidden">
         {/* Header banner */}
-        <div className="primary-gradient px-4 md:px-8 pt-6 md:pt-8 pb-6 flex-shrink-0">
+        <div className="primary-gradient px-4 pt-5 pb-4 md:px-6 md:pt-6 md:pb-5 flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2.5 sm:gap-4">
-              <div className="w-9 h-9 sm:w-14 sm:h-14 bg-surface-container-lowest/20 rounded-xl sm:rounded-2xl flex items-center justify-center text-white font-black text-base sm:text-xl">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-surface-container-lowest/20 rounded-xl sm:rounded-2xl flex items-center justify-center text-white font-black text-base sm:text-xl">
                 {customer.initials}
               </div>
               <div>
-                <h2 className="text-base sm:text-xl font-extrabold text-white leading-tight">
+                <h2 className="text-lg md:text-xl font-extrabold text-white leading-tight">
                   {editing ? t('customers.editCustomer') : customer.name}
                 </h2>
-                <p className="text-blue-200 text-[9px] sm:text-xs font-medium mt-0.5">ID: #{customer.id}</p>
+                <p className="text-blue-200 text-[10px] md:text-xs font-medium mt-0.5">ID: #{customer.id}</p>
               </div>
             </div>
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-white/70 hover:text-white hover:bg-surface-container-lowest/10 transition-colors"
+              className="p-1.5 md:p-2 rounded-xl text-white/70 hover:text-white hover:bg-surface-container-lowest/10 transition-colors"
             >
-              <span className="material-symbols-outlined">close</span>
+              <span className="material-symbols-outlined text-xl md:text-2xl">close</span>
             </button>
           </div>
 
@@ -1275,10 +1275,10 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
                 })()}
                 <div className="overflow-auto flex-1">
                   {customerFinance.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-on-surface-variant">
-                      <span className="material-symbols-outlined text-5xl mb-3 opacity-30">account_balance_wallet</span>
-                      <p className="text-sm font-semibold">No finance records</p>
-                      <p className="text-xs mt-1 opacity-70">Finance records linked to this customer's orders appear here</p>
+                    <div className="flex flex-col items-center justify-center py-12 md:py-16 text-on-surface-variant text-center px-4">
+                      <span className="material-symbols-outlined text-4xl md:text-5xl mb-3 opacity-30">account_balance_wallet</span>
+                      <p className="text-xs md:text-sm font-semibold">No finance records</p>
+                      <p className="text-[10px] md:text-xs mt-1 opacity-70">Finance records linked to this customer's orders appear here</p>
                     </div>
                   ) : (
                     <div className="overflow-x-hidden overflow-y-auto flex-1 px-4 sm:px-0 pb-4">
@@ -1401,24 +1401,24 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
 
         {/* Delete confirmation */}
         {isAdmin && confirming && (
-          <div className="mx-8 mb-4 px-5 py-4 bg-error-container rounded-2xl flex items-center justify-between gap-4 flex-shrink-0">
-            <div className="flex items-center gap-3">
+          <div className="mx-4 md:mx-6 mb-4 px-4 py-3 md:px-5 md:py-4 bg-error-container rounded-2xl flex flex-col sm:flex-row items-center sm:justify-between gap-3 sm:gap-4 flex-shrink-0 text-center sm:text-left">
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
               <span className="material-symbols-outlined text-on-error-container">warning</span>
               <div>
                 <p className="text-sm font-bold text-on-error-container">{t('customers.deleteCustomer')}</p>
-                <p className="text-xs text-on-error-container/70 mt-0.5">{t('common.cantUndo')}</p>
+                <p className="text-[10px] md:text-xs text-on-error-container/70 mt-0.5">{t('common.cantUndo')}</p>
               </div>
             </div>
             <div className="flex gap-2 flex-shrink-0">
               <button
                 onClick={() => setConfirming(false)}
-                className="px-4 py-2 rounded-xl text-on-error-container text-xs font-bold hover:bg-error-container/60 transition-colors"
+                className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-on-error-container text-[10px] md:text-xs font-bold hover:bg-error-container/60 transition-colors"
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={() => onDelete(customer.id)}
-                className="px-4 py-2 rounded-xl bg-error text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5"
+                className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl bg-error text-white text-[10px] md:text-xs font-bold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5"
               >
                 <span className="material-symbols-outlined text-sm">delete</span>
                 {t('common.yesDelete')}
@@ -1428,34 +1428,34 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
         )}
 
         {/* Footer */}
-        <div className="px-4 lg:px-8 pb-4 lg:pb-8 pt-4 flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 lg:gap-4 flex-shrink-0 border-t border-surface-container-low">
+        <div className="px-4 md:px-6 pb-4 pt-3 md:pb-6 md:pt-4 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0 border-t border-surface-container-low">
           {!editing ? (
             <>
-              <div className="flex items-center gap-2 w-full lg:w-auto">
+              <div className="flex items-center gap-1.5 md:gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
                 <button
                   onClick={() => { setEditing(true); setViewTab('info') }}
-                  className="flex-1 lg:flex-none px-4 py-2 lg:px-5 lg:py-2.5 rounded-xl border-2 border-primary text-primary text-xs lg:text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-1.5 lg:gap-2"
+                  className="whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 border-primary text-primary text-[11px] md:text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-1 md:gap-1.5"
                 >
-                  <span className="material-symbols-outlined text-[14px] lg:text-base">edit</span>
+                  <span className="material-symbols-outlined text-[14px] md:text-[18px]">edit</span>
                   {t('common.edit')}
                 </button>
                 {isAdmin && (
                   <button
                     onClick={() => setConfirming((v) => !v)}
-                    className={`flex-1 lg:flex-none px-4 py-2 lg:px-5 lg:py-2.5 rounded-xl border-2 text-xs lg:text-sm font-bold transition-all flex items-center justify-center gap-1.5 lg:gap-2 ${
+                    className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 text-[11px] md:text-sm font-bold transition-all flex items-center justify-center gap-1 md:gap-1.5 ${
                       confirming
                         ? 'border-error bg-error text-white'
                         : 'border-error text-error hover:bg-error hover:text-white'
                     }`}
                   >
-                    <span className="material-symbols-outlined text-[14px] lg:text-base">delete</span>
+                    <span className="material-symbols-outlined text-[14px] md:text-[18px]">delete</span>
                     {t('common.delete')}
                   </button>
                 )}
               </div>
               <button
                 onClick={onClose}
-                className="w-full lg:w-auto px-4 py-2 lg:px-6 lg:py-2.5 rounded-xl primary-gradient text-white text-xs lg:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity"
+                className="w-full sm:w-auto px-4 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity"
               >
                 {t('common.close')}
               </button>

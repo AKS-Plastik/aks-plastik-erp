@@ -148,7 +148,7 @@ export default function TopBar({ setSidebarOpen }) {
             </button>
 
             {showAlarms && (
-              <div className="absolute right-0 top-full mt-2 w-96 max-w-[calc(100vw-2rem)] bg-surface-container-lowest rounded-2xl shadow-2xl shadow-inverse-surface/20 border border-surface-container-low overflow-hidden z-50">
+              <div className="fixed right-3 md:right-6 top-14 md:top-[4.5rem] w-96 max-w-[calc(100vw-1.5rem)] bg-surface-container-lowest rounded-2xl shadow-2xl shadow-inverse-surface/20 border border-surface-container-low overflow-hidden z-[100]">
                 <div className="px-4 pt-4 pb-3 border-b border-surface-container-low flex items-center justify-between">
                   <span className="text-xs font-extrabold text-on-surface">{t('topbar.alerts')}</span>
                   {totalAlarms > 0 && (

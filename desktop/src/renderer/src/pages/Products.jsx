@@ -50,10 +50,10 @@ function Modal({ title, form, setForm, onClose, onSave, errors, isEdit }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-lg p-4 sm:p-8 max-h-[90vh] overflow-y-auto flex flex-col">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-bold text-on-surface">{title}</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-error">
-            <span className="material-symbols-outlined">close</span>
+        <div className="flex items-center justify-between mb-4 md:mb-6">
+          <h2 className="text-base md:text-lg font-bold text-on-surface">{title}</h2>
+          <button onClick={onClose} className="p-1.5 md:p-2 rounded-xl text-text-muted hover:text-error hover:bg-surface-container-low transition-colors">
+            <span className="material-symbols-outlined text-xl md:text-2xl">close</span>
           </button>
         </div>
         <div className="space-y-3 sm:space-y-4">
@@ -111,11 +111,11 @@ function Modal({ title, form, setForm, onClose, onSave, errors, isEdit }) {
             <textarea rows={2} className={inputCls('description')} value={form.description} onChange={set('description')} />
           </div>
         </div>
-          <div className="flex items-center gap-2 mt-4 sm:mt-6">
-            <button onClick={onClose} className="flex-1 bg-surface-container border border-theme-border text-on-surface px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold hover:bg-hover-bg transition">
+          <div className="flex items-center gap-2 mt-4 sm:mt-6 border-t border-surface-container-low pt-4">
+            <button onClick={onClose} className="flex-1 bg-surface-container border border-theme-border text-on-surface px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[11px] md:text-sm font-semibold hover:bg-hover-bg transition">
               {t('common.cancel')}
             </button>
-            <button onClick={handleSave} className="flex-1 primary-gradient text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition">
+            <button onClick={handleSave} className="flex-1 primary-gradient text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[11px] md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition">
               {t('common.save')}
             </button>
           </div>
@@ -190,21 +190,21 @@ function ProductDetailModal({ product, onClose, onEdit, onDelete, isAdmin }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
         {/* Header */}
-        <div className="primary-gradient px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-5">
+        <div className="primary-gradient px-4 md:px-6 pt-5 pb-4 md:pt-6 md:pb-5 flex-shrink-0">
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2.5 sm:gap-3">
-              <div className="w-9 h-9 sm:w-11 sm:h-11 bg-surface-container-lowest/20 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-white text-[18px] sm:text-[24px]">inventory_2</span>
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-surface-container-lowest/20 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-white text-[18px] md:text-[24px]">inventory_2</span>
               </div>
               <div>
-                <h2 className="text-base sm:text-lg font-extrabold text-white leading-tight">{product.name}</h2>
+                <h2 className="text-base md:text-lg font-extrabold text-white leading-tight">{product.name}</h2>
                 {product.stockNo && (
-                  <p className="text-blue-200 text-[10px] sm:text-xs font-mono mt-0.5">{product.stockNo}</p>
+                  <p className="text-blue-200 text-[10px] md:text-xs font-mono mt-0.5">{product.stockNo}</p>
                 )}
               </div>
             </div>
-            <button onClick={onClose} className="p-2 rounded-xl text-white/70 hover:text-white hover:bg-surface-container-lowest/10 transition-colors">
-              <span className="material-symbols-outlined">close</span>
+            <button onClick={onClose} className="p-1.5 md:p-2 rounded-xl text-white/70 hover:text-white hover:bg-surface-container-lowest/10 transition-colors">
+              <span className="material-symbols-outlined text-xl md:text-2xl">close</span>
             </button>
           </div>
         </div>
@@ -258,19 +258,19 @@ function ProductDetailModal({ product, onClose, onEdit, onDelete, isAdmin }) {
         </div>
 
         {/* Footer */}
-        <div className="p-3 md:p-6 flex gap-2 md:gap-3">
+        <div className="px-4 md:px-6 pb-4 pt-3 md:pb-6 md:pt-4 flex gap-2 md:gap-3 border-t border-surface-container-low">
           {isAdmin && (
             <>
               <button
                 onClick={onDelete}
-                className="px-3 md:px-4 py-2 md:py-2.5 rounded-xl border-2 border-error/40 text-error text-[11px] md:text-sm font-bold hover:bg-error hover:text-white transition-all flex items-center gap-1.5 md:gap-2"
+                className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 border-error/40 text-error text-[11px] md:text-sm font-bold hover:bg-error hover:text-white transition-all flex items-center gap-1 md:gap-1.5"
               >
                 <span className="material-symbols-outlined text-[14px] md:text-base">delete</span>
                 {t('common.delete')}
               </button>
               <button
                 onClick={onEdit}
-                className="flex-1 py-2 md:py-2.5 rounded-xl border-2 border-primary text-primary text-[11px] md:text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-1.5 md:gap-2"
+                className="flex-1 py-1.5 md:py-2 rounded-lg md:rounded-xl border-2 border-primary text-primary text-[11px] md:text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-1 md:gap-1.5"
               >
                 <span className="material-symbols-outlined text-[14px] md:text-base">edit</span>
                 {t('common.edit')}
@@ -279,7 +279,7 @@ function ProductDetailModal({ product, onClose, onEdit, onDelete, isAdmin }) {
           )}
           <button
             onClick={onClose}
-            className="flex-1 bg-primary text-white text-[11px] md:text-sm font-bold py-2 md:py-2.5 rounded-xl hover:opacity-90 transition-all shadow-lg shadow-primary/20"
+            className="flex-1 bg-primary text-white text-[11px] md:text-sm font-bold py-1.5 md:py-2 rounded-lg md:rounded-xl hover:opacity-90 transition-all shadow-lg shadow-primary/20"
           >
             {t('common.close')}
           </button>
