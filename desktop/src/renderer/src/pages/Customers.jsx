@@ -323,14 +323,14 @@ function FieldInput({ field, value, onChange, error }) {
         <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">
           {label}
         </label>
-        <div className={`flex items-center gap-2 bg-surface-container-high rounded-lg px-3 py-2.5 transition-all ${
+        <div className={`flex items-center gap-1.5 sm:gap-2 bg-surface-container-high rounded-lg px-2.5 py-2 sm:px-3 sm:py-2.5 transition-all ${
           error ? 'ring-2 ring-error' : 'focus-within:ring-2 focus-within:ring-primary'
         }`}>
-          <span className="material-symbols-outlined text-on-surface-variant text-[18px] flex-shrink-0">{icon}</span>
+          <span className="material-symbols-outlined text-on-surface-variant text-[16px] sm:text-[18px] flex-shrink-0">{icon}</span>
           <select
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            className="bg-transparent border-none outline-none text-sm text-on-surface w-full"
+            className="bg-transparent border-none outline-none text-[13px] sm:text-sm text-on-surface w-full"
           >
             {options.map((o) => (
               <option key={o.value} value={o.value}>{o.label}</option>
@@ -348,16 +348,16 @@ function FieldInput({ field, value, onChange, error }) {
         <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">
           {label}
         </label>
-        <div className={`flex items-start gap-2 bg-surface-container-high rounded-lg px-3 py-2.5 transition-all ${
+        <div className={`flex items-start gap-1.5 sm:gap-2 bg-surface-container-high rounded-lg px-2.5 py-2 sm:px-3 sm:py-2.5 transition-all ${
           error ? 'ring-2 ring-error' : 'focus-within:ring-2 focus-within:ring-primary'
         }`}>
-          <span className="material-symbols-outlined text-on-surface-variant text-[18px] flex-shrink-0 mt-0.5">{icon}</span>
+          <span className="material-symbols-outlined text-on-surface-variant text-[16px] sm:text-[18px] flex-shrink-0 mt-0.5">{icon}</span>
           <textarea
             placeholder={placeholder}
             value={value}
             onChange={(e) => onChange(e.target.value)}
             rows={3}
-            className="bg-transparent border-none outline-none text-sm text-on-surface w-full placeholder-slate-400 resize-none"
+            className="bg-transparent border-none outline-none text-[13px] sm:text-sm text-on-surface w-full placeholder-slate-400 resize-none"
           />
         </div>
         {error && <p className="text-[10px] text-error font-medium mt-1">{error}</p>}
@@ -370,17 +370,17 @@ function FieldInput({ field, value, onChange, error }) {
       <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">
         {label}
       </label>
-      <div className={`flex items-center gap-2 bg-surface-container-high rounded-lg px-3 py-2.5 transition-all ${
+      <div className={`flex items-center gap-1.5 sm:gap-2 bg-surface-container-high rounded-lg px-2.5 py-2 sm:px-3 sm:py-2.5 transition-all ${
         error ? 'ring-2 ring-error' : 'focus-within:ring-2 focus-within:ring-primary'
       }`}>
-        <span className="material-symbols-outlined text-on-surface-variant text-[18px] flex-shrink-0">{icon}</span>
+        <span className="material-symbols-outlined text-on-surface-variant text-[16px] sm:text-[18px] flex-shrink-0">{icon}</span>
         <input
           type={type}
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           maxLength={maxLength}
-          className="bg-transparent border-none outline-none text-sm text-on-surface w-full placeholder-slate-400"
+          className="bg-transparent border-none outline-none text-[13px] sm:text-sm text-on-surface w-full placeholder-slate-400"
         />
       </div>
       {error && <p className="text-[10px] text-error font-medium mt-1">{error}</p>}
@@ -1515,7 +1515,7 @@ export default function Customers() {
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
 
   return (
-    <div className="p-4 md:p-8 min-h-screen bg-page-bg">
+    <div className="p-2 sm:p-4 lg:p-8 min-h-screen bg-page-bg">
       {showModal && (
         <AddCustomerModal onClose={() => setShowModal(false)} onSave={handleSave} />
       )}
@@ -1536,7 +1536,7 @@ export default function Customers() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 mb-6 lg:mb-12">
         <div className="max-w-2xl">
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-on-surface mb-2">
             {t('customers.title')}
@@ -1545,16 +1545,16 @@ export default function Customers() {
             {t('customers.subtitle')}
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-shrink-0">
-          <button onClick={syncAndRefreshCustomers} className="flex items-center justify-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap">
-            <span className="material-symbols-outlined text-base">sync</span>
-            {t('common.refresh', 'Yenile/Senkronize Et')}
+        <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full md:w-auto max-w-full pb-2 md:pb-0">
+          <button onClick={syncAndRefreshCustomers} className="flex items-center justify-center gap-1.5 border border-theme-border px-2.5 py-2 lg:px-3 lg:py-2 rounded-xl text-[11px] lg:text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap flex-shrink-0">
+            <span className="material-symbols-outlined text-[14px] lg:text-base">sync</span>
+            <span className="hidden lg:inline">{t('common.refresh', 'Yenile/Senkronize Et')}</span>
           </button>
           <button
             onClick={() => setShowModal(true)}
-            className="px-6 py-2.5 rounded-xl primary-gradient text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity whitespace-nowrap"
+            className="px-3 py-2 lg:px-4 lg:py-2.5 rounded-xl primary-gradient text-white font-bold text-[11px] lg:text-sm flex items-center justify-center gap-1.5 shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity whitespace-nowrap flex-shrink-0"
           >
-            <span className="material-symbols-outlined text-xl">person_add</span>
+            <span className="material-symbols-outlined text-[14px] lg:text-base">person_add</span>
             {t('customers.addCustomer')}
           </button>
         </div>
@@ -1587,14 +1587,14 @@ export default function Customers() {
       })()}
 
       {/* Search */}
-      <div className="flex items-center gap-2 bg-surface-container-low px-4 py-2.5 rounded-xl mb-8 w-full max-w-sm">
-        <span className="material-symbols-outlined text-on-surface-variant text-lg">search</span>
+      <div className="flex items-center gap-1.5 md:gap-2 bg-surface-container-low px-3 md:px-4 py-1.5 md:py-2.5 rounded-xl mb-4 md:mb-8 w-full max-w-sm">
+        <span className="material-symbols-outlined text-on-surface-variant text-[16px] md:text-lg">search</span>
         <input
           type="text"
           placeholder={t('customers.searchPlaceholder')}
           value={search}
           onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-          className="bg-transparent border-none outline-none text-sm w-full placeholder-slate-400"
+          className="bg-transparent border-none outline-none text-xs md:text-sm w-full placeholder-slate-400"
         />
       </div>
 
@@ -1616,14 +1616,14 @@ export default function Customers() {
             {paginated.map((customer) => (
               <tr
                 key={customer.id}
-                className="group xl:hover:bg-surface-container-low transition-colors cursor-pointer xl:border-b xl:border-surface-container-low block xl:table-row bg-surface-container-lowest rounded-2xl xl:rounded-none p-5 xl:p-0 shadow-sm xl:shadow-none"
+                className="group xl:hover:bg-surface-container-low transition-colors cursor-pointer xl:border-b xl:border-surface-container-low block xl:table-row bg-surface-container-lowest rounded-2xl xl:rounded-none p-4 xl:p-0 shadow-sm xl:shadow-none"
                 onClick={() => setSelectedCustomer(customer)}
               >
                 <td className="block xl:table-cell p-0 xl:px-6 xl:py-5 mb-4 xl:mb-0 border-b border-surface-container-low pb-4 xl:border-0 xl:pb-0">
                   <div className="flex items-center gap-4">
                     <InitialsAvatar initials={customer.initials} size="lg" />
                     <div>
-                      <div className="font-bold text-on-surface text-base">{customer.name}</div>
+                      <div className="font-bold text-on-surface text-sm xl:text-base">{customer.name}</div>
                       {customer.customerType && (
                         <div className="text-[10px] text-on-surface-variant font-medium uppercase">{customer.customerType}</div>
                       )}
@@ -1631,17 +1631,17 @@ export default function Customers() {
                   </div>
                 </td>
                 <td className="flex xl:table-cell justify-between items-center p-0 xl:px-6 xl:py-5 mb-3 xl:mb-0 mt-4 xl:mt-0">
-                  <span className="xl:hidden text-xs font-bold text-on-surface-variant uppercase tracking-widest">{t('customers.colContact')}</span>
-                  <div className="font-semibold text-on-surface text-sm">{customer.contactName || '—'}</div>
+                  <span className="xl:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('customers.colContact')}</span>
+                  <div className="font-semibold text-on-surface text-xs xl:text-sm">{customer.contactName || '—'}</div>
                 </td>
                 <td className="flex xl:table-cell justify-between items-center p-0 xl:px-6 xl:py-5 mb-4 xl:mb-0">
-                  <span className="xl:hidden text-xs font-bold text-on-surface-variant uppercase tracking-widest">{t('customers.colCity')}</span>
-                  <div className="text-on-surface-variant text-sm font-medium text-right">
+                  <span className="xl:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('customers.colCity')}</span>
+                  <div className="text-on-surface-variant text-xs xl:text-sm font-medium text-right">
                     {[customer.city, customer.country].filter(Boolean).join(', ') || customer.region}
                   </div>
                 </td>
                 <td className="block xl:table-cell p-0 xl:px-6 xl:py-5 mb-4 xl:mb-0">
-                  <span className="xl:hidden text-xs font-bold text-on-surface-variant uppercase tracking-widest block mb-2">{t('customers.colTasks')}</span>
+                  <span className="xl:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest block mb-2">{t('customers.colTasks')}</span>
                   {(() => {
                     const ct = (reports || []).filter((r) => r.customerId === customer.id)
                     const counts = [
@@ -1658,7 +1658,7 @@ export default function Customers() {
                           return (
                             <span key={col} className={`flex-1 xl:flex-none flex flex-col xl:flex-row items-center justify-center px-2 py-1.5 xl:py-0.5 rounded-md font-bold gap-0.5 xl:gap-1 ${cls}`}>
                               <span className="text-xs xl:text-[10px] leading-none">{n}</span>
-                              <span className="text-[8px] xl:text-[10px] uppercase xl:normal-case tracking-wider xl:tracking-normal text-center leading-none">{label}</span>
+                              <span className="text-[9px] xl:text-[10px] uppercase xl:normal-case tracking-wider xl:tracking-normal text-center leading-none">{label}</span>
                             </span>
                           )
                         })}
@@ -1669,10 +1669,10 @@ export default function Customers() {
                 <td className="block xl:table-cell p-0 xl:px-6 xl:py-5 text-right mt-4 xl:mt-0">
                   <button
                     onClick={(e) => { e.stopPropagation(); setSelectedCustomer(customer) }}
-                    className="w-full xl:w-auto text-primary font-bold text-sm px-4 py-2.5 xl:py-2 bg-primary/10 xl:bg-transparent hover:bg-primary/20 xl:hover:bg-primary/5 rounded-xl transition-colors flex justify-center items-center gap-2"
+                    className="w-full xl:w-auto text-primary font-bold text-xs xl:text-sm px-3 py-2 bg-primary/10 xl:bg-transparent hover:bg-primary/20 xl:hover:bg-primary/5 rounded-xl transition-colors flex justify-center items-center gap-1.5"
                   >
                     {t('customers.viewDetails')}
-                    <span className="material-symbols-outlined text-[16px] xl:hidden">arrow_forward</span>
+                    <span className="material-symbols-outlined text-[14px] xl:hidden">arrow_forward</span>
                   </button>
                 </td>
               </tr>

@@ -840,7 +840,7 @@ export default function Orders() {
   }
 
   return (
-    <div className="p-4 sm:p-8 max-w-7xl mx-auto">
+    <div className="p-2 sm:p-4 lg:p-8 max-w-7xl mx-auto">
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl primary-gradient flex items-center justify-center text-white shadow-lg shadow-primary/20">
@@ -851,19 +851,19 @@ export default function Orders() {
             <p className="text-xs sm:text-sm text-text-muted mt-0.5">{t('orders.totalOrders', { count: orders.length })}</p>
           </div>
         </div>
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-2 lg:gap-3 flex-shrink-0">
-          <button onClick={syncAndRefreshOrders} className="flex items-center justify-center gap-1.5 border border-theme-border px-3 py-1.5 lg:py-2 rounded-xl text-xs lg:text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap">
+        <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full md:w-auto max-w-full pb-2 md:pb-0">
+          <button onClick={syncAndRefreshOrders} className="flex items-center justify-center gap-1.5 border border-theme-border px-2.5 py-2 lg:px-3 lg:py-2 rounded-xl text-[11px] lg:text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap flex-shrink-0">
             <span className="material-symbols-outlined text-[14px] lg:text-base">refresh</span>
-            {t('common.refresh')}
+            <span className="hidden lg:inline">{t('common.refresh')}</span>
           </button>
-          <div className="relative" ref={exportRef}>
+          <div className="relative flex-shrink-0" ref={exportRef}>
             <button
               onClick={() => setExportOpen((v) => !v)}
               disabled={selected.size === 0}
-              className="flex items-center justify-center gap-1.5 border border-theme-border w-full lg:w-auto px-3 py-1.5 lg:py-2 rounded-xl text-xs lg:text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
+              className="flex items-center justify-center gap-1.5 border border-theme-border px-2.5 py-2 lg:px-3 lg:py-2 rounded-xl text-[11px] lg:text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
             >
               <span className="material-symbols-outlined text-[14px] lg:text-base">download</span>
-              Export{selected.size > 0 ? ` (${selected.size})` : ''}
+              <span className="hidden lg:inline">Export</span>{selected.size > 0 ? ` (${selected.size})` : ''}
               <span className="material-symbols-outlined text-[14px] lg:text-base">arrow_drop_down</span>
             </button>
             {exportOpen && (
@@ -880,7 +880,7 @@ export default function Orders() {
             )}
           </div>
           {canCreate && (
-            <button onClick={openAdd} className="flex items-center justify-center gap-1.5 lg:gap-2 primary-gradient text-white px-4 py-2 lg:py-2.5 rounded-xl text-xs lg:text-sm font-bold shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity whitespace-nowrap">
+            <button onClick={openAdd} className="flex items-center justify-center gap-1.5 primary-gradient text-white px-3 py-2 lg:px-4 lg:py-2.5 rounded-xl text-[11px] lg:text-sm font-bold shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity whitespace-nowrap flex-shrink-0">
               <span className="material-symbols-outlined text-[14px] lg:text-base">add</span>
               {t('orders.newOrder')}
             </button>

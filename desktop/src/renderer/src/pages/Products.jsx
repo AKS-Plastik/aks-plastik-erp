@@ -41,66 +41,68 @@ function Modal({ title, form, setForm, onClose, onSave, errors, isEdit }) {
   const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
 
   const inputCls = (field) =>
-    `w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary transition ${
+    `w-full bg-surface-container-lowest border rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2 text-[13px] sm:text-sm text-on-surface outline-none focus:border-primary transition ${
       errors[field] ? 'border-error' : 'border-theme-border'
     }`
 
+  const handleSave = () => onSave();
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-lg p-8">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-lg p-4 sm:p-8 max-h-[90vh] overflow-y-auto flex flex-col">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-lg font-bold text-on-surface">{title}</h2>
           <button onClick={onClose} className="text-text-muted hover:text-error">
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('products.stockNo')} *</label>
+              <label className="block text-[10px] sm:text-xs font-semibold text-text-muted mb-1">{t('products.stockNo')} *</label>
               <input disabled={isEdit} className={`${inputCls('stockNo')} ${isEdit ? 'opacity-50 cursor-not-allowed bg-surface-container-high' : ''}`} value={form.stockNo} onChange={set('stockNo')} placeholder={t('products.stockNoPh')} />
               {errors.stockNo && <p className="text-xs text-error mt-1">{errors.stockNo}</p>}
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.name')} *</label>
+              <label className="block text-[10px] sm:text-xs font-semibold text-text-muted mb-1">{t('common.name')} *</label>
               <input className={inputCls('name')} value={form.name} onChange={set('name')} />
               {errors.name && <p className="text-xs text-error mt-1">{errors.name}</p>}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.category')}</label>
+              <label className="block text-[10px] sm:text-xs font-semibold text-text-muted mb-1">{t('common.category')}</label>
               <select className={inputCls('category')} value={form.category} onChange={set('category')}>
                 {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.unit')}</label>
+              <label className="block text-[10px] sm:text-xs font-semibold text-text-muted mb-1">{t('common.unit')}</label>
               <select className={inputCls('unit')} value={form.unit} onChange={set('unit')}>
                 {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.currency')}</label>
+              <label className="block text-[10px] sm:text-xs font-semibold text-text-muted mb-1">{t('common.currency')}</label>
               <select className={inputCls('currency')} value={form.currency} onChange={set('currency')}>
                 {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.price')} *</label>
+              <label className="block text-[10px] sm:text-xs font-semibold text-text-muted mb-1">{t('common.price')} *</label>
               <input type="number" min="0" step="0.01" className={inputCls('price')} value={form.price} onChange={set('price')} />
               {errors.price && <p className="text-xs text-error mt-1">{errors.price}</p>}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('products.inStock')}</label>
+              <label className="block text-[10px] sm:text-xs font-semibold text-text-muted mb-1">{t('products.inStock')}</label>
               <input type="number" min="0" className={inputCls('stock')} value={form.stock} onChange={set('stock')} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('products.minStock')}</label>
+              <label className="block text-[10px] sm:text-xs font-semibold text-text-muted mb-1">{t('products.criticalStock')}</label>
               <input type="number" min="0" className={inputCls('minStock')} value={form.minStock} onChange={set('minStock')} />
             </div>
           </div>
@@ -109,14 +111,14 @@ function Modal({ title, form, setForm, onClose, onSave, errors, isEdit }) {
             <textarea rows={2} className={inputCls('description')} value={form.description} onChange={set('description')} />
           </div>
         </div>
-        <div className="flex gap-3 mt-6">
-          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition">
-            {t('common.cancel')}
-          </button>
-          <button onClick={onSave} className="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition">
-            {t('common.save')}
-          </button>
-        </div>
+          <div className="flex items-center gap-2 mt-4 sm:mt-6">
+            <button onClick={onClose} className="flex-1 bg-surface-container border border-theme-border text-on-surface px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-semibold hover:bg-hover-bg transition">
+              {t('common.cancel')}
+            </button>
+            <button onClick={handleSave} className="flex-1 primary-gradient text-white px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition">
+              {t('common.save')}
+            </button>
+          </div>
       </div>
     </div>
   )
@@ -208,76 +210,76 @@ function ProductDetailModal({ product, onClose, onEdit, onDelete, isAdmin }) {
         </div>
 
         {/* Details */}
-        <div className="p-6 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-surface-container-low rounded-xl p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">{t('common.category')}</p>
-              <p className="text-sm font-semibold text-on-surface">
+        <div className="p-4 md:p-6 space-y-2 md:space-y-3">
+          <div className="grid grid-cols-2 gap-2 md:gap-3">
+            <div className="bg-surface-container-low rounded-xl p-3 md:p-4">
+              <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-0.5 md:mb-1">{t('common.category')}</p>
+              <p className="text-xs md:text-sm font-semibold text-on-surface">
                 {CATEGORIES.find((c) => c.id === product.category)?.name || product.category || '—'}
               </p>
             </div>
-            <div className="bg-surface-container-low rounded-xl p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">{t('common.unit')}</p>
-              <p className="text-sm font-semibold text-on-surface">{product.unit || 'pcs'}</p>
+            <div className="bg-surface-container-low rounded-xl p-3 md:p-4">
+              <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-0.5 md:mb-1">{t('common.unit')}</p>
+              <p className="text-xs md:text-sm font-semibold text-on-surface">{product.unit || 'pcs'}</p>
             </div>
-            <div className="bg-surface-container-low rounded-xl p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">{t('common.price')}</p>
-              <p className="text-sm font-semibold text-on-surface">
-                <span className="text-xs text-on-surface-variant mr-1">{product.currency || 'USD'}</span>
+            <div className="bg-surface-container-low rounded-xl p-3 md:p-4">
+              <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-0.5 md:mb-1">{t('common.price')}</p>
+              <p className="text-xs md:text-sm font-semibold text-on-surface">
+                <span className="text-[10px] md:text-xs text-on-surface-variant mr-1">{product.currency || 'USD'}</span>
                 {parseFloat(product.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
-            <div className="bg-surface-container-low rounded-xl p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">{t('common.status')}</p>
-              <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${badge.cls}`}>
+            <div className="bg-surface-container-low rounded-xl p-3 md:p-4">
+              <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-0.5 md:mb-1">{t('common.status')}</p>
+              <span className={`inline-flex px-2 md:px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-semibold ${badge.cls}`}>
                 {badge.label}
               </span>
             </div>
-            <div className="bg-surface-container-low rounded-xl p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">{t('products.inStock')}</p>
-              <p className="text-sm font-semibold text-on-surface">
-                {product.stock} <span className="text-xs text-on-surface-variant">{product.unit || 'pcs'}</span>
+            <div className="bg-surface-container-low rounded-xl p-3 md:p-4">
+              <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-0.5 md:mb-1">{t('products.inStock')}</p>
+              <p className="text-xs md:text-sm font-semibold text-on-surface">
+                {product.stock} <span className="text-[10px] md:text-xs text-on-surface-variant">{product.unit || 'pcs'}</span>
               </p>
             </div>
-            <div className="bg-surface-container-low rounded-xl p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">{t('products.minStock')}</p>
-              <p className="text-sm font-semibold text-on-surface">
-                {product.minStock} <span className="text-xs text-on-surface-variant">{product.unit || 'pcs'}</span>
+            <div className="bg-surface-container-low rounded-xl p-3 md:p-4">
+              <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-0.5 md:mb-1">{t('products.minStock')}</p>
+              <p className="text-xs md:text-sm font-semibold text-on-surface">
+                {product.minStock} <span className="text-[10px] md:text-xs text-on-surface-variant">{product.unit || 'pcs'}</span>
               </p>
             </div>
           </div>
 
           {product.description && (
-            <div className="bg-surface-container-low rounded-xl p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">{t('common.description')}</p>
-              <p className="text-sm text-on-surface">{product.description}</p>
+            <div className="bg-surface-container-low rounded-xl p-3 md:p-4">
+              <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-0.5 md:mb-1">{t('common.description')}</p>
+              <p className="text-xs md:text-sm text-on-surface">{product.description}</p>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-6 pb-6 flex gap-3">
+        <div className="p-3 md:p-6 flex gap-2 md:gap-3">
           {isAdmin && (
             <>
               <button
                 onClick={onDelete}
-                className="px-4 py-2.5 rounded-xl border-2 border-error/40 text-error text-sm font-bold hover:bg-error hover:text-white transition-all flex items-center gap-2"
+                className="px-3 md:px-4 py-2 md:py-2.5 rounded-xl border-2 border-error/40 text-error text-[11px] md:text-sm font-bold hover:bg-error hover:text-white transition-all flex items-center gap-1.5 md:gap-2"
               >
-                <span className="material-symbols-outlined text-base">delete</span>
+                <span className="material-symbols-outlined text-[14px] md:text-base">delete</span>
                 {t('common.delete')}
               </button>
               <button
                 onClick={onEdit}
-                className="flex-1 py-2.5 rounded-xl border-2 border-primary text-primary text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-2"
+                className="flex-1 py-2 md:py-2.5 rounded-xl border-2 border-primary text-primary text-[11px] md:text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-1.5 md:gap-2"
               >
-                <span className="material-symbols-outlined text-base">edit</span>
+                <span className="material-symbols-outlined text-[14px] md:text-base">edit</span>
                 {t('common.edit')}
               </button>
             </>
           )}
           <button
             onClick={onClose}
-            className={`${isAdmin ? '' : 'flex-1'} py-2.5 px-5 rounded-xl primary-gradient text-white text-sm font-bold hover:opacity-90 transition-opacity`}
+            className="flex-1 bg-primary text-white text-[11px] md:text-sm font-bold py-2 md:py-2.5 rounded-xl hover:opacity-90 transition-all shadow-lg shadow-primary/20"
           >
             {t('common.close')}
           </button>
@@ -431,9 +433,9 @@ export default function Products() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-2 sm:p-4 lg:p-8 max-w-7xl mx-auto">
       <input ref={importRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 mb-6 lg:mb-12">
         <div className="max-w-2xl">
           <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-on-surface mb-2">
             {t('products.title')}
@@ -442,25 +444,25 @@ export default function Products() {
             {t('products.totalProducts', { count: products.length })}
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 flex-shrink-0">
-          <button onClick={handleTemplate} className="flex items-center justify-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap">
-            <span className="material-symbols-outlined text-base">download</span>
-            {t('common.template')}
+        <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full md:w-auto max-w-full pb-2 md:pb-0">
+          <button onClick={handleTemplate} className="flex items-center justify-center gap-1.5 border border-theme-border px-2.5 py-2 lg:px-3 lg:py-2 rounded-xl text-[11px] lg:text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap flex-shrink-0">
+            <span className="material-symbols-outlined text-[14px] lg:text-base">download</span>
+            <span className="hidden lg:inline">{t('common.template')}</span>
           </button>
-          <button onClick={() => importRef.current.click()} disabled={importing} className="flex items-center justify-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-40 whitespace-nowrap">
-            <span className="material-symbols-outlined text-base">upload</span>
-            {importing ? t('products.importing') : t('common.import')}
+          <button onClick={() => importRef.current.click()} disabled={importing} className="flex items-center justify-center gap-1.5 border border-theme-border px-2.5 py-2 lg:px-3 lg:py-2 rounded-xl text-[11px] lg:text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-40 whitespace-nowrap flex-shrink-0">
+            <span className="material-symbols-outlined text-[14px] lg:text-base">upload</span>
+            <span className="hidden lg:inline">{importing ? t('products.importing') : t('common.import')}</span>
           </button>
-          <button onClick={handleExport} className="flex items-center justify-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap">
-            <span className="material-symbols-outlined text-base">table_view</span>
-            {t('common.export')}
+          <button onClick={handleExport} className="flex items-center justify-center gap-1.5 border border-theme-border px-2.5 py-2 lg:px-3 lg:py-2 rounded-xl text-[11px] lg:text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap flex-shrink-0">
+            <span className="material-symbols-outlined text-[14px] lg:text-base">table_view</span>
+            <span className="hidden lg:inline">{t('common.export')}</span>
           </button>
-          <button onClick={syncAndRefreshProducts} className="flex items-center justify-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap">
-            <span className="material-symbols-outlined text-base">sync</span>
-            {t('common.refresh', 'Yenile/Senkronize Et')}
+          <button onClick={syncAndRefreshProducts} className="flex items-center justify-center gap-1.5 border border-theme-border px-2.5 py-2 lg:px-3 lg:py-2 rounded-xl text-[11px] lg:text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap flex-shrink-0">
+            <span className="material-symbols-outlined text-[14px] lg:text-base">sync</span>
+            <span className="hidden lg:inline">{t('common.refresh', 'Yenile/Senkronize Et')}</span>
           </button>
-          <button onClick={openAdd} className="flex items-center justify-center gap-2 primary-gradient text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity whitespace-nowrap">
-            <span className="material-symbols-outlined text-base">add</span>
+          <button onClick={openAdd} className="flex items-center justify-center gap-1.5 primary-gradient text-white px-3 py-2 lg:px-4 lg:py-2.5 rounded-xl text-[11px] lg:text-sm font-bold shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity whitespace-nowrap flex-shrink-0">
+            <span className="material-symbols-outlined text-[14px] lg:text-base">add</span>
             {t('products.addProduct')}
           </button>
         </div>
@@ -468,9 +470,9 @@ export default function Products() {
 
       <div className="flex items-center gap-3 mb-4">
         <div className="relative flex-1 max-w-sm">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-lg">search</span>
+          <span className="material-symbols-outlined absolute left-2.5 md:left-3 top-1/2 -translate-y-1/2 text-text-muted text-[16px] md:text-lg">search</span>
           <input
-            className="w-full bg-surface-container-lowest border border-theme-border rounded-xl pl-9 pr-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
+            className="w-full bg-surface-container-lowest border border-theme-border rounded-xl pl-8 md:pl-9 pr-2 md:pr-3 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary"
             placeholder={t('products.searchPlaceholder')}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}

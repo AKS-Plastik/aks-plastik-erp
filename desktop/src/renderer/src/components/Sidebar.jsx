@@ -65,18 +65,19 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             <NavLink
               key={to}
               to={to}
+              onClick={() => setIsOpen(false)} // Close sidebar on click in mobile
               className={({ isActive }) =>
                 isActive
-                  ? 'flex items-center gap-3 px-6 py-4 text-primary font-bold border-r-4 border-primary bg-surface-container-lowest cursor-pointer'
-                  : 'flex items-center gap-3 px-6 py-4 text-text-muted hover:text-on-surface hover:bg-hover-bg transition-colors duration-150 cursor-pointer'
+                  ? 'flex items-center gap-3 px-4 py-3 md:px-6 md:py-4 text-primary font-bold border-r-4 border-primary bg-surface-container-lowest cursor-pointer'
+                  : 'flex items-center gap-3 px-4 py-3 md:px-6 md:py-4 text-text-muted hover:text-on-surface hover:bg-hover-bg transition-colors duration-150 cursor-pointer'
               }
             >
               {({ isActive }) => (
                 <>
-                  <span className={`material-symbols-outlined ${isActive ? 'fill-icon' : ''}`}>
+                  <span className={`material-symbols-outlined text-[20px] md:text-[24px] ${isActive ? 'fill-icon' : ''}`}>
                     {icon}
                   </span>
-                  <span className="text-sm font-medium" style={{ fontFamily: 'Manrope, sans-serif' }}>
+                  <span className="text-xs md:text-sm font-medium" style={{ fontFamily: 'Manrope, sans-serif' }}>
                     {t(tKey)}
                   </span>
                 </>
@@ -89,10 +90,10 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         <div className="mt-auto border-t border-theme-border pt-2">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-6 py-3 text-text-muted hover:text-error transition-colors w-full"
+            className="flex items-center gap-3 px-4 py-2.5 md:px-6 md:py-3 text-text-muted hover:text-error transition-colors w-full"
           >
-            <span className="material-symbols-outlined">logout</span>
-            <span className="text-sm font-medium" style={{ fontFamily: 'Manrope, sans-serif' }}>
+            <span className="material-symbols-outlined text-[20px] md:text-[24px]">logout</span>
+            <span className="text-xs md:text-sm font-medium" style={{ fontFamily: 'Manrope, sans-serif' }}>
               {t('nav.logout')}
             </span>
           </button>

@@ -319,7 +319,8 @@
     "stockNoPh": "e.g. SKU-0012",
     "categoryPh": "e.g. Electronics",
     "unitPh": "pcs / kg / m",
-    "invalidPrice": "Valid price required"
+    "invalidPrice": "Valid price required",
+    "showingOf": "Showing {{from}}–{{to}} of {{total}} products"
   },
   "orders": {
     "title": "Orders",

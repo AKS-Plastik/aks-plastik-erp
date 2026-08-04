@@ -319,7 +319,8 @@
     "stockNoPh": "örn. SKU-0012",
     "categoryPh": "örn. Elektronik",
     "unitPh": "adet / kg / m",
-    "invalidPrice": "Geçerli bir fiyat giriniz"
+    "invalidPrice": "Geçerli bir fiyat giriniz",
+    "showingOf": "{{total}} üründen {{from}}–{{to}} arası gösteriliyor"
   },
   "orders": {
     "title": "Siparişler",

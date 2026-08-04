@@ -269,7 +269,7 @@ export default function Dashboard() {
   const showLogistics = canSee('logistics')
 
   return (
-    <div className="p-4 md:p-8 space-y-6 md:space-y-8 bg-page-bg">
+    <div className="p-2 sm:p-4 lg:p-8 space-y-4 sm:space-y-6 md:space-y-8 bg-page-bg">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
