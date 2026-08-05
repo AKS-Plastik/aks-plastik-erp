@@ -7,33 +7,33 @@ const LOGISTIC_STATUSES = ['Production Completed', 'E-WayBill', 'In Delivery', '
 
 const statusStyle = {
   'Production Completed': 'bg-green-100 text-green-700',
-  'E-WayBill':   'bg-orange-100 text-orange-700',
+  'E-WayBill': 'bg-orange-100 text-orange-700',
   'In Delivery': 'bg-blue-100 text-blue-700',
-  'E-Invoice':   'bg-teal-100 text-teal-700',
-  Delivered:     'bg-green-400 text-green-900',
+  'E-Invoice': 'bg-teal-100 text-teal-700',
+  Delivered: 'bg-green-400 text-green-900',
 }
 
 const statusNext = {
   'Production Completed': 'E-WayBill',
-  'E-WayBill':   'In Delivery',
+  'E-WayBill': 'In Delivery',
   'In Delivery': 'E-Invoice',
-  'E-Invoice':   'Delivered',
+  'E-Invoice': 'Delivered',
 }
 
 const statusIcon = {
   'Production Completed': 'done_all',
-  'E-WayBill':   'receipt_long',
+  'E-WayBill': 'receipt_long',
   'In Delivery': 'local_shipping',
-  'E-Invoice':   'request_quote',
-  Delivered:     'inventory',
+  'E-Invoice': 'request_quote',
+  Delivered: 'inventory',
 }
 
 const statusColor = {
   'Production Completed': 'text-green-600',
-  'E-WayBill':   'text-orange-500',
+  'E-WayBill': 'text-orange-500',
   'In Delivery': 'text-blue-500',
-  'E-Invoice':   'text-teal-600',
-  Delivered:     'text-green-600',
+  'E-Invoice': 'text-teal-600',
+  Delivered: 'text-green-600',
 }
 
 // ─── Order Detail Modal ───────────────────────────────────────────────────────
@@ -48,29 +48,29 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo }) {
   const next = statusNext[order.status]
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-2xl p-8 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-start justify-between mb-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 md:p-4" onClick={onClose}>
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-2xl p-5 md:p-8 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-start justify-between mb-4 md:mb-6">
           <div>
-            <p className="text-xs font-mono text-text-muted mb-1">{order.code}</p>
-            <h2 className="text-xl font-bold text-on-surface">{order.customer?.name || '—'}</h2>
-            <p className="text-sm text-text-muted mt-0.5">{t('orders.salesRep')}: {order.salesRep?.name || order.employee?.name || '—'}</p>
+            <p className="text-[10px] md:text-xs font-mono text-text-muted mb-0.5 md:mb-1">{order.code}</p>
+            <h2 className="text-base md:text-xl font-bold text-on-surface leading-tight">{order.customer?.name || '—'}</h2>
+            <p className="text-[11px] md:text-sm text-text-muted mt-1 md:mt-0.5">{t('orders.salesRep')}: {order.salesRep?.name || order.employee?.name || '—'}</p>
           </div>
-          <div className="flex items-center gap-3">
-            <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${statusStyle[order.status] || 'bg-surface-container-high text-text-muted'}`}>
+          <div className="flex items-center gap-2 md:gap-3">
+            <span className={`inline-flex px-2 md:px-3 py-1 rounded-full text-[10px] md:text-xs font-semibold ${statusStyle[order.status] || 'bg-surface-container-high text-text-muted'}`}>
               {order.status}
             </span>
-            <button onClick={onClose} className="text-text-muted hover:text-error">
-              <span className="material-symbols-outlined">close</span>
+            <button onClick={onClose} className="text-text-muted hover:text-error p-1">
+              <span className="material-symbols-outlined text-xl">close</span>
             </button>
           </div>
         </div>
 
         {/* Line Items */}
-        <div className="rounded-xl border border-theme-border overflow-hidden mb-4">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-surface-container-high text-text-muted text-xs uppercase tracking-wider">
+        <div className="rounded-xl border border-theme-border overflow-y-auto max-h-[240px] md:max-h-none mb-4 bg-surface-container-lowest">
+          <table className="w-full text-sm block md:table">
+            <thead className="hidden md:table-header-group sticky top-0 bg-surface-container-high z-10 shadow-sm">
+              <tr className="text-text-muted text-xs uppercase tracking-wider">
                 <th className="text-left px-4 py-2.5 font-semibold">{t('products.stockNo')}</th>
                 <th className="text-left px-4 py-2.5 font-semibold">{t('orders.product')}</th>
                 <th className="text-right px-4 py-2.5 font-semibold">{t('orders.qty')}</th>
@@ -78,19 +78,44 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo }) {
                 <th className="text-right px-4 py-2.5 font-semibold">{t('orders.lineTotal')}</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody className="block md:table-row-group">
               {(order.items || []).map((it, i) => (
-                <tr key={i} className="border-t border-theme-border">
-                  <td className="px-4 py-3 font-mono text-xs text-text-muted">{it.product?.stockNo || '—'}</td>
-                  <td className="px-4 py-3 text-on-surface font-medium">{it.productName}</td>
-                  <td className="px-4 py-3 text-right text-text-muted">{it.quantity}</td>
-                  <td className="px-4 py-3 text-right text-on-surface">
-                    <span className="text-xs text-text-muted mr-1">{it.currency || 'USD'}</span>
-                    {parseFloat(it.unitPrice).toFixed(2)}
+                <tr key={i} className="block md:table-row border-b border-theme-border py-2 md:py-0">
+                  <td className="block md:table-cell px-3 md:px-4 py-1 md:py-3 relative w-full md:w-auto">
+                    <div className="flex justify-between md:justify-start items-center">
+                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('products.stockNo')}</span>
+                      <span className="font-mono text-xs text-text-muted">{it.product?.stockNo || '—'}</span>
+                    </div>
                   </td>
-                  <td className="px-4 py-3 text-right font-semibold text-on-surface">
-                    <span className="text-xs text-text-muted mr-1">{it.currency || 'USD'}</span>
-                    {(parseFloat(it.unitPrice) * parseInt(it.quantity)).toFixed(2)}
+                  <td className="block md:table-cell px-3 md:px-4 py-1 md:py-3 relative w-full md:w-auto">
+                    <div className="flex justify-between md:justify-start items-center">
+                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.product')}</span>
+                      <span className="text-xs md:text-sm text-on-surface font-medium">{it.productName}</span>
+                    </div>
+                  </td>
+                  <td className="block md:table-cell px-3 md:px-4 py-1 md:py-3 relative w-full md:w-auto">
+                    <div className="flex justify-between md:justify-end items-center">
+                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.qty')}</span>
+                      <span className="text-xs md:text-sm text-text-muted">{it.quantity}</span>
+                    </div>
+                  </td>
+                  <td className="block md:table-cell px-3 md:px-4 py-1 md:py-3 relative w-full md:w-auto">
+                    <div className="flex justify-between md:justify-end items-center">
+                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.unitPrice')}</span>
+                      <span className="text-xs md:text-sm text-on-surface">
+                        <span className="text-[10px] md:text-xs text-text-muted mr-1">{it.currency || 'USD'}</span>
+                        {parseFloat(it.unitPrice).toFixed(2)}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="block md:table-cell px-3 md:px-4 py-1 md:py-3 relative w-full md:w-auto">
+                    <div className="flex justify-between md:justify-end items-center">
+                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.lineTotal')}</span>
+                      <span className="font-semibold text-xs md:text-sm text-on-surface">
+                        <span className="text-[10px] md:text-xs text-text-muted mr-1">{it.currency || 'USD'}</span>
+                        {(parseFloat(it.unitPrice) * parseInt(it.quantity)).toFixed(2)}
+                      </span>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -99,12 +124,12 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo }) {
         </div>
 
         {/* Totals */}
-        <div className="flex flex-col items-end gap-1 text-sm mb-4">
+        <div className="flex flex-col items-end gap-0.5 md:gap-1 text-[11px] md:text-sm mb-4">
           <span className="text-text-muted">Subtotal: <span className="text-on-surface font-medium">{currency} {subtotal.toFixed(2)}</span></span>
           {order.vat > 0 && (
             <span className="text-text-muted">VAT ({order.vat}%): <span className="text-on-surface font-medium">+{currency} {vatAmount.toFixed(2)}</span></span>
           )}
-          <span className="font-bold text-on-surface text-base border-t border-theme-border pt-1 mt-0.5">
+          <span className="font-bold text-on-surface text-[13px] md:text-base border-t border-theme-border pt-1 mt-0.5">
             Total: {currency} {parseFloat(order.totalAmount).toFixed(2)}
           </span>
         </div>
@@ -118,12 +143,12 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo }) {
 
         {/* Advance status — logistic staff only */}
         {canAct && next && canChangeTo(next) && !confirming && (
-          <div className="flex justify-end">
+          <div className="flex md:justify-end mt-4">
             <button
               onClick={() => setConfirming(true)}
-              className="flex items-center gap-2 bg-primary text-white px-5 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90 transition"
+              className="w-full md:w-auto flex justify-center items-center gap-1.5 bg-primary text-white px-4 py-2 md:py-2.5 rounded-xl text-[11px] md:text-sm font-semibold hover:opacity-90 transition"
             >
-              <span className="material-symbols-outlined text-base">arrow_forward</span>
+              <span className="material-symbols-outlined text-[14px] md:text-base">arrow_forward</span>
               {t('orders.markAs', { status: next })}
             </button>
           </div>
@@ -162,7 +187,7 @@ export default function Logistics() {
   useEffect(() => { refreshOrders() }, [])
 
   // Logistics sees orders from Completed onwards
-  const logisticOrders = orders.filter((o) => LOGISTIC_STATUSES.includes(o.status))
+  const logisticOrders = (orders || []).filter((o) => LOGISTIC_STATUSES.includes(o.status))
 
   const filtered = logisticOrders.filter((o) => {
     if (filterStatus && o.status !== filterStatus) return false
@@ -203,72 +228,72 @@ export default function Logistics() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-3 md:p-8 max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-4 md:mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-on-surface">{t('logistics.title')}</h1>
-          <p className="text-sm text-text-muted mt-0.5">{logisticOrders.length} orders in logistics</p>
+          <h1 className="text-xl md:text-2xl font-bold text-on-surface">{t('logistics.title')}</h1>
+          <p className="text-xs md:text-sm text-text-muted mt-0.5">{logisticOrders.length} orders in logistics</p>
         </div>
         <button
           onClick={refreshOrders}
-          className="flex items-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition"
+          className="flex items-center gap-1.5 border border-theme-border px-2.5 md:px-3 py-1.5 md:py-2 rounded-lg md:rounded-xl text-xs md:text-sm text-text-muted hover:bg-hover-bg transition"
         >
-          <span className="material-symbols-outlined text-base">refresh</span>
+          <span className="material-symbols-outlined text-[14px] md:text-base">refresh</span>
           {t('common.refresh')}
         </button>
       </div>
 
       {/* Status summary cards */}
-      <div className="grid grid-cols-5 gap-4 mb-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-4 md:mb-6">
         {LOGISTIC_STATUSES.map((s) => (
           <div
             key={s}
-            className="rounded-2xl border border-theme-border bg-surface-container-lowest p-4"
+            className="rounded-xl md:rounded-2xl border border-theme-border bg-surface-container-lowest p-3 md:p-4 transition hover:border-primary/30"
           >
-            <div className="flex items-center justify-between mb-2">
-              <span className={`material-symbols-outlined text-2xl ${statusColor[s]}`}>{statusIcon[s]}</span>
-              <span className="text-2xl font-bold text-on-surface">{counts[s] || 0}</span>
+            <div className="flex items-center justify-between mb-1.5 md:mb-2">
+              <span className={`material-symbols-outlined text-xl md:text-2xl ${statusColor[s]}`}>{statusIcon[s]}</span>
+              <span className="text-lg md:text-2xl font-bold text-on-surface">{counts[s] || 0}</span>
             </div>
-            <p className="text-xs font-semibold text-text-muted uppercase tracking-wider">{s}</p>
+            <p className="text-[10px] md:text-xs font-semibold text-text-muted uppercase tracking-wide md:tracking-wider leading-tight" title={s}>{s}</p>
           </div>
         ))}
       </div>
 
       {/* Filters */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <div className="relative flex-1 min-w-[200px]">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-lg">search</span>
+      <div className="flex flex-col md:flex-row flex-wrap items-center gap-2 md:gap-3 mb-4">
+        <div className="relative w-full md:flex-1 md:min-w-[200px]">
+          <span className="material-symbols-outlined absolute left-2.5 md:left-3 top-1/2 -translate-y-1/2 text-text-muted text-base md:text-lg">search</span>
           <input
-            className="w-full bg-surface-container-lowest border border-theme-border rounded-xl pl-9 pr-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
+            className="w-full bg-surface-container-lowest border border-theme-border rounded-lg md:rounded-xl pl-8 md:pl-9 pr-8 md:pr-10 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary"
             placeholder={t('logistics.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          {(search || filterStatus) && (
+            <button
+              onClick={() => { setSearch(''); setFilterStatus('') }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center p-1 text-text-muted hover:text-error transition bg-surface-container-lowest"
+              title={t('common.clear')}
+            >
+              <span className="material-symbols-outlined text-[16px] md:text-[18px]">close</span>
+            </button>
+          )}
         </div>
         <select
-          className="bg-surface-container-lowest border border-theme-border rounded-xl px-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
+          className="w-full md:w-auto bg-surface-container-lowest border border-theme-border rounded-lg md:rounded-xl px-2.5 md:px-3 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary"
           value={filterStatus}
           onChange={(e) => setFilterStatus(e.target.value)}
         >
           <option value="">{t('orders.allStatuses')}</option>
           {LOGISTIC_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
         </select>
-        {(search || filterStatus) && (
-          <button
-            onClick={() => { setSearch(''); setFilterStatus('') }}
-            className="flex items-center gap-1 text-xs text-text-muted hover:text-error transition"
-          >
-            <span className="material-symbols-outlined text-base">close</span>
-            {t('common.clear')}
-          </button>
-        )}
       </div>
 
       {/* Table */}
-      <div className="bg-surface-container-lowest rounded-2xl border border-theme-border overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
+      <div className="bg-transparent xl:bg-surface-container-lowest rounded-2xl xl:border border-theme-border overflow-hidden">
+        <table className="w-full text-sm block xl:table">
+          <thead className="hidden xl:table-header-group">
             <tr className="border-b border-theme-border text-text-muted text-xs uppercase tracking-wider">
               <th className="text-left px-4 py-4 font-semibold">{t('orders.order')}</th>
               <th className="text-left px-4 py-4 font-semibold">{t('common.customer')}</th>
@@ -279,10 +304,10 @@ export default function Logistics() {
               <th className="text-left px-4 py-4 font-semibold">{t('common.date')}</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="block xl:table-row-group">
             {filtered.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="text-center py-16 text-text-muted">{t('logistics.noData')}</td>
+              <tr className="block xl:table-row w-full">
+                <td colSpan={7} className="block xl:table-cell w-full text-center py-16 text-text-muted">{t('logistics.noData')}</td>
               </tr>
             ) : (
               filtered.map((o) => {
@@ -295,23 +320,56 @@ export default function Logistics() {
                 return (
                   <tr
                     key={o.id}
-                    className="border-b border-theme-border hover:bg-hover-bg transition-colors cursor-pointer"
+                    className="block xl:table-row border-b border-theme-border hover:bg-hover-bg transition-colors cursor-pointer py-3 xl:py-0"
                     onClick={() => setDetailOrder(o)}
                   >
-                    <td className="px-4 py-4 font-mono text-xs text-text-muted font-semibold">{o.code}</td>
-                    <td className="px-4 py-4 font-medium text-on-surface">{o.customer?.name || '—'}</td>
-                    <td className="px-4 py-4 text-sm text-on-surface max-w-[220px] truncate" title={productSummary}>{productSummary || '—'}</td>
-                    <td className="px-4 py-4 text-right text-text-muted">{totalQty}</td>
-                    <td className="px-4 py-4 text-right font-semibold text-on-surface">
-                      <span className="text-xs text-text-muted mr-1">{currency}</span>
-                      {parseFloat(o.totalAmount).toFixed(2)}
+                    <td className="block xl:table-cell w-full xl:w-auto relative mb-2 xl:mb-0 px-1 xl:px-4 py-1 xl:py-4">
+                      <div className="flex items-center justify-between xl:justify-start">
+                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.order')}</span>
+                        <span className="font-mono text-xs text-text-muted font-semibold">{o.code}</span>
+                      </div>
                     </td>
-                    <td className="px-4 py-4">
-                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusStyle[o.status] || 'bg-surface-container-high text-text-muted'}`}>
-                        {o.status}
-                      </span>
+                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 px-1 xl:px-4 py-1 xl:py-4">
+                      <div className="flex items-center justify-between xl:justify-start">
+                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.customer')}</span>
+                        <span className="font-medium text-xs lg:text-sm text-on-surface">{o.customer?.name || '—'}</span>
+                      </div>
                     </td>
-                    <td className="px-4 py-4 text-xs text-text-muted whitespace-nowrap">{dateStr}</td>
+                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 px-1 xl:px-4 py-1 xl:py-4">
+                      <div className="flex flex-col xl:flex-row xl:items-center justify-between xl:justify-start gap-1">
+                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('nav.products')}</span>
+                        <span className="text-xs xl:text-sm text-on-surface xl:max-w-[220px] xl:truncate" title={productSummary}>{productSummary || '—'}</span>
+                      </div>
+                    </td>
+                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 px-1 xl:px-4 py-1 xl:py-4">
+                      <div className="flex items-center justify-between xl:justify-end">
+                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.qty')}</span>
+                        <span className="text-xs xl:text-sm text-text-muted text-right">{totalQty}</span>
+                      </div>
+                    </td>
+                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 px-1 xl:px-4 py-1 xl:py-4">
+                      <div className="flex items-center justify-between xl:justify-end">
+                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.total')}</span>
+                        <span className="font-semibold text-xs lg:text-sm text-on-surface text-right">
+                          <span className="text-xs text-text-muted mr-1">{currency}</span>
+                          {parseFloat(o.totalAmount).toFixed(2)}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 px-1 xl:px-4 py-1 xl:py-4">
+                      <div className="flex items-center justify-between xl:justify-start">
+                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.status')}</span>
+                        <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusStyle[o.status] || 'bg-surface-container-high text-text-muted'}`}>
+                          {o.status}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1 xl:mb-0 px-1 xl:px-4 py-1 xl:py-4">
+                      <div className="flex items-center justify-between xl:justify-start">
+                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.date')}</span>
+                        <span className="text-xs xl:text-sm text-text-muted whitespace-nowrap">{dateStr}</span>
+                      </div>
+                    </td>
                   </tr>
                 )
               })

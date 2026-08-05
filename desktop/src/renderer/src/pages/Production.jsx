@@ -256,11 +256,20 @@ export default function Production() {
         <div className="relative flex-1">
           <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted text-base">search</span>
           <input
-            className="w-full bg-surface-container-lowest border border-theme-border rounded-lg md:rounded-xl pl-8 pr-3 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary"
+            className="w-full bg-surface-container-lowest border border-theme-border rounded-lg md:rounded-xl pl-8 pr-8 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary"
             placeholder={t('production.searchPlaceholder')}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          {(search || filterStatus) && (
+            <button
+              onClick={() => { setSearch(''); setFilterStatus('') }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center p-1 text-text-muted hover:text-error transition bg-surface-container-lowest"
+              title={t('common.clear')}
+            >
+              <span className="material-symbols-outlined text-[16px] md:text-[18px]">close</span>
+            </button>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <select
@@ -271,15 +280,6 @@ export default function Production() {
             <option value="">{t('orders.allStatuses')}</option>
             {PRODUCTION_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
-          {(search || filterStatus) && (
-            <button
-              onClick={() => { setSearch(''); setFilterStatus('') }}
-              className="flex items-center justify-center gap-1 text-[10px] md:text-xs text-text-muted hover:text-error transition px-2"
-            >
-              <span className="material-symbols-outlined text-sm md:text-base">close</span>
-              <span className="hidden sm:inline">{t('common.clear')}</span>
-            </button>
-          )}
         </div>
       </div>
 
@@ -299,8 +299,8 @@ export default function Production() {
           </thead>
           <tbody className="block xl:table-row-group">
             {filtered.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="text-center py-16 text-text-muted">{t('production.noData')}</td>
+              <tr className="block xl:table-row w-full">
+                <td colSpan={7} className="block xl:table-cell w-full text-center py-16 text-text-muted">{t('production.noData')}</td>
               </tr>
             ) : (
               filtered.map((o) => {

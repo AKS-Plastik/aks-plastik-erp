@@ -875,11 +875,20 @@ export default function Finance() {
         <div className="relative flex-1 min-w-44">
           <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-base">search</span>
           <input
-            className="w-full bg-surface-container-lowest border border-theme-border rounded-xl pl-9 pr-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
+            className="w-full bg-surface-container-lowest border border-theme-border rounded-xl pl-9 pr-8 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
             placeholder={t('finance.searchPlaceholder')}
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1) }}
           />
+          {hasFilters && (
+            <button
+              onClick={() => { setSearch(''); setTypeFilter('all'); setCategoryFilter('all'); setDateFilter('all'); setPage(1) }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center p-1 text-text-muted hover:text-error transition bg-surface-container-lowest"
+              title={t('common.clear')}
+            >
+              <span className="material-symbols-outlined text-[16px] md:text-[18px]">close</span>
+            </button>
+          )}
         </div>
         <div className="flex gap-0.5 bg-surface-container-lowest border border-theme-border rounded-xl p-0.5">
           {[
@@ -906,13 +915,6 @@ export default function Finance() {
             <option value="all">All Categories</option>
             {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
-        )}
-        {hasFilters && (
-          <button onClick={() => { setSearch(''); setTypeFilter('all'); setCategoryFilter('all'); setDateFilter('all'); setPage(1) }}
-            className="flex items-center gap-1 text-xs text-text-muted hover:text-error transition">
-            <span className="material-symbols-outlined text-sm">close</span>
-            {t('common.clear')}
-          </button>
         )}
       </div>
 

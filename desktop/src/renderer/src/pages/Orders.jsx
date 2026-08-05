@@ -90,9 +90,9 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start justify-between mb-4 md:mb-6 gap-3 md:gap-4">
           <div>
-            <p className="text-xs font-mono text-text-muted mb-1">{order.code}</p>
-            <h2 className="text-xl font-bold text-on-surface">{order.customer?.name || '—'}</h2>
-            <p className="text-sm text-text-muted mt-0.5">Sales Rep: {order.salesRep?.name || order.employee?.name || '—'}</p>
+            <p className="text-[10px] md:text-xs font-mono text-text-muted mb-0.5 md:mb-1">{order.code}</p>
+            <h2 className="text-base md:text-xl font-bold text-on-surface leading-tight">{order.customer?.name || '—'}</h2>
+            <p className="text-xs md:text-sm text-text-muted mt-1 md:mt-0.5">Sales Rep: {order.salesRep?.name || order.employee?.name || '—'}</p>
           </div>
           <div className="flex items-center gap-3">
             <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${detailStatusStyle[localStatus] || 'bg-surface-container-high text-text-muted'}`}>
@@ -105,10 +105,10 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
         </div>
 
         {/* Line Items */}
-        <div className="rounded-xl border border-theme-border overflow-hidden mb-4 bg-surface-container-lowest">
+        <div className="rounded-xl border border-theme-border overflow-y-auto max-h-[240px] md:max-h-none mb-4 bg-surface-container-lowest">
           <table className="w-full text-sm block md:table">
-            <thead className="hidden md:table-header-group">
-              <tr className="bg-surface-container-high text-text-muted text-xs uppercase tracking-wider">
+            <thead className="hidden md:table-header-group sticky top-0 bg-surface-container-high z-10 shadow-sm">
+              <tr className="text-text-muted text-xs uppercase tracking-wider">
                 <th className="text-left px-4 py-2.5 font-semibold">{t('orders.product')}</th>
                 <th className="text-right px-4 py-2.5 font-semibold">{t('orders.qty')}</th>
                 <th className="text-center px-4 py-2.5 font-semibold">{t('common.unit')}</th>
@@ -121,34 +121,34 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
               {(order.items || []).map((it, i) => {
                 const lineTotal = (parseFloat(it.unitPrice) || 0) * (parseInt(it.quantity) || 0) * (1 + (it.vat || 0) / 100)
                 return (
-                  <tr key={i} className="block md:table-row border-b border-surface-container-low md:border-theme-border last:border-0 p-3 md:p-0">
-                    <td className="block md:table-cell px-1 md:px-4 py-1.5 md:py-3 text-on-surface font-semibold md:font-medium text-[13px] md:text-sm">
-                      <span className="md:hidden text-[10px] font-bold uppercase text-text-muted block mb-0.5">{t('orders.product')}</span>
+                  <tr key={i} className="block md:table-row border-b border-theme-border last:border-0 p-2 md:p-0">
+                    <td className="block md:table-cell px-2 md:px-4 py-1 md:py-3 text-on-surface font-semibold md:font-medium text-[11px] md:text-sm">
+                      <span className="md:hidden text-[9px] font-bold uppercase text-text-muted block mb-0.5">{t('orders.product')}</span>
                       {it.productName}
                     </td>
-                    <td className="flex md:table-cell justify-between items-center px-1 md:px-4 py-1 md:py-3 text-right text-text-muted text-[13px] md:text-sm">
-                      <span className="md:hidden text-[10px] font-bold uppercase text-text-muted">{t('orders.qty')}</span>
+                    <td className="flex md:table-cell justify-between items-center px-2 md:px-4 py-1 md:py-3 text-right text-text-muted text-[11px] md:text-sm">
+                      <span className="md:hidden text-[9px] font-bold uppercase text-text-muted">{t('orders.qty')}</span>
                       <span className="font-medium text-on-surface md:text-text-muted">{it.quantity}</span>
                     </td>
-                    <td className="flex md:table-cell justify-between items-center px-1 md:px-4 py-1 md:py-3 text-center text-text-muted text-[13px] md:text-sm">
-                      <span className="md:hidden text-[10px] font-bold uppercase text-text-muted">{t('common.unit')}</span>
+                    <td className="flex md:table-cell justify-between items-center px-2 md:px-4 py-1 md:py-3 text-center text-text-muted text-[11px] md:text-sm">
+                      <span className="md:hidden text-[9px] font-bold uppercase text-text-muted">{t('common.unit')}</span>
                       <span className="font-medium text-on-surface md:text-text-muted">{it.product?.unit || '—'}</span>
                     </td>
-                    <td className="flex md:table-cell justify-between items-center px-1 md:px-4 py-1 md:py-3 text-right text-on-surface text-[13px] md:text-sm">
-                      <span className="md:hidden text-[10px] font-bold uppercase text-text-muted">{t('orders.unitPrice')}</span>
+                    <td className="flex md:table-cell justify-between items-center px-2 md:px-4 py-1 md:py-3 text-right text-on-surface text-[11px] md:text-sm">
+                      <span className="md:hidden text-[9px] font-bold uppercase text-text-muted">{t('orders.unitPrice')}</span>
                       <div className="font-medium">
-                        <span className="text-[11px] md:text-xs text-text-muted mr-1">{it.currency || 'USD'}</span>
+                        <span className="text-[9px] md:text-xs text-text-muted mr-1">{it.currency || 'USD'}</span>
                         {parseFloat(it.unitPrice).toFixed(2)}
                       </div>
                     </td>
-                    <td className="flex md:table-cell justify-between items-center px-1 md:px-4 py-1 md:py-3 text-right text-text-muted text-[13px] md:text-sm">
-                      <span className="md:hidden text-[10px] font-bold uppercase text-text-muted">{t('orders.vat')}</span>
+                    <td className="flex md:table-cell justify-between items-center px-2 md:px-4 py-1 md:py-3 text-right text-text-muted text-[11px] md:text-sm">
+                      <span className="md:hidden text-[9px] font-bold uppercase text-text-muted">{t('orders.vat')}</span>
                       <span className="font-medium text-on-surface md:text-text-muted">{it.vat > 0 ? `${it.vat}%` : '—'}</span>
                     </td>
-                    <td className="flex md:table-cell justify-between items-center px-1 md:px-4 py-1 md:py-3 text-right font-bold md:font-semibold text-on-surface mt-2 md:mt-0 pt-2 md:pt-0 border-t border-surface-container md:border-0 text-[13px] md:text-sm">
-                      <span className="md:hidden text-[10px] font-bold uppercase text-text-muted">{t('orders.lineTotal')}</span>
+                    <td className="flex md:table-cell justify-between items-center px-2 md:px-4 py-1 md:py-3 text-right font-bold md:font-semibold text-on-surface mt-1 md:mt-0 pt-1 md:pt-0 border-t border-surface-container md:border-0 text-[11px] md:text-sm">
+                      <span className="md:hidden text-[9px] font-bold uppercase text-text-muted">{t('orders.lineTotal')}</span>
                       <div>
-                        <span className="text-[11px] md:text-xs text-text-muted mr-1">{it.currency || 'USD'}</span>
+                        <span className="text-[9px] md:text-xs text-text-muted mr-1">{it.currency || 'USD'}</span>
                         {lineTotal.toFixed(2)}
                       </div>
                     </td>
@@ -199,17 +199,17 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
 
         {/* Status change */}
         {canChangeStatus && (
-          <div className="pt-4 border-t border-theme-border space-y-3">
+          <div className="pt-3 border-t border-theme-border space-y-2">
             {isAdmin ? (
-              <div className="flex flex-col md:flex-row items-start md:items-center gap-2 md:gap-3">
+              <div className="flex flex-col md:flex-row items-start md:items-center gap-2">
                 <div className="flex items-center gap-1.5 md:gap-3">
-                  <span className="material-symbols-outlined text-text-muted text-base">swap_horiz</span>
-                  <label className="text-xs font-semibold text-text-muted whitespace-nowrap">{t('orders.changeStatus')}</label>
+                  <span className="material-symbols-outlined text-text-muted text-sm md:text-base">swap_horiz</span>
+                  <label className="text-[11px] md:text-xs font-semibold text-text-muted whitespace-nowrap">{t('orders.changeStatus')}</label>
                 </div>
                 <select
                   value={pendingStatus ?? localStatus}
                   onChange={(e) => setPendingStatus(e.target.value === localStatus ? null : e.target.value)}
-                  className="w-full md:flex-1 bg-surface-container-lowest border border-theme-border rounded-lg px-3 py-2 text-[13px] md:text-sm text-on-surface outline-none focus:border-primary"
+                  className="w-full md:flex-1 bg-surface-container-lowest border border-theme-border rounded-lg px-2 md:px-3 py-1.5 md:py-2 text-[11px] md:text-sm text-on-surface outline-none focus:border-primary"
                 >
                   {ORDER_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
@@ -217,27 +217,27 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
             ) : (
               !pendingStatus && canAdvanceFromCurrent && nextStatus && (
                 <div className="flex items-center justify-between">
-                  <span className="text-xs text-text-muted">{t('orders.current')} {localStatus}</span>
+                  <span className="text-[11px] md:text-xs text-text-muted">{t('orders.current')} {localStatus}</span>
                   <button
                     onClick={() => setPendingStatus(nextStatus)}
-                    className="flex items-center gap-1.5 md:gap-2 bg-primary text-white px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-xs md:text-sm font-semibold hover:opacity-90 transition"
+                    className="flex items-center gap-1 md:gap-2 bg-primary text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[11px] md:text-sm font-semibold hover:opacity-90 transition"
                   >
-                    <span className="material-symbols-outlined text-[16px] md:text-base">arrow_forward</span>
+                    <span className="material-symbols-outlined text-[14px] md:text-base">arrow_forward</span>
                     {t('orders.markAs', { status: nextStatus })}
                   </button>
                 </div>
               )
             )}
             {pendingStatus && (
-              <div className="flex flex-wrap md:flex-nowrap items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 md:px-4 py-2 md:py-3 mt-3 md:mt-0">
-                <span className="material-symbols-outlined text-amber-500 text-[16px] md:text-base">warning</span>
-                <p className="text-[11px] md:text-xs text-amber-700 flex-1 min-w-[200px] md:min-w-0">
+              <div className="flex flex-wrap md:flex-nowrap items-center gap-1.5 md:gap-2 bg-amber-50 border border-amber-200 rounded-xl px-2.5 md:px-4 py-1.5 md:py-3">
+                <span className="material-symbols-outlined text-amber-500 text-[14px] md:text-base">warning</span>
+                <p className="text-[10px] md:text-xs text-amber-700 flex-1 min-w-[150px] md:min-w-0">
                   {t('orders.changeFrom', { from: localStatus, to: pendingStatus })}
                 </p>
-                <button onClick={() => setPendingStatus(null)} className="text-xs text-text-muted hover:text-on-surface px-2 py-1 rounded transition">
+                <button onClick={() => setPendingStatus(null)} className="text-[10px] md:text-xs text-text-muted hover:text-on-surface px-1.5 py-1 rounded transition">
                   {t('common.cancel')}
                 </button>
-                <button onClick={confirmStatusChange} className="text-xs font-semibold text-white bg-primary hover:opacity-90 px-3 py-1 rounded-lg transition">
+                <button onClick={confirmStatusChange} className="text-[10px] md:text-xs font-semibold text-white bg-primary hover:opacity-90 px-2 py-1 rounded-lg transition">
                   {t('common.confirm')}
                 </button>
               </div>
@@ -936,11 +936,20 @@ export default function Orders() {
         <div className="relative flex-1 min-w-[180px]">
           <span className="material-symbols-outlined absolute left-2.5 md:left-3 top-1/2 -translate-y-1/2 text-text-muted text-[16px] md:text-lg">search</span>
           <input
-            className="w-full bg-surface-container-lowest border border-theme-border rounded-xl pl-8 md:pl-9 pr-2 md:pr-3 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary"
+            className="w-full bg-surface-container-lowest border border-theme-border rounded-xl pl-8 md:pl-9 pr-8 md:pr-10 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary"
             placeholder={t('common.search')}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
           />
+          {(search || filterStatus || filterDateFrom || filterDateTo) && (
+            <button
+              onClick={() => { setSearch(''); setFilterStatus(''); setFilterDateFrom(''); setFilterDateTo(''); setPage(1) }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center p-1 text-text-muted hover:text-error transition bg-surface-container-lowest"
+              title={t('common.clear')}
+            >
+              <span className="material-symbols-outlined text-[16px] md:text-[18px]">close</span>
+            </button>
+          )}
         </div>
         <select
           className="w-full md:w-auto bg-surface-container-lowest border border-theme-border rounded-xl px-2.5 md:px-3 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary"
@@ -970,15 +979,6 @@ export default function Orders() {
             />
           </div>
         </div>
-        {(search || filterStatus || filterDateFrom || filterDateTo) && (
-          <button
-            onClick={() => { setSearch(''); setFilterStatus(''); setFilterDateFrom(''); setFilterDateTo(''); setPage(1) }}
-            className="flex items-center justify-center md:justify-start gap-1 text-xs text-text-muted hover:text-error transition w-full md:w-auto"
-          >
-            <span className="material-symbols-outlined text-base">close</span>
-            {t('common.clear')}
-          </button>
-        )}
       </div>
 
       <div className="bg-transparent xl:bg-surface-container-lowest rounded-2xl xl:border border-theme-border overflow-hidden">
@@ -1006,8 +1006,11 @@ export default function Orders() {
           </thead>
           <tbody className="block xl:table-row-group">
             {paginated.length === 0 ? (
-              <tr>
-                <td colSpan={(canDelete || canEditProcessing) ? 9 : 8} className="text-center py-16 text-text-muted">{t('orders.noOrders')}</td>
+              <tr className="block xl:table-row w-full">
+                <td colSpan={(canDelete || canEditProcessing) ? 9 : 8} className="block xl:table-cell w-full text-center py-12 text-text-muted">
+                  <span className="material-symbols-outlined text-4xl block mb-2 opacity-30">inbox</span>
+                  {t('orders.noOrders')}
+                </td>
               </tr>
             ) : (
               paginated.map((o) => {
