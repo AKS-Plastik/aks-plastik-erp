@@ -287,7 +287,7 @@ export default function Dashboard() {
             <div
               key={m.label}
               onClick={() => navigate(m.href)}
-              className="bg-surface-container-lowest p-6 rounded-xl flex flex-col justify-between min-h-[140px] relative overflow-hidden border border-outline-variant/30 cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all"
+              className="bg-surface-container-lowest p-4 md:p-6 rounded-xl flex flex-col justify-between min-h-[110px] md:min-h-[140px] relative overflow-hidden border border-outline-variant/30 cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all"
             >
               {m.accent && <div className="absolute top-0 left-0 w-1.5 h-full bg-primary" />}
               <div className="flex justify-between items-start">
@@ -316,7 +316,7 @@ export default function Dashboard() {
           {showFinance && (
             <div
               onClick={() => navigate('/finance')}
-              className="bg-surface-container-lowest p-5 md:p-8 rounded-xl cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all border border-transparent"
+              className="bg-surface-container-lowest p-4 md:p-8 rounded-xl cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all border border-transparent"
             >
               <div className="mb-6 flex items-start justify-between">
                 <div>
@@ -326,7 +326,7 @@ export default function Dashboard() {
                 <span className="material-symbols-outlined text-text-muted text-sm">open_in_new</span>
               </div>
               <div className="flex flex-col min-[480px]:flex-row items-center gap-6 md:gap-8 w-full">
-                <div className="relative flex-shrink-0 w-[180px] h-[180px]">
+                <div className="relative flex-shrink-0 w-[140px] h-[140px] md:w-[180px] md:h-[180px]">
                   <DonutChart income={totalIncome} expenses={totalExpenses} />
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{t('dashboard.net')}</span>
@@ -336,30 +336,30 @@ export default function Dashboard() {
                     </span>
                   </div>
                 </div>
-                <div className="flex-1 space-y-4">
-                  <div className="flex items-center gap-3">
-                    <span className="w-3 h-3 rounded-full bg-green-500 flex-shrink-0" />
+                <div className="flex-1 space-y-3 md:space-y-4">
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-green-500 flex-shrink-0" />
                     <div className="flex-1">
-                      <div className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{t('dashboard.income')}</div>
-                      <div className="text-base sm:text-lg lg:text-xl font-black text-green-500 tabular-nums">
+                      <div className="text-[10px] md:text-xs font-bold text-on-surface-variant uppercase tracking-wider">{t('dashboard.income')}</div>
+                      <div className="text-sm md:text-xl font-black text-green-500 tabular-nums">
                         {totalIncome.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="w-3 h-3 rounded-full bg-red-500 flex-shrink-0" />
+                  <div className="flex items-center gap-2 md:gap-3">
+                    <span className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full bg-red-500 flex-shrink-0" />
                     <div className="flex-1">
-                      <div className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{t('dashboard.expenses')}</div>
-                      <div className="text-base sm:text-lg lg:text-xl font-black text-red-500 tabular-nums">
+                      <div className="text-[10px] md:text-xs font-bold text-on-surface-variant uppercase tracking-wider">{t('dashboard.expenses')}</div>
+                      <div className="text-sm md:text-xl font-black text-red-500 tabular-nums">
                         {totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
                     </div>
                   </div>
-                  <div className="border-t border-outline-variant/30 pt-4 flex items-center gap-3">
-                    <span className={`w-3 h-3 rounded-full flex-shrink-0 ${netBalance >= 0 ? 'bg-green-500' : 'bg-red-500'}`} />
+                  <div className="border-t border-outline-variant/30 pt-3 md:pt-4 flex items-center gap-2 md:gap-3">
+                    <span className={`w-2.5 h-2.5 md:w-3 md:h-3 rounded-full flex-shrink-0 ${netBalance >= 0 ? 'bg-green-500' : 'bg-red-500'}`} />
                     <div className="flex-1">
-                      <div className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{t('dashboard.netBalance')}</div>
-                      <div className={`text-base sm:text-lg lg:text-xl font-black tabular-nums ${netBalance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                      <div className="text-[10px] md:text-xs font-bold text-on-surface-variant uppercase tracking-wider">{t('dashboard.netBalance')}</div>
+                      <div className={`text-sm md:text-xl font-black tabular-nums ${netBalance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
                         {netBalance >= 0 ? '+' : ''}
                         {netBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </div>
@@ -374,7 +374,7 @@ export default function Dashboard() {
           {showOrders && (
             <div
               onClick={() => navigate('/orders')}
-              className="bg-surface-container-lowest p-5 md:p-8 rounded-xl cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all border border-transparent"
+              className="bg-surface-container-lowest p-4 md:p-8 rounded-xl cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all border border-transparent"
             >
               <div className="mb-6 flex items-start justify-between">
                 <div>
@@ -384,7 +384,7 @@ export default function Dashboard() {
                 <span className="material-symbols-outlined text-text-muted text-sm">open_in_new</span>
               </div>
               <div className="flex flex-col min-[480px]:flex-row items-center gap-6 md:gap-8 w-full">
-                <div className="relative flex-shrink-0 w-[180px] h-[180px]">
+                <div className="relative flex-shrink-0 w-[140px] h-[140px] md:w-[180px] md:h-[180px]">
                   <OrdersDonutChart segments={orderSegments} />
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                     <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">{t('dashboard.total')}</span>
@@ -419,18 +419,18 @@ export default function Dashboard() {
       {showLogistics && (
         <div
           onClick={() => navigate('/logistics')}
-          className="bg-surface-container-lowest p-5 md:p-8 rounded-xl cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all border border-transparent"
+          className="bg-surface-container-lowest p-4 md:p-8 rounded-xl cursor-pointer hover:border-primary/30 hover:shadow-sm transition-all border border-transparent"
         >
-          <div className="flex items-start justify-between mb-6">
+          <div className="flex items-start justify-between mb-4 md:mb-6">
             <div>
               <h3 className="text-sm sm:text-base lg:text-lg font-extrabold text-on-surface">{t('dashboard.logisticsPipeline')}</h3>
-              <p className="text-sm text-on-surface-variant">{t('dashboard.ordersInLogistics', { count: totalLogistics })}</p>
+              <p className="text-[11px] md:text-sm text-on-surface-variant">{t('dashboard.ordersInLogistics', { count: totalLogistics })}</p>
             </div>
-            <span className="material-symbols-outlined text-text-muted text-sm">open_in_new</span>
+            <span className="material-symbols-outlined text-text-muted text-[16px] md:text-sm">open_in_new</span>
           </div>
-          <div className="md:grid md:grid-cols-5 flex flex-col gap-6 md:gap-3">
+          <div className="md:grid md:grid-cols-5 flex flex-col gap-4 md:gap-3">
             {logisticCounts.map((s, i) => (
-              <div key={s.status} className="flex flex-row md:flex-col items-center md:items-center justify-start md:justify-center gap-4 md:gap-2 relative">
+              <div key={s.status} className="flex flex-row md:flex-col items-center md:items-center justify-start md:justify-center gap-3 md:gap-2 relative">
                 
                 {/* Horizontal Line (Desktop) */}
                 {i < logisticCounts.length - 1 && (
@@ -439,16 +439,16 @@ export default function Dashboard() {
 
                 {/* Vertical Line (Mobile) */}
                 {i < logisticCounts.length - 1 && (
-                  <div className="md:hidden absolute top-10 left-5 bottom-[-24px] w-px bg-outline-variant/40" />
+                  <div className="md:hidden absolute top-8 left-4 bottom-[-16px] w-px bg-outline-variant/40" />
                 )}
 
-                <div className={`w-10 h-10 rounded-full ${s.bg} flex items-center justify-center flex-shrink-0 relative z-10`}>
-                  <span className={`material-symbols-outlined text-lg ${s.color}`}>{s.icon}</span>
+                <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full ${s.bg} flex items-center justify-center flex-shrink-0 relative z-10`}>
+                  <span className={`material-symbols-outlined text-base md:text-lg ${s.color}`}>{s.icon}</span>
                 </div>
                 
-                <div className="flex md:flex-col items-baseline md:items-center gap-3 md:gap-0">
-                  <span className={`text-xl md:text-2xl font-black ${s.count > 0 ? s.color : 'text-on-surface-variant'}`}>{s.count}</span>
-                  <span className="text-sm md:text-[10px] font-semibold text-on-surface-variant text-left md:text-center leading-tight">{s.status}</span>
+                <div className="flex md:flex-col items-baseline md:items-center gap-2 md:gap-0">
+                  <span className={`text-lg md:text-2xl font-black ${s.count > 0 ? s.color : 'text-on-surface-variant'}`}>{s.count}</span>
+                  <span className="text-xs md:text-[10px] font-semibold text-on-surface-variant text-left md:text-center leading-tight">{s.status}</span>
                 </div>
               </div>
             ))}
