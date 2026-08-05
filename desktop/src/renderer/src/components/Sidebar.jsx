@@ -55,8 +55,8 @@ export default function Sidebar({ isOpen, setIsOpen }) {
 
       <aside className={`h-screen w-64 fixed left-0 top-0 bg-sidebar flex flex-col pt-8 pb-4 z-50 transform transition-transform duration-300 ease-in-out md:translate-x-0 ${isOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full'}`}>
         {/* Logo */}
-        <div className="px-6 mb-10 flex flex-col items-center">
-          <img src={dark ? aksLogoDark : aksLogoLight} alt="AKS" className="w-36 object-contain" />
+        <div className="px-4 md:px-6 mb-6 md:mb-10 flex flex-col items-center">
+          <img src={dark ? aksLogoDark : aksLogoLight} alt="AKS" className="w-24 md:w-36 object-contain transition-all" />
         </div>
 
         {/* Nav */}

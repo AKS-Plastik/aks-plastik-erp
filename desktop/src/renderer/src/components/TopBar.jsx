@@ -348,32 +348,32 @@ export default function TopBar({ setSidebarOpen }) {
           {showUserMenu && (
             <div className="absolute right-0 top-full mt-2 w-48 bg-surface-container-lowest rounded-xl shadow-2xl shadow-inverse-surface/20 border border-surface-container-low overflow-hidden z-50">
               <div className="md:hidden border-b border-surface-container-low py-1">
-                <button className="hidden flex items-center gap-3 w-full px-4 py-3 text-sm text-on-surface hover:bg-hover-bg transition-colors">
-                  <span className="material-symbols-outlined text-base text-text-muted">help_outline</span>
+                <button className="hidden flex items-center gap-2.5 md:gap-3 w-full px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm text-on-surface hover:bg-hover-bg transition-colors">
+                  <span className="material-symbols-outlined text-[14px] md:text-base text-text-muted">help_outline</span>
                   {i18n.language === 'tr' ? 'Yardım' : 'Help'}
                 </button>
-                <button onClick={toggleLang} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-on-surface hover:bg-hover-bg transition-colors">
-                  <span className="material-symbols-outlined text-base text-text-muted">language</span>
+                <button onClick={toggleLang} className="flex items-center gap-2.5 md:gap-3 w-full px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm text-on-surface hover:bg-hover-bg transition-colors">
+                  <span className="material-symbols-outlined text-[14px] md:text-base text-text-muted">language</span>
                   {i18n.language === 'tr' ? 'English' : 'Türkçe'}
                 </button>
-                <button onClick={toggleTheme} className="flex items-center gap-3 w-full px-4 py-3 text-sm text-on-surface hover:bg-hover-bg transition-colors">
-                  <span className="material-symbols-outlined text-base text-text-muted">{dark ? 'light_mode' : 'dark_mode'}</span>
+                <button onClick={toggleTheme} className="flex items-center gap-2.5 md:gap-3 w-full px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm text-on-surface hover:bg-hover-bg transition-colors">
+                  <span className="material-symbols-outlined text-[14px] md:text-base text-text-muted">{dark ? 'light_mode' : 'dark_mode'}</span>
                   {dark ? (i18n.language === 'tr' ? 'Açık Tema' : 'Light Mode') : (i18n.language === 'tr' ? 'Koyu Tema' : 'Dark Mode')}
                 </button>
               </div>
 
               <button
                 onClick={() => { navigate('/account'); setShowUserMenu(false) }}
-                className="flex items-center gap-3 w-full px-4 py-3 text-sm text-on-surface hover:bg-hover-bg transition-colors"
+                className="flex items-center gap-2.5 md:gap-3 w-full px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm text-on-surface hover:bg-hover-bg transition-colors"
               >
-                <span className="material-symbols-outlined text-base text-text-muted">person</span>
+                <span className="material-symbols-outlined text-[14px] md:text-base text-text-muted">person</span>
                 {t('topbar.myAccount')}
               </button>
               <button
                 onClick={() => { navigate('/attendance'); setShowUserMenu(false) }}
-                className="flex items-center gap-3 w-full px-4 py-3 text-sm text-on-surface hover:bg-hover-bg transition-colors border-t border-surface-container-low"
+                className="flex items-center gap-2.5 md:gap-3 w-full px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm text-on-surface hover:bg-hover-bg transition-colors border-t border-surface-container-low"
               >
-                <span className="material-symbols-outlined text-base text-text-muted">schedule</span>
+                <span className="material-symbols-outlined text-[14px] md:text-base text-text-muted">schedule</span>
                 {t('topbar.attendance')}
               </button>
             </div>
