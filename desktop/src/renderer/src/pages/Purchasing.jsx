@@ -890,7 +890,7 @@ export default function Purchasing() {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-5">
+    <div className="p-2.5 sm:p-4 md:p-6 space-y-3 sm:space-y-4 md:space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -909,7 +909,7 @@ export default function Purchasing() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
         <StatCard icon="assignment" label={t('purchasing.totalRequests')} value={requests.length} sub={t('purchasing.activeCount', { n: activeReqs.length })} />
         <StatCard icon="pending_actions" label={t('purchasing.inProgress')} value={activeReqs.length} color="text-amber-500" />
         <StatCard icon="check_circle" label={t('purchasing.completed')} value={requests.filter((r) => r.status === 'Completed').length} color="text-green-500" />
