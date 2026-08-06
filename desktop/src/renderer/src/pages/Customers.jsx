@@ -536,13 +536,13 @@ function AddCustomerModal({ onClose, onSave }) {
 
 function DetailRow({ icon, label, value }) {
   return (
-    <div className="flex items-start gap-3 py-2.5 border-b border-surface-container-low last:border-0">
-      <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center flex-shrink-0 mt-0.5">
-        <span className="material-symbols-outlined text-on-surface-variant text-[18px]">{icon}</span>
+    <div className="flex items-start gap-2.5 py-2 border-b border-surface-container-low last:border-0">
+      <div className="w-6 h-6 rounded-md bg-surface-container-high flex items-center justify-center flex-shrink-0 mt-0.5">
+        <span className="material-symbols-outlined text-on-surface-variant text-[14px]">{icon}</span>
       </div>
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{label}</p>
-        <p className="text-sm font-semibold text-on-surface mt-0.5">{value || '—'}</p>
+        <p className="text-[9px] font-bold uppercase tracking-widest text-on-surface-variant">{label}</p>
+        <p className="text-xs font-semibold text-on-surface mt-0.5">{value || '—'}</p>
       </div>
     </div>
   )
@@ -966,17 +966,17 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
 
       <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl shadow-inverse-surface/20 w-full max-w-2xl flex flex-col max-h-[90dvh] overflow-hidden">
         {/* Header banner */}
-        <div className="primary-gradient px-4 pt-5 pb-4 md:px-6 md:pt-6 md:pb-5 flex-shrink-0">
+        <div className="primary-gradient px-4 pt-4 pb-3 md:px-5 md:pt-5 md:pb-4 flex-shrink-0">
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-2.5 sm:gap-4">
-              <div className="w-10 h-10 md:w-12 md:h-12 bg-surface-container-lowest/20 rounded-xl sm:rounded-2xl flex items-center justify-center text-white font-black text-base sm:text-xl">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="w-8 h-8 md:w-10 md:h-10 bg-surface-container-lowest/20 rounded-lg sm:rounded-xl flex items-center justify-center text-white font-black text-sm md:text-base">
                 {customer.initials}
               </div>
               <div>
-                <h2 className="text-lg md:text-xl font-extrabold text-white leading-tight">
+                <h2 className="text-base md:text-lg font-extrabold text-white leading-tight">
                   {editing ? t('customers.editCustomer') : customer.name}
                 </h2>
-                <p className="text-blue-200 text-[10px] md:text-xs font-medium mt-0.5">ID: #{customer.id}</p>
+                <p className="text-blue-200 text-[9px] md:text-[10px] font-medium mt-0.5">ID: #{customer.id}</p>
               </div>
             </div>
             <button
@@ -1027,7 +1027,7 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
         {!editing && (
           <>
             {/* Sub-tab bar */}
-            <div className="flex w-full justify-between sm:justify-start items-center gap-1 px-2 sm:px-6 pt-3 pb-0 border-b border-surface-container-low flex-shrink-0 overflow-x-auto scrollbar-thin">
+            <div className="flex w-full justify-between sm:justify-start items-center px-2 sm:px-5 pt-2 pb-0 border-b border-surface-container-low flex-shrink-0 overflow-x-auto scrollbar-thin">
               {[
                 { key: 'info',    label: t('customers.tabInfo'),    icon: 'person' },
                 { key: 'orders',  label: t('customers.tabOrders'),  icon: 'shopping_bag',           count: customerOrders.length },
@@ -1036,13 +1036,13 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
                 <button
                   key={t.key}
                   onClick={() => setViewTab(t.key)}
-                  className={`flex flex-col sm:flex-row flex-1 sm:flex-none items-center justify-center gap-1 sm:gap-2 px-1 sm:px-4 py-2 sm:py-2.5 rounded-t-xl text-[10px] sm:text-sm font-bold transition-all relative ${
+                  className={`flex flex-col sm:flex-row flex-1 sm:flex-none items-center justify-center gap-1 px-1 sm:px-3 py-1.5 sm:py-2 rounded-t-lg text-[10px] sm:text-xs font-bold transition-all relative ${
                     viewTab === t.key
                       ? 'text-primary bg-primary/5'
                       : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
                   }`}
                 >
-                  <span className="material-symbols-outlined text-lg sm:text-lg">{t.icon}</span>
+                  <span className="material-symbols-outlined text-base sm:text-base">{t.icon}</span>
                   <div className="flex items-center justify-center gap-1">
                     <span className="text-center leading-none sm:leading-normal">{t.label}</span>
                     {t.count !== undefined && (
@@ -1428,34 +1428,34 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
         )}
 
         {/* Footer */}
-        <div className="px-4 md:px-6 pb-4 pt-3 md:pb-6 md:pt-4 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0 border-t border-surface-container-low">
+        <div className="px-4 md:px-5 pb-3 pt-2 md:pb-4 md:pt-3 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 flex-shrink-0 border-t border-surface-container-low">
           {!editing ? (
             <>
-              <div className="flex items-center gap-1.5 md:gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
+              <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
                 <button
                   onClick={() => { setEditing(true); setViewTab('info') }}
-                  className="whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 border-primary text-primary text-[11px] md:text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-1 md:gap-1.5"
+                  className="whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-1.5 rounded-lg border border-primary text-primary text-[11px] md:text-xs font-bold hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-1"
                 >
-                  <span className="material-symbols-outlined text-[14px] md:text-[18px]">edit</span>
+                  <span className="material-symbols-outlined text-[14px] md:text-[16px]">edit</span>
                   {t('common.edit')}
                 </button>
                 {isAdmin && (
                   <button
                     onClick={() => setConfirming((v) => !v)}
-                    className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 text-[11px] md:text-sm font-bold transition-all flex items-center justify-center gap-1 md:gap-1.5 ${
+                    className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-1.5 rounded-lg border text-[11px] md:text-xs font-bold transition-all flex items-center justify-center gap-1 ${
                       confirming
                         ? 'border-error bg-error text-white'
                         : 'border-error text-error hover:bg-error hover:text-white'
                     }`}
                   >
-                    <span className="material-symbols-outlined text-[14px] md:text-[18px]">delete</span>
+                    <span className="material-symbols-outlined text-[14px] md:text-[16px]">delete</span>
                     {t('common.delete')}
                   </button>
                 )}
               </div>
               <button
                 onClick={onClose}
-                className="w-full sm:w-auto px-4 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity"
+                className="w-full sm:w-auto px-4 py-1.5 md:px-6 md:py-1.5 rounded-lg primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity"
               >
                 {t('common.close')}
               </button>

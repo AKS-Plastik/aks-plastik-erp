@@ -382,17 +382,17 @@ export default function Users() {
                 </>
               ) : (
                 <div className="text-center py-2">
-                  <div className="w-14 h-14 rounded-full bg-surface-container-high flex items-center justify-center mx-auto mb-4">
-                    <span className="material-symbols-outlined text-3xl text-on-surface-variant">help</span>
+                  <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-surface-container-high flex items-center justify-center mx-auto mb-3 md:mb-4">
+                    <span className="material-symbols-outlined text-2xl md:text-3xl text-on-surface-variant">help</span>
                   </div>
-                  <p className="text-base font-bold text-on-surface mb-1">{t('common.areYouSure')}</p>
-                  <p className="text-sm text-on-surface-variant mb-6">This will update the user's information.</p>
-                  <div className="flex gap-3 justify-center">
-                    <button onClick={() => setConfirmEdit(false)} className="px-5 py-2.5 rounded-lg border border-outline-variant text-on-surface-variant text-sm font-semibold hover:bg-surface-container-low transition-colors">
+                  <p className="text-sm md:text-base font-bold text-on-surface mb-1">{t('common.areYouSure')}</p>
+                  <p className="text-xs md:text-sm text-on-surface-variant mb-4 md:mb-6">This will update the user's information.</p>
+                  <div className="flex gap-2 md:gap-3 justify-center">
+                    <button onClick={() => setConfirmEdit(false)} className="flex-1 py-1.5 md:py-2 rounded-lg border border-theme-border text-text-muted text-xs md:text-sm font-semibold hover:bg-hover-bg transition-colors">
                       {t('common.goBack')}
                     </button>
-                    <button onClick={handleUpdate} className="px-5 py-2.5 rounded-lg primary-gradient text-white text-sm font-bold hover:opacity-90 flex items-center gap-2">
-                      <span className="material-symbols-outlined text-base">check</span>
+                    <button onClick={handleUpdate} className="flex-1 py-1.5 md:py-2 rounded-lg primary-gradient text-white text-xs md:text-sm font-bold hover:opacity-90 flex items-center justify-center gap-1.5 md:gap-2">
+                      <span className="material-symbols-outlined text-sm md:text-base">check</span>
                       {t('common.confirm')}
                     </button>
                   </div>
@@ -521,26 +521,26 @@ export default function Users() {
 
       {/* Delete Confirmation Modal */}
       {confirmDeleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-0">
           <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={() => setConfirmDeleteId(null)} />
-          <div className="relative bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-sm mx-4 p-6 text-center">
-            <div className="w-14 h-14 rounded-full bg-error-container flex items-center justify-center mx-auto mb-4">
-              <span className="material-symbols-outlined text-3xl text-error">delete_forever</span>
+          <div className="relative bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-[320px] md:max-w-sm mx-auto p-5 md:p-6 text-center">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-error-container flex items-center justify-center mx-auto mb-3 md:mb-4">
+              <span className="material-symbols-outlined text-2xl md:text-3xl text-error">delete_forever</span>
             </div>
-            <p className="text-base font-bold text-on-surface mb-1">Delete this user?</p>
-            <p className="text-sm text-on-surface-variant mb-6">{t('common.cantUndo')}</p>
-            <div className="flex gap-3 justify-center">
+            <p className="text-sm md:text-base font-bold text-on-surface mb-1">Delete this user?</p>
+            <p className="text-xs md:text-sm text-text-muted mb-4 md:mb-6">{t('common.cantUndo')}</p>
+            <div className="flex gap-2 md:gap-3 justify-center">
               <button
                 onClick={() => setConfirmDeleteId(null)}
-                className="flex-1 px-4 py-2.5 rounded-lg border border-outline-variant text-on-surface-variant text-sm font-semibold hover:bg-surface-container-low transition-colors"
+                className="flex-1 py-1.5 md:py-2 rounded-lg border border-theme-border text-text-muted text-xs md:text-sm font-semibold hover:bg-hover-bg transition-colors"
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={() => handleDelete(confirmDeleteId)}
-                className="flex-1 px-4 py-2.5 rounded-lg bg-error text-white text-sm font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-2"
+                className="flex-1 py-1.5 md:py-2 rounded-lg bg-error text-white text-xs md:text-sm font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5 md:gap-2"
               >
-                <span className="material-symbols-outlined text-base">delete</span>
+                <span className="material-symbols-outlined text-sm md:text-base">delete</span>
                 {t('common.delete')}
               </button>
             </div>

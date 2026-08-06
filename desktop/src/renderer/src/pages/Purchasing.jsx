@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useData } from '../context/DataContext'
@@ -56,14 +56,14 @@ function fmt(n) { return Number(n || 0).toLocaleString('en-US', { minimumFractio
 // ── Stat Card ────────────────────────────────────────────────────────────────
 function StatCard({ icon, label, value, sub, color = 'text-primary' }) {
   return (
-    <div className="bg-surface-container-lowest border border-theme-border rounded-2xl p-4 flex items-center gap-4">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center bg-surface-container ${color}`}>
-        <span className="material-symbols-outlined text-lg">{icon}</span>
+    <div className="bg-surface-container-lowest border border-theme-border rounded-xl xl:rounded-2xl p-3 xl:p-4 flex items-center gap-2 xl:gap-4">
+      <div className={`w-8 h-8 xl:w-10 xl:h-10 rounded-lg xl:rounded-xl flex items-center justify-center bg-surface-container ${color} flex-shrink-0`}>
+        <span className="material-symbols-outlined text-sm xl:text-lg">{icon}</span>
       </div>
-      <div className="min-w-0">
-        <p className="text-[11px] text-text-muted font-semibold uppercase tracking-wide">{label}</p>
-        <p className="text-lg font-bold text-on-surface leading-tight">{value}</p>
-        {sub && <p className="text-[11px] text-text-muted truncate">{sub}</p>}
+      <div className="min-w-0 flex-1">
+        <p className="text-[9px] xl:text-[11px] text-text-muted font-semibold uppercase tracking-wide truncate" title={label}>{label}</p>
+        <p className="text-sm xl:text-lg font-bold text-on-surface leading-tight break-words">{value}</p>
+        {sub && <p className="text-[9px] xl:text-[11px] text-text-muted truncate" title={sub}>{sub}</p>}
       </div>
     </div>
   )
@@ -79,8 +79,22 @@ function RequestModal({ initial, onClose, onSave }) {
     ...(initial || {}),
   })
   const [errors, setErrors] = useState({})
+  const descRef = useRef(null)
+
+  useEffect(() => {
+    const el = descRef.current
+    if (!el) return
+    const adjust = () => {
+      el.style.height = 'auto'
+      el.style.height = el.scrollHeight + 'px'
+    }
+    adjust()
+    const t = setTimeout(adjust, 50)
+    return () => clearTimeout(t)
+  }, [form.description])
+
   const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
-  const inp = (f) => `w-full bg-surface-container-lowest border rounded-lg px-3 py-2 text-sm text-on-surface outline-none focus:border-primary transition ${errors[f] ? 'border-error' : 'border-theme-border'}`
+  const inp = (f) => `w-full bg-surface-container-lowest border rounded-lg px-3 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary transition ${errors[f] ? 'border-error' : 'border-theme-border'}`
 
   function handleSave() {
     const e = {}
@@ -90,70 +104,85 @@ function RequestModal({ initial, onClose, onSave }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-lg p-7 overflow-y-auto max-h-[90vh]">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-on-surface">{initial?.id ? t('purchasing.editRequest') : t('purchasing.newPurchaseRequest')}</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-error"><span className="material-symbols-outlined">close</span></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 md:p-0">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between p-4 md:p-6 pb-2 shrink-0">
+          <h2 className="text-sm md:text-base font-bold text-on-surface">{initial?.id ? t('purchasing.editRequest') : t('purchasing.newPurchaseRequest')}</h2>
+          <button onClick={onClose} className="text-text-muted hover:text-error"><span className="material-symbols-outlined text-lg md:text-xl">close</span></button>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2 md:space-y-3 overflow-y-auto p-4 md:p-6 py-3 custom-scrollbar">
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.title')} *</label>
+            <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.title')} *</label>
             <input className={inp('title')} value={form.title} onChange={set('title')} placeholder={t('purchasing.titlePh')} />
             {errors.title && <p className="text-xs text-error mt-1">{errors.title}</p>}
           </div>
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.description')}</label>
-            <textarea rows={2} className={inp('description')} value={form.description} onChange={set('description')} />
+            <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.description')}</label>
+            <textarea 
+              ref={descRef}
+              rows={2} 
+              className={`${inp('description')} resize-none overflow-hidden`} 
+              style={{ minHeight: '3rem', fieldSizing: 'content' }}
+              value={form.description} 
+              onChange={set('description')}
+              onFocus={(e) => {
+                e.target.style.height = 'auto'
+                e.target.style.height = e.target.scrollHeight + 'px'
+              }}
+              onInput={(e) => {
+                e.target.style.height = 'auto'
+                e.target.style.height = e.target.scrollHeight + 'px'
+              }}
+            />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2 md:gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.department')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.department')}</label>
               <input className={inp('department')} value={form.department} onChange={set('department')} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('purchasing.requestedBy')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('purchasing.requestedBy')}</label>
               <input className={inp('requestedBy')} value={form.requestedBy} onChange={set('requestedBy')} />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2 md:gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.priority')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.priority')}</label>
               <select className={inp('priority')} value={form.priority} onChange={set('priority')}>
                 {PRIORITIES.map((p) => <option key={p}>{p}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.category')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.category')}</label>
               <select className={inp('category')} value={form.category} onChange={set('category')}>
                 {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('purchasing.budgetCode')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('purchasing.budgetCode')}</label>
               <input className={inp('budgetCode')} value={form.budgetCode} onChange={set('budgetCode')} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2 md:gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('purchasing.estimatedAmount')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('purchasing.estimatedAmount')}</label>
               <input type="number" min="0" step="0.01" className={inp('estimatedAmount')} value={form.estimatedAmount} onChange={set('estimatedAmount')} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.currency')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.currency')}</label>
               <select className={inp('currency')} value={form.currency} onChange={set('currency')}>
                 {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
               </select>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.notes')}</label>
+            <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.notes')}</label>
             <textarea rows={2} className={inp('notes')} value={form.notes} onChange={set('notes')} />
           </div>
         </div>
-        <div className="flex gap-3 mt-5">
-          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
-          <button onClick={handleSave} className="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition">{t('common.save')}</button>
+        <div className="flex gap-2 md:gap-3 p-4 md:p-6 pt-2 shrink-0">
+          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
+          <button onClick={handleSave} className="flex-1 bg-primary text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition">{t('common.save')}</button>
         </div>
       </div>
     </div>
@@ -168,7 +197,7 @@ function QuotationModal({ suppliers, initial, onClose, onSave }) {
     amount: '', currency: 'TRY', vat: '20', deliveryDays: '', paymentTerms: '', warranty: '', notes: '',
   })
   const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
-  const inp = (f) => `w-full bg-surface-container-lowest border border-theme-border rounded-lg px-3 py-2 text-sm text-on-surface outline-none focus:border-primary transition`
+  const inp = (f) => `w-full bg-surface-container-lowest border border-theme-border rounded-lg px-3 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary transition`
 
   function handleSave() {
     if (!form.amount) return
@@ -180,15 +209,15 @@ function QuotationModal({ suppliers, initial, onClose, onSave }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md p-7 overflow-y-auto max-h-[90vh]">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-on-surface">{initial ? t('purchasing.editQuotation') : t('purchasing.addQuotation')}</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-error"><span className="material-symbols-outlined">close</span></button>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 md:p-0">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between p-4 md:p-6 pb-2 shrink-0">
+          <h2 className="text-sm md:text-base font-bold text-on-surface">{initial ? t('purchasing.editQuotation') : t('purchasing.addQuotation')}</h2>
+          <button onClick={onClose} className="text-text-muted hover:text-error"><span className="material-symbols-outlined text-lg md:text-xl">close</span></button>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2 md:space-y-3 overflow-y-auto p-4 md:p-6 py-3 custom-scrollbar">
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">{t('purchasing.supplier')}</label>
+            <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('purchasing.supplier')}</label>
             <select className={inp('supplierId')} value={form.supplierId} onChange={set('supplierId')}>
               <option value="">{t('purchasing.manualEntry')}</option>
               {suppliers.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
@@ -196,58 +225,58 @@ function QuotationModal({ suppliers, initial, onClose, onSave }) {
           </div>
           {!form.supplierId && (
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('purchasing.supplierName')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('purchasing.supplierName')}</label>
               <input className={inp('supplierName')} value={form.supplierName} onChange={set('supplierName')} />
             </div>
           )}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2 md:gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('purchasing.quoteNo')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('purchasing.quoteNo')}</label>
               <input className={inp('quotationNo')} value={form.quotationNo} onChange={set('quotationNo')} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('purchasing.quoteDate')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('purchasing.quoteDate')}</label>
               <input type="date" className={inp('quotationDate')} value={form.quotationDate} onChange={set('quotationDate')} />
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2 md:gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('purchasing.amount')} *</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('purchasing.amount')} *</label>
               <input type="number" min="0" step="0.01" className={inp('amount')} value={form.amount} onChange={set('amount')} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('purchasing.vat')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('purchasing.vat')}</label>
               <input type="number" min="0" max="100" className={inp('vat')} value={form.vat} onChange={set('vat')} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.currency')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.currency')}</label>
               <select className={inp('currency')} value={form.currency} onChange={set('currency')}>
                 {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2 md:gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('purchasing.deliveryDays')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('purchasing.deliveryDays')}</label>
               <input type="number" min="0" className={inp('deliveryDays')} value={form.deliveryDays} onChange={set('deliveryDays')} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('purchasing.warranty')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('purchasing.warranty')}</label>
               <input className={inp('warranty')} value={form.warranty} onChange={set('warranty')} placeholder={t('purchasing.warrantyPh')} />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">{t('purchasing.paymentTerms')}</label>
+            <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('purchasing.paymentTerms')}</label>
             <input className={inp('paymentTerms')} value={form.paymentTerms} onChange={set('paymentTerms')} placeholder={t('purchasing.paymentTermsPh')} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.notes')}</label>
+            <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.notes')}</label>
             <textarea rows={2} className={inp('notes')} value={form.notes} onChange={set('notes')} />
           </div>
         </div>
-        <div className="flex gap-3 mt-5">
-          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
-          <button onClick={handleSave} className="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition">{t('common.save')}</button>
+        <div className="flex gap-2 md:gap-3 p-4 md:p-6 pt-2 shrink-0">
+          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
+          <button onClick={handleSave} className="flex-1 bg-primary text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition">{t('common.save')}</button>
         </div>
       </div>
     </div>
@@ -263,7 +292,7 @@ function SupplierModal({ initial, onClose, onSave }) {
   })
   const [errors, setErrors] = useState({})
   const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
-  const inp = (f) => `w-full bg-surface-container-lowest border rounded-lg px-3 py-2 text-sm text-on-surface outline-none focus:border-primary transition ${errors[f] ? 'border-error' : 'border-theme-border'}`
+  const inp = (f) => `w-full bg-surface-container-lowest border rounded-lg px-3 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary transition ${errors[f] ? 'border-error' : 'border-theme-border'}`
 
   function handleSave() {
     const e = {}
@@ -273,27 +302,27 @@ function SupplierModal({ initial, onClose, onSave }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-lg p-7 overflow-y-auto max-h-[90vh]">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-on-surface">{initial ? t('purchasing.editSupplier') : t('purchasing.newSupplier')}</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-error"><span className="material-symbols-outlined">close</span></button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 md:p-0">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between p-4 md:p-6 pb-2 shrink-0">
+          <h2 className="text-sm md:text-base font-bold text-on-surface">{initial ? t('purchasing.editSupplier') : t('purchasing.newSupplier')}</h2>
+          <button onClick={onClose} className="text-text-muted hover:text-error"><span className="material-symbols-outlined text-lg md:text-xl">close</span></button>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2 md:space-y-3 overflow-y-auto p-4 md:p-6 py-3 custom-scrollbar">
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">{t('purchasing.companyName')} *</label>
+            <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('purchasing.companyName')} *</label>
             <input className={inp('name')} value={form.name} onChange={set('name')} />
             {errors.name && <p className="text-xs text-error mt-1">{errors.name}</p>}
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2 md:gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.category')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.category')}</label>
               <select className={inp('category')} value={form.category} onChange={set('category')}>
                 {SUPPLIER_CATEGORIES.map((c) => <option key={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.status')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.status')}</label>
               <select className={inp('status')} value={form.status} onChange={set('status')}>
                 <option value="Active">{t('purchasing.statusActive')}</option>
                 <option value="Inactive">{t('purchasing.statusInactive')}</option>
@@ -301,44 +330,44 @@ function SupplierModal({ initial, onClose, onSave }) {
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2 md:gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('purchasing.contactPerson')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('purchasing.contactPerson')}</label>
               <input className={inp('contactName')} value={form.contactName} onChange={set('contactName')} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.phone')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.phone')}</label>
               <input className={inp('contactPhone')} value={form.contactPhone} onChange={set('contactPhone')} />
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.email')}</label>
+            <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.email')}</label>
             <input className={inp('contactEmail')} value={form.contactEmail} onChange={set('contactEmail')} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-2 md:gap-3">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.country')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.country')}</label>
               <input className={inp('country')} value={form.country} onChange={set('country')} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.currency')}</label>
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.currency')}</label>
               <select className={inp('currency')} value={form.currency} onChange={set('currency')}>
                 {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
               </select>
             </div>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.address')}</label>
+            <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.address')}</label>
             <input className={inp('address')} value={form.address} onChange={set('address')} />
           </div>
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.notes')}</label>
+            <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.notes')}</label>
             <textarea rows={2} className={inp('notes')} value={form.notes} onChange={set('notes')} />
           </div>
         </div>
-        <div className="flex gap-3 mt-5">
-          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
-          <button onClick={handleSave} className="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition">{t('common.save')}</button>
+        <div className="flex gap-2 md:gap-3 p-4 md:p-6 pt-2 shrink-0">
+          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
+          <button onClick={handleSave} className="flex-1 bg-primary text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition">{t('common.save')}</button>
         </div>
       </div>
     </div>
@@ -400,31 +429,34 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-surface-container-lowest w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-xl rounded-2xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 md:p-0">
+      <div className="bg-surface-container-lowest w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-xl rounded-2xl">
         {/* Header */}
-        <div className="px-6 pt-6 pb-4 border-b border-theme-border">
+        <div className="p-3 md:p-4 pb-2 shrink-0">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-3">
-              <span className="font-mono text-sm text-text-muted">{r.code}</span>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${STATUS_BADGE[r.status] || 'bg-surface-container text-text-muted'}`}>
+            <div className="flex items-center gap-2">
+              <span className="font-mono text-[11px] text-text-muted">{r.code}</span>
+              <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${STATUS_BADGE[r.status] || 'bg-surface-container text-text-muted'}`}>
                 {r.status}
               </span>
-              <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${PRIORITY_COLOR[r.priority]}`}>
+              <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${PRIORITY_COLOR[r.priority]}`}>
                 {r.priority}
               </span>
             </div>
-            <div className="flex items-center gap-1">
-              {canEditDelete && <button onClick={onEdit} className="text-text-muted hover:text-primary transition p-1 rounded-lg hover:bg-hover-bg" title="Edit"><span className="material-symbols-outlined text-sm">edit</span></button>}
-              {canEditDelete && <button onClick={onDelete} className="text-text-muted hover:text-error transition p-1 rounded-lg hover:bg-hover-bg" title="Delete"><span className="material-symbols-outlined text-sm">delete</span></button>}
-              <button onClick={onClose} className="text-text-muted hover:text-error p-1 rounded-lg hover:bg-hover-bg"><span className="material-symbols-outlined">close</span></button>
+            <div className="flex items-center gap-3">
+
+              <div className="flex items-center gap-1">
+                {canEditDelete && <button onClick={onEdit} className="text-text-muted hover:text-primary transition p-1 rounded-lg hover:bg-hover-bg" title="Edit"><span className="material-symbols-outlined text-sm">edit</span></button>}
+                {canEditDelete && <button onClick={onDelete} className="text-text-muted hover:text-error transition p-1 rounded-lg hover:bg-hover-bg" title="Delete"><span className="material-symbols-outlined text-sm">delete</span></button>}
+                <button onClick={onClose} className="text-text-muted hover:text-error p-1 rounded-lg hover:bg-hover-bg"><span className="material-symbols-outlined text-lg md:text-xl">close</span></button>
+              </div>
             </div>
           </div>
-          <h2 className="text-lg font-bold text-on-surface">{r.title}</h2>
-          {r.description && <p className="text-sm text-text-muted mt-1">{r.description}</p>}
+          <h2 className="text-[11px] md:text-xs font-bold text-on-surface">{r.title}</h2>
+          {r.description && <p className="text-[9px] md:text-[10px] text-text-muted mt-0.5">{r.description}</p>}
         </div>
 
-        <div className="px-6 py-5 space-y-5">
+        <div className="p-3 md:p-4 py-2 overflow-y-auto custom-scrollbar space-y-3">
           {/* Progress bar */}
           <div>
             <p className="text-xs font-semibold text-text-muted mb-2">{t('purchasing.processStatus')}</p>
@@ -442,7 +474,7 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
           </div>
 
           {/* Info grid */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             {[
               [t('common.department'), r.department],
               [t('purchasing.requestedBy'), r.requestedBy],
@@ -451,22 +483,22 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
               [t('purchasing.budgetCode'), r.budgetCode],
               [t('common.date'), new Date(r.createdAt).toLocaleDateString('en-US')],
             ].map(([label, val]) => (
-              <div key={label} className="bg-surface-container rounded-lg p-3">
-                <p className="text-[10px] font-semibold text-text-muted uppercase">{label}</p>
-                <p className="text-sm font-medium text-on-surface mt-0.5">{val || '—'}</p>
+              <div key={label} className="bg-surface-container rounded-lg p-2.5">
+                <p className="text-[9px] font-semibold text-text-muted uppercase tracking-wider">{label}</p>
+                <p className="text-xs md:text-sm font-medium text-on-surface mt-0.5">{val || '—'}</p>
               </div>
             ))}
           </div>
 
           {/* Stage-specific: Budget Review */}
           {r.status === 'Budget Review' && (
-            <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-4">
-              <p className="text-sm font-bold text-amber-600 mb-2 flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm">account_balance</span> {t('purchasing.budgetReviewTitle')}
+            <div className="bg-amber-500/5 border border-amber-500/20 rounded-lg p-3">
+              <p className="text-xs font-bold text-amber-600 mb-1.5 flex items-center gap-1.5">
+                <span className="material-symbols-outlined text-xs">account_balance</span> {t('purchasing.budgetReviewTitle')}
               </p>
-              <p className="text-xs text-text-muted mb-3">{t('purchasing.budgetEstimated')} <strong>{r.currency} {fmt(r.estimatedAmount)}</strong></p>
+              <p className="text-[10px] text-text-muted mb-2">{t('purchasing.budgetEstimated')} <strong>{r.currency} {fmt(r.estimatedAmount)}</strong></p>
               <textarea
-                className="w-full bg-surface-container-lowest border border-theme-border rounded-lg px-3 py-2 text-sm text-on-surface outline-none mb-2"
+                className="w-full bg-surface-container-lowest border border-theme-border rounded-lg px-2 py-1.5 text-xs text-on-surface outline-none mb-2"
                 rows={2}
                 placeholder={t('purchasing.budgetNotePh')}
                 value={r.budgetNotes || ''}
@@ -475,7 +507,7 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
               <div className="flex gap-2">
                 <button
                   onClick={() => onUpdate({ status: 'Rejected', rejectionReason: 'Budget not approved', budgetApproved: false })}
-                  className="px-4 py-1.5 rounded-lg bg-error/10 text-error text-xs font-semibold hover:bg-error/20 transition"
+                  className="px-3 py-1 rounded-lg bg-error/10 text-error text-[10px] md:text-xs font-semibold hover:bg-error/20 transition"
                 >
                   {t('purchasing.rejectBudget')}
                 </button>
@@ -486,77 +518,78 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
           {/* Stage-specific: Quotations */}
           {['Collecting Quotes', 'Comparison', 'Pending Approval'].includes(r.status) && (
             <div>
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-sm font-bold text-on-surface flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm text-purple-500">request_quote</span>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs md:text-sm font-bold text-on-surface flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-xs md:text-sm text-purple-500">request_quote</span>
                   {t('purchasing.quotationsHeader', { count: quotations.length })}
                 </p>
                 {r.status === 'Collecting Quotes' && (
-                  <button onClick={onAddQuotation} className="flex items-center gap-1 text-xs text-primary hover:opacity-80 font-semibold">
-                    <span className="material-symbols-outlined text-sm">add</span> {t('purchasing.addQuote')}
+                  <button onClick={onAddQuotation} className="flex items-center gap-0.5 text-[10px] md:text-xs text-primary hover:opacity-80 font-semibold">
+                    <span className="material-symbols-outlined text-xs md:text-sm">add</span> {t('purchasing.addQuote')}
                   </button>
                 )}
               </div>
               {quotations.length === 0 ? (
-                <div className="border border-dashed border-theme-border rounded-lg p-6 text-center text-xs text-text-muted">
+                <div className="border border-dashed border-theme-border rounded-lg p-4 text-center text-[10px] md:text-xs text-text-muted">
                   {t('purchasing.noQuotations')}
                 </div>
               ) : (
-                <div className="border border-theme-border rounded-xl overflow-hidden">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="bg-surface-container text-text-muted">
-                        <th className="px-3 py-2 text-left font-semibold">{t('purchasing.supplier')}</th>
-                        <th className="px-3 py-2 text-left font-semibold">{t('purchasing.amount')}</th>
-                        <th className="px-3 py-2 text-left font-semibold">{t('purchasing.vat')}</th>
-                        <th className="px-3 py-2 text-left font-semibold">{t('orders.total')}</th>
-                        <th className="px-3 py-2 text-left font-semibold">{t('purchasing.deliveryDays')}</th>
-                        <th className="px-3 py-2 text-left font-semibold">{t('purchasing.warranty')}</th>
-                        <th className="px-3 py-2 text-left font-semibold">{t('purchasing.paymentTerms')}</th>
-                        <th className="px-3 py-2" />
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-theme-border">
-                      {quotations.map((q) => {
-                        const total = (q.amount || 0) * (1 + (q.vat || 0) / 100)
-                        const isBest = quotations.length >= 3 && total === Math.min(...quotations.map((x) => (x.amount || 0) * (1 + (x.vat || 0) / 100)))
-                        return (
-                          <tr key={q.id} className={`${q.selected ? 'bg-green-500/5' : 'hover:bg-hover-bg'} transition-colors`}>
-                            <td className="px-3 py-2.5">
-                              <div className="flex items-center gap-1.5">
-                                {q.selected && <span className="material-symbols-outlined text-green-600 text-sm">check_circle</span>}
-                                <span className="font-medium text-on-surface">{q.supplier?.name || q.supplierName || '—'}</span>
-                              </div>
-                              {q.quotationNo && <div className="text-[10px] text-text-muted">#{q.quotationNo}</div>}
-                            </td>
-                            <td className="px-3 py-2.5 font-mono">{q.currency} {fmt(q.amount)}</td>
-                            <td className="px-3 py-2.5 text-text-muted">%{q.vat}</td>
-                            <td className="px-3 py-2.5 font-mono font-semibold">
-                              <span className={isBest ? 'text-green-600' : ''}>{q.currency} {fmt(total)}</span>
-                              {isBest && <span className="ml-1 text-[9px] text-green-600 font-bold">{t('purchasing.lowest')}</span>}
-                            </td>
-                            <td className="px-3 py-2.5 text-text-muted">{q.deliveryDays ? t('purchasing.deliveryDaysSuffix', { n: q.deliveryDays }) : '—'}</td>
-                            <td className="px-3 py-2.5 text-text-muted">{q.warranty || '—'}</td>
-                            <td className="px-3 py-2.5 text-text-muted">{q.paymentTerms || '—'}</td>
-                            <td className="px-3 py-2.5">
-                              <div className="flex items-center gap-1">
-                                {r.status === 'Comparison' && !q.selected && (
-                                  <button onClick={() => onSelectQuotation(q.id)} className="text-primary hover:opacity-80" title="Select this quote">
-                                    <span className="material-symbols-outlined text-sm">task_alt</span>
-                                  </button>
-                                )}
-                                {r.status === 'Collecting Quotes' && (
-                                  <button onClick={() => onDeleteQuotation(q.id)} className="text-text-muted hover:text-error" title={t('common.delete')}>
-                                    <span className="material-symbols-outlined text-sm">delete</span>
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
+                <div className="space-y-2">
+                  {quotations.map((q) => {
+                    const total = (q.amount || 0) * (1 + (q.vat || 0) / 100)
+                    const isBest = quotations.length >= 3 && total === Math.min(...quotations.map((x) => (x.amount || 0) * (1 + (x.vat || 0) / 100)))
+                    return (
+                      <div key={q.id} className={`p-3 rounded-lg border ${q.selected ? 'bg-green-500/5 border-green-500/20' : 'bg-surface-container border-theme-border'}`}>
+                        <div className="flex justify-between items-start mb-2.5">
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              {q.selected && <span className="material-symbols-outlined text-green-600 text-[14px]">check_circle</span>}
+                              <p className="font-bold text-xs text-on-surface">{q.supplier?.name || q.supplierName || '—'}</p>
+                            </div>
+                            {q.quotationNo && <p className="text-[9px] text-text-muted mt-0.5">#{q.quotationNo}</p>}
+                          </div>
+                          <div className="text-right">
+                            <p className={`font-mono font-bold text-xs ${isBest || q.selected ? 'text-green-600' : 'text-on-surface'}`}>{q.currency} {fmt(total)}</p>
+                            {isBest ? <p className="text-[8px] text-green-600 font-bold uppercase mt-0.5">{t('purchasing.lowest')}</p> : <p className="text-[8px] text-text-muted mt-0.5">{t('orders.total')}</p>}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 text-[9px] md:text-[10px]">
+                          <div className="flex justify-between border-b border-theme-border/50 pb-1">
+                            <span className="text-text-muted">{t('purchasing.amount')}:</span>
+                            <span className="font-mono font-medium text-on-surface">{q.currency} {fmt(q.amount)} (+%{q.vat})</span>
+                          </div>
+                          <div className="flex justify-between border-b border-theme-border/50 pb-1">
+                            <span className="text-text-muted">{t('purchasing.deliveryDays')}:</span>
+                            <span className="font-medium text-on-surface">{q.deliveryDays ? t('purchasing.deliveryDaysSuffix', { n: q.deliveryDays }) : '—'}</span>
+                          </div>
+                          <div className="flex justify-between border-b border-theme-border/50 pb-1">
+                            <span className="text-text-muted">{t('purchasing.warranty')}:</span>
+                            <span className="font-medium text-on-surface">{q.warranty || '—'}</span>
+                          </div>
+                          <div className="flex justify-between border-b border-theme-border/50 pb-1">
+                            <span className="text-text-muted">{t('purchasing.paymentTerms')}:</span>
+                            <span className="font-medium text-on-surface">{q.paymentTerms || '—'}</span>
+                          </div>
+                        </div>
+
+                        {(r.status === 'Comparison' && !q.selected) || (r.status === 'Collecting Quotes') ? (
+                          <div className="mt-2.5 flex justify-end">
+                            {r.status === 'Comparison' && !q.selected && (
+                              <button onClick={() => onSelectQuotation(q.id)} className="flex items-center gap-1 text-[9px] font-bold text-primary hover:opacity-80 px-2 py-1 bg-primary/10 rounded">
+                                <span className="material-symbols-outlined text-[12px]">task_alt</span> {t('purchasing.selectQuote', 'Seç')}
+                              </button>
+                            )}
+                            {r.status === 'Collecting Quotes' && (
+                              <button onClick={() => onDeleteQuotation(q.id)} className="flex items-center gap-1 text-[9px] font-bold text-error hover:opacity-80 px-2 py-1 bg-error/10 rounded">
+                                <span className="material-symbols-outlined text-[12px]">delete</span> {t('common.delete')}
+                              </button>
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
+                    )
+                  })}
                 </div>
               )}
               {r.status === 'Collecting Quotes' && quotations.length > 0 && quotations.length < 3 && (
@@ -570,21 +603,21 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
 
           {/* Stage-specific: Quality Check */}
           {r.status === 'Quality Check' && (
-            <div className="bg-lime-500/5 border border-lime-500/20 rounded-xl p-4">
-              <p className="text-sm font-bold text-lime-700 mb-2 flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm">verified</span> Quality Check
+            <div className="bg-lime-500/5 border border-lime-500/20 rounded-lg p-2 md:p-2.5">
+              <p className="text-[10px] md:text-[11px] font-bold text-lime-700 mb-1 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[12px]">verified</span> Quality Check
               </p>
               <textarea
-                className="w-full bg-surface-container-lowest border border-theme-border rounded-lg px-3 py-2 text-sm text-on-surface outline-none mb-2"
+                className="w-full bg-surface-container-lowest border border-theme-border rounded-lg px-2 py-1 text-[10px] md:text-[11px] text-on-surface outline-none mb-1.5 custom-scrollbar"
                 rows={2}
                 placeholder="Quality check notes..."
                 value={r.qcNotes || ''}
                 onChange={(e) => onUpdate({ qcNotes: e.target.value })}
               />
-              <div className="flex gap-2">
+              <div className="flex gap-1.5">
                 <button
                   onClick={() => onUpdate({ status: 'QC Rejected', qcResult: 'Rejected', qcDate: new Date().toISOString().split('T')[0] })}
-                  className="px-4 py-1.5 rounded-lg bg-error/10 text-error text-xs font-semibold hover:bg-error/20 transition"
+                  className="px-2.5 py-0.5 rounded-lg bg-error/10 text-error text-[9px] font-bold hover:bg-error/20 transition"
                 >
                   Reject
                 </button>
@@ -594,34 +627,34 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
 
           {/* Stage-specific: Invoice Matching */}
           {r.status === 'Invoice Matching' && (
-            <div className="bg-pink-500/5 border border-pink-500/20 rounded-xl p-4 space-y-3">
-              <p className="text-sm font-bold text-pink-600 mb-1 flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm">receipt</span> Invoice Matching
+            <div className="bg-pink-500/5 border border-pink-500/20 rounded-lg p-2 md:p-2.5 space-y-1.5">
+              <p className="text-[10px] md:text-[11px] font-bold text-pink-600 mb-0.5 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[12px]">receipt</span> Invoice Matching
               </p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-1.5">
                 <div>
-                  <label className="block text-[10px] font-semibold text-text-muted mb-0.5">Invoice No</label>
+                  <label className="block text-[8px] md:text-[9px] font-semibold text-text-muted mb-0.5">Invoice No</label>
                   <input
-                    className="w-full bg-surface-container-lowest border border-theme-border rounded-lg px-3 py-1.5 text-sm text-on-surface outline-none"
+                    className="w-full bg-surface-container-lowest border border-theme-border rounded-lg px-2 py-0.5 text-[10px] md:text-[11px] text-on-surface outline-none"
                     value={r.invoiceNo || ''}
                     onChange={(e) => onUpdate({ invoiceNo: e.target.value })}
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-text-muted mb-0.5">Invoice Date</label>
+                  <label className="block text-[8px] md:text-[9px] font-semibold text-text-muted mb-0.5">Invoice Date</label>
                   <input
                     type="date"
-                    className="w-full bg-surface-container-lowest border border-theme-border rounded-lg px-3 py-1.5 text-sm text-on-surface outline-none"
+                    className="w-full bg-surface-container-lowest border border-theme-border rounded-lg px-2 py-0.5 text-[10px] md:text-[11px] text-on-surface outline-none"
                     value={r.invoiceDate || ''}
                     onChange={(e) => onUpdate({ invoiceDate: e.target.value })}
                   />
                 </div>
               </div>
               <div>
-                <label className="block text-[10px] font-semibold text-text-muted mb-0.5">Invoice Amount</label>
+                <label className="block text-[8px] md:text-[9px] font-semibold text-text-muted mb-0.5">Invoice Amount</label>
                 <input
                   type="number" min="0" step="0.01"
-                  className="w-full bg-surface-container-lowest border border-theme-border rounded-lg px-3 py-1.5 text-sm text-on-surface outline-none"
+                  className="w-full bg-surface-container-lowest border border-theme-border rounded-lg px-2 py-0.5 text-[10px] md:text-[11px] text-on-surface outline-none"
                   value={r.invoiceAmount || ''}
                   onChange={(e) => onUpdate({ invoiceAmount: e.target.value })}
                 />
@@ -631,25 +664,25 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
 
           {/* Stage-specific: Payment */}
           {r.status === 'Payment' && (
-            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-xl p-4 space-y-3">
-              <p className="text-sm font-bold text-emerald-600 mb-1 flex items-center gap-2">
-                <span className="material-symbols-outlined text-sm">payments</span> Payment Schedule
+            <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-lg p-2 md:p-2.5 space-y-1.5">
+              <p className="text-[10px] md:text-[11px] font-bold text-emerald-600 mb-0.5 flex items-center gap-1">
+                <span className="material-symbols-outlined text-[12px]">payments</span> Payment Schedule
               </p>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-1.5">
                 <div>
-                  <label className="block text-[10px] font-semibold text-text-muted mb-0.5">Payment Due Date</label>
+                  <label className="block text-[8px] md:text-[9px] font-semibold text-text-muted mb-0.5">Payment Due Date</label>
                   <input
                     type="date"
-                    className="w-full bg-surface-container-lowest border border-theme-border rounded-lg px-3 py-1.5 text-sm text-on-surface outline-none"
+                    className="w-full bg-surface-container-lowest border border-theme-border rounded-lg px-2 py-0.5 text-[10px] md:text-[11px] text-on-surface outline-none"
                     value={r.paymentDueDate || ''}
                     onChange={(e) => onUpdate({ paymentDueDate: e.target.value })}
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-semibold text-text-muted mb-0.5">Payment Date</label>
+                  <label className="block text-[8px] md:text-[9px] font-semibold text-text-muted mb-0.5">Payment Date</label>
                   <input
                     type="date"
-                    className="w-full bg-surface-container-lowest border border-theme-border rounded-lg px-3 py-1.5 text-sm text-on-surface outline-none"
+                    className="w-full bg-surface-container-lowest border border-theme-border rounded-lg px-2 py-0.5 text-[10px] md:text-[11px] text-on-surface outline-none"
                     value={r.paymentDate || ''}
                     onChange={(e) => onUpdate({ paymentDate: e.target.value })}
                   />
@@ -660,29 +693,29 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
 
           {/* Notes */}
           {r.notes && (
-            <div className="bg-surface-container rounded-xl p-4">
-              <p className="text-[10px] font-semibold text-text-muted uppercase mb-1">Notes</p>
-              <p className="text-sm text-on-surface whitespace-pre-wrap">{r.notes}</p>
+            <div className="bg-surface-container rounded-lg p-2 md:p-2.5">
+              <p className="text-[8px] md:text-[9px] font-semibold text-text-muted uppercase mb-0.5">Notes</p>
+              <p className="text-[10px] md:text-[11px] text-on-surface whitespace-pre-wrap">{r.notes}</p>
             </div>
           )}
 
           {/* Rejection reason */}
           {['Rejected', 'Budget Rejected', 'QC Rejected'].includes(r.status) && r.rejectionReason && (
-            <div className="bg-error/5 border border-error/20 rounded-xl p-4">
-              <p className="text-xs font-bold text-error mb-1">Rejection Reason</p>
-              <p className="text-sm text-on-surface">{r.rejectionReason}</p>
+            <div className="bg-error/5 border border-error/20 rounded-lg p-2 md:p-2.5">
+              <p className="text-[9px] md:text-[10px] font-bold text-error mb-0.5">Rejection Reason</p>
+              <p className="text-[10px] md:text-[11px] text-on-surface">{r.rejectionReason}</p>
             </div>
           )}
         </div>
 
         {/* Action bar */}
-        <div className="bg-surface-container-lowest border-t border-theme-border px-6 py-4 flex items-center gap-3 rounded-b-2xl">
+        <div className="flex items-center gap-2 md:gap-3 p-3 md:p-4 pt-2 shrink-0">
           {!isTerminal && (
             <>
               {canCreateEdit && (
                 <button
                   onClick={() => onUpdate({ status: 'Cancelled' })}
-                  className="px-4 py-2 rounded-lg border border-error/30 text-error text-xs font-semibold hover:bg-error/5 transition"
+                  className="px-3 py-1.5 rounded-lg border border-error/30 text-error text-[10px] md:text-xs font-semibold hover:bg-error/5 transition"
                 >
                   Cancel Request
                 </button>
@@ -700,14 +733,14 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
                   if (r.status === 'Invoice Matching') updates.invoiceMatched = true
                   onUpdate(updates)
                 }}
-                className={`px-5 py-2 rounded-lg text-sm font-semibold transition flex items-center gap-2 ${
+                className={`px-3 py-1.5 md:px-4 md:py-1.5 rounded-lg text-[10px] md:text-xs font-semibold transition flex items-center gap-1.5 ${
                   canAdvance()
                     ? 'bg-primary text-white hover:opacity-90'
                     : 'bg-surface-container text-text-muted cursor-not-allowed'
                 }`}
               >
                 {advanceLabel()}
-                <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                <span className="material-symbols-outlined text-[14px]">arrow_forward</span>
               </button>
             </>
           )}
@@ -757,6 +790,7 @@ export default function Purchasing() {
         fetch(`${BASE}/suppliers`, { headers: authH }),
       ])
       const [reqData, supData] = await Promise.all([reqRes.json(), supRes.json()])
+
       setRequests(Array.isArray(reqData) ? reqData : [])
       setSuppliers(Array.isArray(supData) ? supData : [])
     } catch { /* ignore */ }
@@ -801,6 +835,7 @@ export default function Purchasing() {
     const res = await fetch(`${BASE}/requests/${id}`, {
       method: 'PUT', headers, body: JSON.stringify(updates),
     })
+    if (!res.ok) throw new Error('Update failed')
     const updated = await res.json()
     setRequests((prev) => prev.map((r) => r.id === id ? updated : r))
     if (detailDrawer?.id === id) setDetailDrawer(updated)
@@ -812,7 +847,6 @@ export default function Purchasing() {
     })
     setQuotationModal(null)
     load().then(() => {
-      // Refresh detail drawer
       fetch(`${BASE}/requests`, { headers: authH })
         .then((r) => r.json())
         .then((data) => {
@@ -856,54 +890,56 @@ export default function Purchasing() {
   }
 
   return (
-    <div className="p-6 space-y-5">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-5">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-on-surface">{t('purchasing.title')}</h1>
-          <p className="text-sm text-text-muted mt-0.5">{t('purchasing.subtitle')}</p>
+          <h1 className="text-lg md:text-2xl font-bold text-on-surface">{t('purchasing.title')}</h1>
+          <p className="text-[10px] md:text-sm text-text-muted mt-0.5">{t('purchasing.subtitle')}</p>
         </div>
         {(tab === 'suppliers' ? isAdmin : canCreateEdit) && (
           <button
             onClick={() => tab === 'suppliers' ? setSupplierModal('new') : setRequestModal({ _isNew: true, requestedBy: user?.name || '' })}
-            className="flex items-center gap-2 primary-gradient text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity"
+            className="flex items-center gap-1 md:gap-1.5 primary-gradient text-white px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity"
           >
-            <span className="material-symbols-outlined text-sm">add</span>
+            <span className="material-symbols-outlined text-xs md:text-sm">add</span>
             {tab === 'suppliers' ? t('purchasing.newSupplier') : t('purchasing.newRequest')}
           </button>
         )}
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3">
         <StatCard icon="assignment" label={t('purchasing.totalRequests')} value={requests.length} sub={t('purchasing.activeCount', { n: activeReqs.length })} />
         <StatCard icon="pending_actions" label={t('purchasing.inProgress')} value={activeReqs.length} color="text-amber-500" />
         <StatCard icon="check_circle" label={t('purchasing.completed')} value={requests.filter((r) => r.status === 'Completed').length} color="text-green-500" />
         <StatCard icon="storefront" label={t('purchasing.suppliers')} value={suppliers.filter((s) => s.status === 'Active').length} sub={t('purchasing.totalCount', { n: suppliers.length })} color="text-purple-500" />
-        <StatCard icon="payments" label={t('purchasing.totalEstimated')} value={`${fmt(totalEst)}`} sub="TRY" color="text-blue-500" />
+        <StatCard icon="payments" label="TOPLAM" value={totalEst % 1000 === 0 && totalEst > 0 ? (totalEst / 1000).toLocaleString('en-US') + 'K' : new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: 3 }).format(totalEst)} sub="TRY" color="text-blue-500" />
       </div>
 
 
       {/* Tabs + Table */}
       <div className="bg-surface-container-lowest border border-theme-border rounded-2xl">
-        <div className="flex items-center gap-4 px-6 pt-4 border-b border-theme-border">
-          {[
-            { key: 'requests', label: 'Purchase Requests' },
-            { key: 'suppliers', label: 'Suppliers' },
-          ].map((tabItem) => (
-            <button
-              key={tabItem.key}
-              onClick={() => { setTab(tabItem.key); setSearch('') }}
-              className={`pb-3 text-sm font-semibold border-b-2 transition ${tab === tabItem.key ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-on-surface'}`}
-            >
-              {tabItem.label}
-            </button>
-          ))}
-          <div className="ml-auto flex items-center gap-3 pb-3">
-            <div className="relative">
-              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-sm text-text-muted">search</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 md:px-5 pt-3 border-b border-theme-border">
+          <div className="flex items-center gap-3 md:gap-4 overflow-x-auto no-scrollbar w-full sm:w-auto">
+            {[
+              { key: 'requests', label: 'Purchase Requests' },
+              { key: 'suppliers', label: 'Suppliers' },
+            ].map((tabItem) => (
+              <button
+                key={tabItem.key}
+                onClick={() => { setTab(tabItem.key); setSearch('') }}
+                className={`pb-2 text-xs md:text-sm font-semibold border-b-2 transition whitespace-nowrap ${tab === tabItem.key ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-on-surface'}`}
+              >
+                {tabItem.label}
+              </button>
+            ))}
+          </div>
+          <div className="w-full sm:w-auto flex items-center pb-2 md:pb-3">
+            <div className="relative w-full sm:w-auto">
+              <span className="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-[12px] md:text-sm text-text-muted">search</span>
               <input
-                className="bg-surface-container border border-theme-border rounded-lg pl-8 pr-3 py-1.5 text-sm text-on-surface outline-none focus:border-primary w-48"
+                className="bg-surface-container border border-theme-border rounded-lg pl-7 pr-2.5 py-1 text-xs md:text-sm text-on-surface outline-none focus:border-primary w-full sm:w-48"
                 placeholder={t('purchasing.searchPlaceholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
@@ -949,13 +985,19 @@ export default function Purchasing() {
         />
       )}
       {deleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-surface-container-lowest rounded-2xl shadow-xl p-8 max-w-sm w-full">
-            <h2 className="text-lg font-bold text-on-surface mb-2">{t('common.areYouSure')}</h2>
-            <p className="text-sm text-text-muted mb-6">{t('common.cantUndo')}</p>
-            <div className="flex gap-3">
-              <button onClick={() => setDeleteConfirm(null)} className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
-              <button onClick={handleDelete} className="flex-1 bg-error text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition">{t('common.delete')}</button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 md:p-0">
+          <div className="bg-surface-container-lowest rounded-2xl shadow-xl p-5 md:p-6 max-w-[320px] md:max-w-sm w-full text-center">
+            <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-error-container flex items-center justify-center mx-auto mb-3 md:mb-4">
+              <span className="material-symbols-outlined text-2xl md:text-3xl text-error">delete_forever</span>
+            </div>
+            <h2 className="text-sm md:text-base font-bold text-on-surface mb-1">{t('common.areYouSure')}</h2>
+            <p className="text-xs md:text-sm text-text-muted mb-4 md:mb-6">{t('common.cantUndo')}</p>
+            <div className="flex gap-2 md:gap-3">
+              <button onClick={() => setDeleteConfirm(null)} className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
+              <button onClick={handleDelete} className="flex-1 bg-error text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition flex items-center justify-center gap-1.5 md:gap-2">
+                <span className="material-symbols-outlined text-sm md:text-base">delete</span>
+                {t('common.delete')}
+              </button>
             </div>
           </div>
         </div>
@@ -968,52 +1010,80 @@ export default function Purchasing() {
 function RequestTable({ requests, onOpen }) {
   const { t } = useTranslation()
   if (requests.length === 0) return (
-    <div className="flex flex-col items-center justify-center h-40 text-text-muted gap-2">
-      <span className="material-symbols-outlined text-3xl">assignment</span>
-      <p className="text-sm">{t('purchasing.noData')}</p>
+    <div className="flex flex-col items-center justify-center h-24 md:h-32 text-text-muted gap-1.5">
+      <span className="material-symbols-outlined text-xl md:text-2xl">assignment</span>
+      <p className="text-xs">{t('purchasing.noData')}</p>
     </div>
   )
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-left text-xs text-text-muted border-b border-theme-border">
-            <th className="px-6 py-3 font-semibold">{t('common.code')}</th>
-            <th className="px-4 py-3 font-semibold">{t('common.title')}</th>
-            <th className="px-4 py-3 font-semibold">{t('common.department')}</th>
-            <th className="px-4 py-3 font-semibold">{t('common.priority')}</th>
-            <th className="px-4 py-3 font-semibold">{t('common.status')}</th>
-            <th className="px-4 py-3 font-semibold">{t('purchasing.totalAmount')}</th>
-            <th className="px-4 py-3 font-semibold">Quotes</th>
-            <th className="px-4 py-3 font-semibold">{t('common.date')}</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-theme-border">
-          {requests.map((r) => (
-            <tr key={r.id} onClick={() => onOpen(r)} className="hover:bg-hover-bg transition-colors cursor-pointer">
-              <td className="px-6 py-3 font-mono font-semibold text-primary text-xs">{r.code}</td>
-              <td className="px-4 py-3 text-on-surface font-medium max-w-[200px] truncate">{r.title}</td>
-              <td className="px-4 py-3 text-text-muted">{r.department || '—'}</td>
-              <td className="px-4 py-3">
-                <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${PRIORITY_COLOR[r.priority]}`}>{r.priority}</span>
-              </td>
-              <td className="px-4 py-3">
-                <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap ${STATUS_BADGE[r.status] || 'bg-surface-container text-text-muted'}`}>{r.status}</span>
-              </td>
-              <td className="px-4 py-3 font-mono text-xs">{r.currency} {fmt(r.estimatedAmount)}</td>
-              <td className="px-4 py-3">
-                <span className="text-text-muted">{(r.quotations || []).length}</span>
-                {(r.quotations || []).some((q) => q.selected) && (
-                  <span className="material-symbols-outlined text-green-500 text-xs ml-1">check_circle</span>
-                )}
-              </td>
-              <td className="px-4 py-3 text-text-muted text-xs">{new Date(r.createdAt).toLocaleDateString('en-US')}</td>
+    <>
+      <div className="hidden 2xl:block overflow-x-auto">
+        <table className="w-full text-sm whitespace-nowrap">
+          <thead>
+            <tr className="text-left text-xs text-text-muted border-b border-theme-border">
+              <th className="px-6 py-3 font-semibold">{t('common.code')}</th>
+              <th className="px-4 py-3 font-semibold">{t('common.title')}</th>
+              <th className="px-4 py-3 font-semibold">{t('common.department')}</th>
+              <th className="px-4 py-3 font-semibold">{t('common.priority')}</th>
+              <th className="px-4 py-3 font-semibold">{t('common.status')}</th>
+              <th className="px-4 py-3 font-semibold">{t('purchasing.totalAmount')}</th>
+              <th className="px-4 py-3 font-semibold">Quotes</th>
+              <th className="px-4 py-3 font-semibold">{t('common.date')}</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody className="divide-y divide-theme-border">
+            {requests.map((r) => (
+              <tr key={r.id} onClick={() => onOpen(r)} className="hover:bg-hover-bg transition-colors cursor-pointer">
+                <td className="px-6 py-3 font-mono font-semibold text-primary text-xs">{r.code}</td>
+                <td className="px-4 py-3 text-on-surface font-medium max-w-[300px] truncate">{r.title}</td>
+                <td className="px-4 py-3 text-text-muted">{r.department || '—'}</td>
+                <td className="px-4 py-3">
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${PRIORITY_COLOR[r.priority]}`}>{r.priority}</span>
+                </td>
+                <td className="px-4 py-3">
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold whitespace-nowrap ${STATUS_BADGE[r.status] || 'bg-surface-container text-text-muted'}`}>{r.status}</span>
+                </td>
+                <td className="px-4 py-3 font-mono text-xs">{r.currency} {fmt(r.estimatedAmount)}</td>
+                <td className="px-4 py-3">
+                  <span className="text-text-muted">{(r.quotations || []).length}</span>
+                  {(r.quotations || []).some((q) => q.selected) && (
+                    <span className="material-symbols-outlined text-green-500 text-xs ml-1">check_circle</span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-text-muted text-xs">{new Date(r.createdAt).toLocaleDateString('en-US')}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="2xl:hidden flex flex-col divide-y divide-theme-border">
+        {requests.map((r) => (
+          <div key={r.id} onClick={() => onOpen(r)} className="p-3 hover:bg-hover-bg transition-colors cursor-pointer flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <span className="font-mono font-bold text-primary text-[9px]">{r.code}</span>
+              <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${STATUS_BADGE[r.status] || 'bg-surface-container text-text-muted'}`}>{r.status}</span>
+            </div>
+            <div className="text-xs font-bold text-on-surface line-clamp-2">{r.title}</div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-text-muted mt-0.5">
+              <div className="flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">domain</span> {r.department || '—'}</div>
+              <div className="flex items-center gap-1">
+                <span className={`px-1.5 py-0.5 rounded text-[8px] font-semibold ${PRIORITY_COLOR[r.priority]}`}>{r.priority}</span>
+              </div>
+              <div className="flex items-center gap-1 font-mono font-semibold text-on-surface-variant">{r.currency} {fmt(r.estimatedAmount)}</div>
+            </div>
+            <div className="flex items-center justify-between text-[10px] text-text-muted mt-1.5 pt-1.5 border-t border-theme-border/50">
+              <div className="flex items-center gap-1">
+                Quotes: {(r.quotations || []).length}
+                {(r.quotations || []).some((q) => q.selected) && <span className="material-symbols-outlined text-green-500 text-[12px]">check_circle</span>}
+              </div>
+              <div>{new Date(r.createdAt).toLocaleDateString('en-US')}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   )
 }
 
@@ -1021,60 +1091,97 @@ function RequestTable({ requests, onOpen }) {
 function SupplierTable({ suppliers, onEdit, onDelete }) {
   const { t } = useTranslation()
   if (suppliers.length === 0) return (
-    <div className="flex flex-col items-center justify-center h-40 text-text-muted gap-2">
-      <span className="material-symbols-outlined text-3xl">storefront</span>
-      <p className="text-sm">{t('common.noData')}</p>
+    <div className="flex flex-col items-center justify-center h-24 md:h-32 text-text-muted gap-1.5">
+      <span className="material-symbols-outlined text-xl md:text-2xl">storefront</span>
+      <p className="text-xs">{t('common.noData')}</p>
     </div>
   )
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="text-left text-xs text-text-muted border-b border-theme-border">
-            <th className="px-6 py-3 font-semibold">{t('common.code')}</th>
-            <th className="px-4 py-3 font-semibold">{t('common.name')}</th>
-            <th className="px-4 py-3 font-semibold">{t('common.category')}</th>
-            <th className="px-4 py-3 font-semibold">Contact</th>
-            <th className="px-4 py-3 font-semibold">{t('common.country')}</th>
-            <th className="px-4 py-3 font-semibold">{t('common.currency')}</th>
-            <th className="px-4 py-3 font-semibold">{t('common.status')}</th>
-            <th className="px-4 py-3" />
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-theme-border">
-          {suppliers.map((s) => (
-            <tr key={s.id} className="hover:bg-hover-bg transition-colors">
-              <td className="px-6 py-3 font-mono text-xs text-text-muted">{s.code}</td>
-              <td className="px-4 py-3 font-semibold text-on-surface">{s.name}</td>
-              <td className="px-4 py-3 text-text-muted">{s.category}</td>
-              <td className="px-4 py-3">
-                <div className="text-on-surface">{s.contactName || '—'}</div>
-                {s.contactEmail && <div className="text-xs text-text-muted">{s.contactEmail}</div>}
-              </td>
-              <td className="px-4 py-3 text-text-muted">{s.country || '—'}</td>
-              <td className="px-4 py-3 text-text-muted">{s.currency}</td>
-              <td className="px-4 py-3">
-                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                  s.status === 'Active' ? 'bg-green-500/10 text-green-600' :
-                  s.status === 'Blacklisted' ? 'bg-error/10 text-error' :
-                  'bg-surface-container text-text-muted'
-                }`}>{s.status}</span>
-              </td>
-              <td className="px-4 py-3">
-                <div className="flex items-center gap-2">
-                  <button onClick={() => onEdit(s)} className="text-text-muted hover:text-primary transition">
-                    <span className="material-symbols-outlined text-sm">edit</span>
-                  </button>
-                  <button onClick={() => onDelete(s.id)} className="text-text-muted hover:text-error transition">
-                    <span className="material-symbols-outlined text-sm">delete</span>
-                  </button>
-                </div>
-              </td>
+    <>
+      <div className="hidden 2xl:block overflow-x-auto">
+        <table className="w-full text-sm whitespace-nowrap">
+          <thead>
+            <tr className="text-left text-xs text-text-muted border-b border-theme-border">
+              <th className="px-6 py-3 font-semibold">{t('common.code')}</th>
+              <th className="px-4 py-3 font-semibold">{t('common.name')}</th>
+              <th className="px-4 py-3 font-semibold">{t('common.category')}</th>
+              <th className="px-4 py-3 font-semibold">Contact</th>
+              <th className="px-4 py-3 font-semibold">{t('common.country')}</th>
+              <th className="px-4 py-3 font-semibold">{t('common.currency')}</th>
+              <th className="px-4 py-3 font-semibold">{t('common.status')}</th>
+              <th className="px-4 py-3" />
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody className="divide-y divide-theme-border">
+            {suppliers.map((s) => (
+              <tr key={s.id} className="hover:bg-hover-bg transition-colors">
+                <td className="px-6 py-3 font-mono text-xs text-text-muted">{s.code}</td>
+                <td className="px-4 py-3 font-semibold text-on-surface">{s.name}</td>
+                <td className="px-4 py-3 text-text-muted">{s.category}</td>
+                <td className="px-4 py-3">
+                  <div className="text-on-surface">{s.contactName || '—'}</div>
+                  {s.contactEmail && <div className="text-xs text-text-muted">{s.contactEmail}</div>}
+                </td>
+                <td className="px-4 py-3 text-text-muted">{s.country || '—'}</td>
+                <td className="px-4 py-3 text-text-muted">{s.currency}</td>
+                <td className="px-4 py-3">
+                  <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
+                    s.status === 'Active' ? 'bg-green-500/10 text-green-600' :
+                    s.status === 'Blacklisted' ? 'bg-error/10 text-error' :
+                    'bg-surface-container text-text-muted'
+                  }`}>{s.status}</span>
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => onEdit(s)} className="text-text-muted hover:text-primary transition">
+                      <span className="material-symbols-outlined text-sm">edit</span>
+                    </button>
+                    <button onClick={() => onDelete(s.id)} className="text-text-muted hover:text-error transition">
+                      <span className="material-symbols-outlined text-sm">delete</span>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      <div className="2xl:hidden flex flex-col divide-y divide-theme-border">
+        {suppliers.map((s) => (
+          <div key={s.id} className="p-3 hover:bg-hover-bg transition-colors flex flex-col gap-1.5">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-text-muted text-[9px]">{s.code}</span>
+              <span className={`px-1.5 py-0.5 rounded-full text-[9px] font-semibold ${
+                s.status === 'Active' ? 'bg-green-500/10 text-green-600' :
+                s.status === 'Blacklisted' ? 'bg-error/10 text-error' :
+                'bg-surface-container text-text-muted'
+              }`}>{s.status}</span>
+            </div>
+            <div className="text-xs font-bold text-on-surface">{s.name}</div>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-text-muted mt-0.5">
+              <div className="flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">category</span> {s.category || '—'}</div>
+              <div className="flex items-center gap-1"><span className="material-symbols-outlined text-[12px]">public</span> {s.country || '—'}</div>
+              <div className="flex items-center gap-1 font-mono">{s.currency}</div>
+            </div>
+            <div className="flex items-center justify-between text-[10px] text-text-muted mt-1.5 pt-1.5 border-t border-theme-border/50">
+              <div>
+                <span className="text-on-surface-variant font-medium">{s.contactName || '—'}</span>
+                {s.contactEmail && <span className="text-text-muted"> · {s.contactEmail}</span>}
+              </div>
+              <div className="flex items-center gap-3">
+                <button onClick={() => onEdit(s)} className="text-text-muted hover:text-primary transition">
+                  <span className="material-symbols-outlined text-sm">edit</span>
+                </button>
+                <button onClick={() => onDelete(s.id)} className="text-text-muted hover:text-error transition">
+                  <span className="material-symbols-outlined text-sm">delete</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
   )
 }
