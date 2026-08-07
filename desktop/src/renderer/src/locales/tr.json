@@ -107,7 +107,8 @@
     "country": "Ülke",
     "yes": "Evet",
     "no": "Hayır",
-    "noData": "Veri yok"
+    "noData": "Veri yok",
+    "departments": "Departmanlar"
   },
   "login": {
     "welcome": "Hoş Geldiniz",
@@ -615,6 +616,8 @@
     "deleteMachine": "Makineyi Sil",
     "noMachines": "Makine bulunamadı",
     "users": "Kullanıcılar",
+    "orderStatus": "Sipariş Durumları",
+    "purchasingStatus": "Satınalma Durumları",
     "currencySettings": "Para Birimi Ayarları",
     "manufacturer": "Üretici",
     "productionYear": "Üretim Yılı",

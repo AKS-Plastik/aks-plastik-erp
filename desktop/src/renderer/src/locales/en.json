@@ -107,7 +107,8 @@
     "country": "Country",
     "yes": "Yes",
     "no": "No",
-    "noData": "No data"
+    "noData": "No data",
+    "departments": "Departments"
   },
   "login": {
     "welcome": "Welcome",
@@ -615,6 +616,8 @@
     "deleteMachine": "Delete Machine",
     "noMachines": "No machines found",
     "users": "Users",
+    "orderStatus": "Order Statuses",
+    "purchasingStatus": "Purchasing Statuses",
     "currencySettings": "Currency Settings",
     "manufacturer": "Manufacturer",
     "productionYear": "Production Year",

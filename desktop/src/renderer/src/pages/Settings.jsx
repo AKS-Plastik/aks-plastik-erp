@@ -32,10 +32,10 @@ function MachineViewModal({ machine, onClose, onEdit }) {
   const field = (label, value, icon) => (
     value ? (
       <div className="flex items-start gap-2">
-        {icon && <span className="material-symbols-outlined text-base text-text-muted mt-0.5">{icon}</span>}
+        {icon && <span className="material-symbols-outlined text-[13px] text-text-muted mt-0.5">{icon}</span>}
         <div>
-          <p className="text-xs text-text-muted">{label}</p>
-          <p className="text-sm text-on-surface font-medium">{value}</p>
+          <p className="text-[10px] text-text-muted">{label}</p>
+          <p className="text-xs text-on-surface font-semibold">{value}</p>
         </div>
       </div>
     ) : null
@@ -43,38 +43,38 @@ function MachineViewModal({ machine, onClose, onEdit }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-2xl max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-xl max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-theme-border shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <span className="material-symbols-outlined text-primary">precision_manufacturing</span>
+        <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-theme-border shrink-0 primary-gradient">
+          <div className="flex items-center gap-2.5 md:gap-3">
+            <div className="w-8 h-8 md:w-10 md:h-10 rounded-lg bg-white/20 flex items-center justify-center">
+              <span className="material-symbols-outlined text-white text-[15px] md:text-xl">precision_manufacturing</span>
             </div>
             <div>
-              <h2 className="text-base font-bold text-on-surface">{machine.name}</h2>
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-xs text-text-muted">{machine.code}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusColor[machine.status] || 'bg-surface-container-high text-text-muted'}`}>{machine.status}</span>
+              <h2 className="text-sm md:text-base font-bold text-white">{machine.name}</h2>
+              <div className="flex items-center gap-1.5 md:gap-2">
+                <span className="font-mono text-[10px] md:text-xs text-white/80">{machine.code}</span>
+                <span className={`text-[9px] md:text-[10px] uppercase tracking-widest px-1.5 md:px-2 py-0.5 rounded-full font-extrabold ${statusColor[machine.status] || 'bg-surface-container-high text-text-muted'}`}>{machine.status}</span>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={onEdit} className="flex items-center gap-1.5 border border-theme-border px-3 py-1.5 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition">
-              <span className="material-symbols-outlined text-base">edit</span>
-              {t('common.edit')}
+          <div className="flex items-center gap-1.5 md:gap-2">
+            <button onClick={onEdit} className="flex items-center gap-1 md:gap-1.5 border border-white/20 px-2 py-1 md:px-3 md:py-1.5 rounded-lg text-[11px] md:text-sm font-semibold text-white hover:bg-white/10 transition">
+              <span className="material-symbols-outlined text-[13px] md:text-base">edit</span>
+              {t('common.edit', 'Düzenle')}
             </button>
-            <button onClick={onClose} className="text-text-muted hover:text-on-surface transition">
-              <span className="material-symbols-outlined">close</span>
+            <button onClick={onClose} className="p-1 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition">
+              <span className="material-symbols-outlined text-sm md:text-base">close</span>
             </button>
           </div>
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto flex-1 px-6 py-5 space-y-6">
+        <div className="overflow-y-auto flex-1 px-4 py-4 md:px-6 md:py-5 space-y-4 md:space-y-6">
           {/* Basic Info */}
           <div>
-            <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Basic Information</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <h3 className="text-[10px] md:text-xs font-bold text-text-muted uppercase tracking-widest md:tracking-wider mb-2 md:mb-3">Basic Information</h3>
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               {field('Machine Code', machine.code, 'tag')}
               {field('Machine Name', machine.name, 'precision_manufacturing')}
               {field('Status', machine.status, 'toggle_on')}
@@ -84,8 +84,8 @@ function MachineViewModal({ machine, onClose, onEdit }) {
               {field('Next Maintenance Due', machine.nextMaintenanceDue, 'event')}
             </div>
             {machine.notes && (
-              <div className="mt-3 bg-surface-container-high rounded-xl px-4 py-3 text-sm text-text-muted">
-                <span className="font-semibold text-on-surface mr-2">Notes:</span>{machine.notes}
+              <div className="mt-2.5 md:mt-3 bg-surface-container-high rounded-lg md:rounded-xl px-3 py-2 md:px-4 md:py-3 text-xs md:text-sm text-text-muted leading-relaxed">
+                <span className="font-semibold text-on-surface mr-1.5">Notes:</span>{machine.notes}
               </div>
             )}
           </div>
@@ -93,8 +93,8 @@ function MachineViewModal({ machine, onClose, onEdit }) {
           {/* Manufacturer */}
           {(machine.manufacturer || machine.manufacturerCountry || machine.manufacturerContact) && (
             <div>
-              <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Manufacturer Details</h3>
-              <div className="grid grid-cols-2 gap-4">
+              <h3 className="text-[10px] md:text-xs font-bold text-text-muted uppercase tracking-widest md:tracking-wider mb-2 md:mb-3">Manufacturer Details</h3>
+              <div className="grid grid-cols-2 gap-3 md:gap-4">
                 {field('Manufacturer', machine.manufacturer, 'factory')}
                 {field('Country', machine.manufacturerCountry, 'public')}
                 {field('Contact', machine.manufacturerContact, 'contact_phone')}
@@ -104,19 +104,19 @@ function MachineViewModal({ machine, onClose, onEdit }) {
 
           {/* Maintenance Summary */}
           <div>
-            <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">Maintenance Overview</h3>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="bg-surface-container-high rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-on-surface">{(machine.maintenanceRecords || []).length}</p>
-                <p className="text-xs text-text-muted mt-1">Total Records</p>
+            <h3 className="text-[10px] md:text-xs font-bold text-text-muted uppercase tracking-widest md:tracking-wider mb-2 md:mb-3">Maintenance Overview</h3>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="bg-surface-container-high rounded-lg md:rounded-xl p-2.5 md:p-3 text-center">
+                <p className="text-base md:text-lg font-bold text-on-surface leading-none mb-1">{(machine.maintenanceRecords || []).length}</p>
+                <p className="text-[9px] md:text-[10px] text-text-muted">Total Records</p>
               </div>
-              <div className="bg-surface-container-high rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-on-surface">{doneTasks}/{yearTasks.length}</p>
-                <p className="text-xs text-text-muted mt-1">Tasks This Year</p>
+              <div className="bg-surface-container-high rounded-lg md:rounded-xl p-2.5 md:p-3 text-center">
+                <p className="text-base md:text-lg font-bold text-on-surface leading-none mb-1">{doneTasks}/{yearTasks.length}</p>
+                <p className="text-[9px] md:text-[10px] text-text-muted">Tasks This Year</p>
               </div>
-              <div className="bg-surface-container-high rounded-xl p-4 text-center">
-                <p className="text-2xl font-bold text-on-surface">{machine.manualName ? 'Yes' : 'No'}</p>
-                <p className="text-xs text-text-muted mt-1">Manual Uploaded</p>
+              <div className="bg-surface-container-high rounded-lg md:rounded-xl p-2.5 md:p-3 text-center">
+                <p className="text-base md:text-lg font-bold text-on-surface leading-none mb-1">{machine.manualName ? 'Yes' : 'No'}</p>
+                <p className="text-[9px] md:text-[10px] text-text-muted">Manual Uploaded</p>
               </div>
             </div>
           </div>
@@ -124,28 +124,28 @@ function MachineViewModal({ machine, onClose, onEdit }) {
           {/* Recent Maintenance Records */}
           {(machine.maintenanceRecords || []).length > 0 && (
             <div>
-              <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">
+              <h3 className="text-[10px] md:text-xs font-bold text-text-muted uppercase tracking-widest md:tracking-wider mb-2 md:mb-3">
                 Recent Maintenance Records
               </h3>
-              <div className="rounded-xl border border-theme-border overflow-hidden">
-                <table className="w-full text-sm">
+              <div className="rounded-lg md:rounded-xl border border-theme-border overflow-hidden">
+                <table className="w-full text-left">
                   <thead>
-                    <tr className="bg-surface-container-high text-text-muted text-xs uppercase tracking-wider border-b border-theme-border">
-                      <th className="text-left px-3 py-2.5 font-semibold">Date</th>
-                      <th className="text-left px-3 py-2.5 font-semibold">Type</th>
-                      <th className="text-left px-3 py-2.5 font-semibold">Description</th>
-                      <th className="text-right px-3 py-2.5 font-semibold">Cost</th>
+                    <tr className="bg-surface-container-high text-text-muted text-[10px] md:text-xs uppercase tracking-wider border-b border-theme-border">
+                      <th className="px-2.5 md:px-3 py-2 md:py-2.5 font-semibold">Date</th>
+                      <th className="px-2.5 md:px-3 py-2 md:py-2.5 font-semibold">Type</th>
+                      <th className="px-2.5 md:px-3 py-2 md:py-2.5 font-semibold">Description</th>
+                      <th className="px-2.5 md:px-3 py-2 md:py-2.5 font-semibold text-right">Cost</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(machine.maintenanceRecords || []).slice(0, 5).map((r) => (
                       <tr key={r.id} className="border-b border-theme-border last:border-0">
-                        <td className="px-3 py-2.5 text-xs text-text-muted whitespace-nowrap">{r.date}</td>
-                        <td className="px-3 py-2.5">
-                          <span className="text-xs bg-surface-container-high px-2 py-0.5 rounded-full">{r.type}</span>
+                        <td className="px-2.5 md:px-3 py-2 md:py-2.5 text-[11px] md:text-xs text-text-muted whitespace-nowrap">{r.date}</td>
+                        <td className="px-2.5 md:px-3 py-2 md:py-2.5">
+                          <span className="text-[10px] md:text-xs bg-surface-container-high px-1.5 md:px-2 py-0.5 rounded-full font-medium">{r.type}</span>
                         </td>
-                        <td className="px-3 py-2.5 text-xs max-w-[200px] truncate" title={r.description}>{r.description || '—'}</td>
-                        <td className="px-3 py-2.5 text-xs text-right">
+                        <td className="px-2.5 md:px-3 py-2 md:py-2.5 text-[11px] md:text-xs max-w-[150px] md:max-w-[200px] truncate" title={r.description}>{r.description || '—'}</td>
+                        <td className="px-2.5 md:px-3 py-2 md:py-2.5 text-[11px] md:text-xs text-right font-medium">
                           {r.cost > 0 ? `${r.currency || 'USD'} ${r.cost.toFixed(2)}` : '—'}
                         </td>
                       </tr>
@@ -153,8 +153,8 @@ function MachineViewModal({ machine, onClose, onEdit }) {
                   </tbody>
                 </table>
                 {(machine.maintenanceRecords || []).length > 5 && (
-                  <p className="text-xs text-text-muted text-center py-2 border-t border-theme-border">
-                    +{(machine.maintenanceRecords || []).length - 5} more records — view in Maintenance & Repair page
+                  <p className="text-[10px] md:text-xs text-text-muted text-center py-1.5 md:py-2 border-t border-theme-border bg-surface-container-lowest">
+                    +{(machine.maintenanceRecords || []).length - 5} more records
                   </p>
                 )}
               </div>
@@ -164,15 +164,15 @@ function MachineViewModal({ machine, onClose, onEdit }) {
           {/* Manual */}
           {machine.manualName && (
             <div>
-              <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wider mb-3">User Manual</h3>
-              <div className="flex items-center gap-3 bg-surface-container-high rounded-xl px-4 py-3">
-                <span className="material-symbols-outlined text-2xl text-primary">picture_as_pdf</span>
-                <span className="text-sm font-medium text-on-surface flex-1">{machine.manualName}</span>
+              <h3 className="text-[10px] md:text-xs font-bold text-text-muted uppercase tracking-widest md:tracking-wider mb-2 md:mb-3">User Manual</h3>
+              <div className="flex items-center gap-2 md:gap-3 bg-surface-container-high rounded-lg md:rounded-xl px-3 py-2 md:px-4 md:py-3">
+                <span className="material-symbols-outlined text-lg md:text-2xl text-primary">picture_as_pdf</span>
+                <span className="text-xs md:text-sm font-semibold text-on-surface flex-1 truncate">{machine.manualName}</span>
                 <button
                   onClick={() => downloadMachineManual(machine.id, machine.manualName)}
-                  className="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded-xl text-xs font-semibold hover:opacity-90 transition"
+                  className="flex items-center gap-1 md:gap-1.5 bg-primary text-white px-2 py-1 md:px-3 md:py-1.5 rounded-md md:rounded-xl text-[10px] md:text-xs font-bold hover:opacity-90 transition"
                 >
-                  <span className="material-symbols-outlined text-sm">download</span>
+                  <span className="material-symbols-outlined text-[12px] md:text-sm">download</span>
                   Download
                 </button>
               </div>
@@ -181,9 +181,9 @@ function MachineViewModal({ machine, onClose, onEdit }) {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-theme-border flex justify-end shrink-0">
-          <button onClick={onClose} className="border border-theme-border rounded-xl px-6 py-2 text-sm text-text-muted hover:bg-hover-bg transition">
-            {t('common.close')}
+        <div className="px-4 py-3 md:px-6 md:py-4 border-t border-theme-border flex justify-end shrink-0">
+          <button onClick={onClose} className="border border-theme-border rounded-lg md:rounded-xl px-4 py-1.5 md:px-6 md:py-2 text-xs md:text-sm font-semibold text-text-muted hover:bg-hover-bg transition">
+            {t('common.close', 'Kapat')}
           </button>
         </div>
       </div>
@@ -219,9 +219,9 @@ function MachineModal({ machine, onClose, onSave }) {
 
   const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
   const inp = (extra = '') =>
-    `w-full bg-surface-container-lowest border border-theme-border rounded-xl px-3 py-2 text-sm text-on-surface outline-none focus:border-primary transition ${extra}`
-  const errInp = (field) =>
-    `w-full bg-surface-container-lowest border rounded-xl px-3 py-2 text-sm text-on-surface outline-none focus:border-primary transition ${errors[field] ? 'border-error' : 'border-theme-border'}`
+    `w-full bg-surface-container-lowest border border-theme-border rounded-lg md:rounded-xl px-2.5 md:px-3 py-1.5 md:py-2 text-[11px] md:text-sm text-on-surface outline-none focus:border-primary transition ${extra}`
+  const errInp = (field, extra = '') =>
+    `w-full bg-surface-container-lowest border rounded-lg md:rounded-xl px-2.5 md:px-3 py-1.5 md:py-2 text-[11px] md:text-sm text-on-surface outline-none focus:border-primary transition ${errors[field] ? 'border-error' : 'border-theme-border'} ${extra}`
 
   function validate() {
     const e = {}
@@ -252,7 +252,7 @@ function MachineModal({ machine, onClose, onSave }) {
   }
 
   const tabCls = (key) =>
-    `flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 -mb-px transition whitespace-nowrap ${
+    `flex items-center gap-1 md:gap-1.5 px-2 py-1.5 md:px-3 md:py-2 text-[11px] md:text-xs font-medium border-b-2 -mb-px transition whitespace-nowrap ${
       tab === key ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-on-surface'
     }`
 
@@ -262,74 +262,75 @@ function MachineModal({ machine, onClose, onSave }) {
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-theme-border shrink-0">
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-primary">precision_manufacturing</span>
+        <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-theme-border shrink-0">
+          <div className="flex items-center gap-2 md:gap-3">
+            <span className="material-symbols-outlined text-primary text-[18px] md:text-2xl">precision_manufacturing</span>
             <div>
-              <h2 className="text-base font-bold text-on-surface">{isNew ? t('settings.addMachine') : machine.name}</h2>
-              {!isNew && <p className="text-xs text-text-muted">{machine.code}</p>}
+              <h2 className="text-sm md:text-base font-bold text-on-surface leading-snug">{isNew ? t('settings.addMachine') : machine.name}</h2>
+              {!isNew && <p className="text-[10px] md:text-xs text-text-muted mt-0.5">{machine.code}</p>}
             </div>
           </div>
-          <button onClick={onClose} className="text-text-muted hover:text-on-surface transition">
-            <span className="material-symbols-outlined">close</span>
+          <button onClick={onClose} className="p-1 rounded-md text-text-muted hover:text-on-surface hover:bg-hover-bg transition">
+            <span className="material-symbols-outlined text-sm md:text-base">close</span>
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-0 border-b border-theme-border shrink-0 px-6 overflow-x-auto">
+        <div className="flex gap-1 md:gap-0 border-b border-theme-border shrink-0 px-4 md:px-6 overflow-x-auto no-scrollbar">
           <button className={tabCls('basic')} onClick={() => setTab('basic')}>
-            <span className="material-symbols-outlined text-sm">info</span> Basic Info
+            <span className="material-symbols-outlined text-[13px] md:text-sm">info</span> Basic Info
           </button>
           <button className={tabCls('manufacturer')} onClick={() => setTab('manufacturer')}>
-            <span className="material-symbols-outlined text-sm">factory</span> Manufacturer
+            <span className="material-symbols-outlined text-[13px] md:text-sm">factory</span> Manufacturer
           </button>
           {!isNew && (
             <button className={tabCls('manual')} onClick={() => setTab('manual')}>
-              <span className="material-symbols-outlined text-sm">menu_book</span> Manual
+              <span className="material-symbols-outlined text-[13px] md:text-sm">menu_book</span> Manual
             </button>
           )}
         </div>
 
         {/* Body */}
-        <div className="overflow-y-auto flex-1 px-6 py-5">
+        {/* Body */}
+        <div className="overflow-y-auto flex-1 px-4 py-4 md:px-6 md:py-5">
 
           {/* ── Basic Info ── */}
           {tab === 'basic' && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               <div>
-                <label className="block text-xs font-semibold text-text-muted mb-1">Machine Code <span className="text-error">*</span></label>
+                <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">Machine Code <span className="text-error">*</span></label>
                 <input className={errInp('code')} value={form.code} onChange={set('code')} placeholder="e.g. MCH-001" />
-                {errors.code && <p className="text-xs text-error mt-0.5">{t('common.required')}</p>}
+                {errors.code && <p className="text-[10px] md:text-xs text-error mt-0.5">{t('common.required')}</p>}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-text-muted mb-1">Machine Name <span className="text-error">*</span></label>
+                <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">Machine Name <span className="text-error">*</span></label>
                 <input className={errInp('name')} value={form.name} onChange={set('name')} placeholder="e.g. CNC Lathe" />
-                {errors.name && <p className="text-xs text-error mt-0.5">{t('common.required')}</p>}
+                {errors.name && <p className="text-[10px] md:text-xs text-error mt-0.5">{t('common.required')}</p>}
               </div>
               <div>
-                <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.status')}</label>
+                <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">{t('common.status')}</label>
                 <select className={inp()} value={form.status} onChange={set('status')}>
                   {MACHINE_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-text-muted mb-1">Location / Department</label>
+                <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">Location / Department</label>
                 <input className={inp()} value={form.location} onChange={set('location')} placeholder="e.g. Hall A" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-text-muted mb-1">{t('settings.productionYear')}</label>
+                <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">{t('settings.productionYear')}</label>
                 <input type="number" className={inp()} value={form.productionYear} onChange={set('productionYear')} placeholder="e.g. 2019" min="1900" max="2099" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-text-muted mb-1">{t('settings.warrantyExpiry')}</label>
+                <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">{t('settings.warrantyExpiry')}</label>
                 <input type="date" className={inp()} value={form.warrantyExpiry} onChange={set('warrantyExpiry')} />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-text-muted mb-1">{t('settings.nextMaintenance')}</label>
+                <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">{t('settings.nextMaintenance')}</label>
                 <input type="date" className={inp()} value={form.nextMaintenanceDue} onChange={set('nextMaintenanceDue')} />
               </div>
-              <div className="col-span-2">
-                <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.notes')}</label>
+              <div className="col-span-1 md:col-span-2">
+                <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">{t('common.notes')}</label>
                 <textarea rows={3} className={inp()} value={form.notes} onChange={set('notes')} placeholder="Any additional notes…" />
               </div>
             </div>
@@ -337,17 +338,17 @@ function MachineModal({ machine, onClose, onSave }) {
 
           {/* ── Manufacturer ── */}
           {tab === 'manufacturer' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div className="col-span-2">
-                <label className="block text-xs font-semibold text-text-muted mb-1">{t('settings.manufacturer')}</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+              <div className="col-span-1 md:col-span-2">
+                <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">{t('settings.manufacturer')}</label>
                 <input className={inp()} value={form.manufacturer} onChange={set('manufacturer')} placeholder="e.g. Mazak Corporation" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.country')}</label>
+                <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">{t('common.country')}</label>
                 <input className={inp()} value={form.manufacturerCountry} onChange={set('manufacturerCountry')} placeholder="e.g. Japan" />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-text-muted mb-1">Manufacturer Contact</label>
+                <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">Manufacturer Contact</label>
                 <input className={inp()} value={form.manufacturerContact} onChange={set('manufacturerContact')} placeholder="Email, phone, or website" />
               </div>
             </div>
@@ -359,30 +360,30 @@ function MachineModal({ machine, onClose, onSave }) {
           {tab === 'manual' && (
             <div className="flex flex-col items-center gap-6 py-4">
               {machine?.manualPath ? (
-                <div className="w-full max-w-md bg-surface-container-high rounded-2xl border border-theme-border p-6 flex flex-col items-center gap-4">
-                  <span className="material-symbols-outlined text-5xl text-primary">picture_as_pdf</span>
-                  <p className="text-sm font-medium text-on-surface text-center">{machine.manualName || 'Manual'}</p>
-                  <div className="flex gap-3 w-full">
+                <div className="w-full max-w-md bg-surface-container-high rounded-2xl border border-theme-border p-4 md:p-6 flex flex-col items-center gap-3 md:gap-4">
+                  <span className="material-symbols-outlined text-4xl md:text-5xl text-primary">picture_as_pdf</span>
+                  <p className="text-[11px] md:text-sm font-medium text-on-surface text-center">{machine.manualName || 'Manual'}</p>
+                  <div className="flex gap-2 md:gap-3 w-full">
                     <button
                       onClick={() => downloadMachineManual(machine.id, machine.manualName)}
-                      className="flex-1 flex items-center justify-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:opacity-90 transition"
+                      className="flex-1 flex items-center justify-center gap-1.5 md:gap-2 bg-primary text-white px-3 py-2 md:px-4 md:py-2.5 rounded-xl text-[11px] md:text-sm font-semibold hover:opacity-90 transition"
                     >
-                      <span className="material-symbols-outlined text-base">download</span>
+                      <span className="material-symbols-outlined text-[14px] md:text-base">download</span>
                       Download
                     </button>
                     <button
                       onClick={handleDeleteManual}
                       disabled={deletingManual}
-                      className="flex items-center gap-2 border border-theme-border px-4 py-2.5 rounded-xl text-sm text-error hover:bg-hover-bg transition disabled:opacity-40"
+                      className="flex items-center gap-1.5 md:gap-2 border border-theme-border px-3 py-2 md:px-4 md:py-2.5 rounded-xl text-[11px] md:text-sm text-error hover:bg-hover-bg transition disabled:opacity-40"
                     >
-                      <span className="material-symbols-outlined text-base">delete</span>
+                      <span className="material-symbols-outlined text-[14px] md:text-base">delete</span>
                       {deletingManual ? 'Removing…' : 'Remove'}
                     </button>
                   </div>
                   <button
                     onClick={() => fileRef.current?.click()}
                     disabled={uploading}
-                    className="text-xs text-text-muted hover:text-on-surface transition"
+                    className="text-[10px] md:text-xs text-text-muted hover:text-on-surface transition"
                   >
                     {uploading ? 'Uploading…' : 'Replace file'}
                   </button>
@@ -390,12 +391,12 @@ function MachineModal({ machine, onClose, onSave }) {
               ) : (
                 <div
                   onClick={() => fileRef.current?.click()}
-                  className="w-full max-w-md border-2 border-dashed border-theme-border rounded-2xl p-10 flex flex-col items-center gap-3 cursor-pointer hover:border-primary hover:bg-hover-bg transition"
+                  className="w-full max-w-md border-2 border-dashed border-theme-border rounded-2xl p-6 md:p-10 flex flex-col items-center gap-2 md:gap-3 cursor-pointer hover:border-primary hover:bg-hover-bg transition"
                 >
-                  <span className="material-symbols-outlined text-4xl text-text-muted">upload_file</span>
-                  <p className="text-sm font-medium text-on-surface">Click to upload machine manual</p>
-                  <p className="text-xs text-text-muted">PDF, DOC, DOCX — max 50 MB</p>
-                  {uploading && <p className="text-xs text-primary">Uploading…</p>}
+                  <span className="material-symbols-outlined text-3xl md:text-4xl text-text-muted">upload_file</span>
+                  <p className="text-[11px] md:text-sm font-medium text-on-surface">Click to upload machine manual</p>
+                  <p className="text-[10px] md:text-xs text-text-muted">PDF, DOC, DOCX — max 50 MB</p>
+                  {uploading && <p className="text-[10px] md:text-xs text-primary">Uploading…</p>}
                 </div>
               )}
               <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={handleUpload} />
@@ -405,18 +406,18 @@ function MachineModal({ machine, onClose, onSave }) {
 
         {/* Footer */}
         {(tab === 'basic' || tab === 'manufacturer') && (
-          <div className="px-6 py-4 border-t border-theme-border flex gap-3 shrink-0">
-            <button onClick={onClose} className="flex-1 border border-theme-border rounded-xl py-2 text-sm text-text-muted hover:bg-hover-bg transition">
+          <div className="px-4 py-3 md:px-6 md:py-4 border-t border-theme-border flex gap-2 md:gap-3 shrink-0">
+            <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg md:rounded-xl py-1.5 md:py-2 text-[11px] md:text-sm text-text-muted hover:bg-hover-bg transition">
               {t('common.cancel')}
             </button>
-            <button onClick={handleSave} disabled={saving} className="flex-1 bg-primary text-white rounded-xl py-2 text-sm font-semibold hover:opacity-90 transition disabled:opacity-40">
+            <button onClick={handleSave} disabled={saving} className="flex-1 bg-primary text-white rounded-lg md:rounded-xl py-1.5 md:py-2 text-[11px] md:text-sm font-semibold hover:opacity-90 transition disabled:opacity-40">
               {saving ? 'Saving…' : isNew ? t('settings.addMachine') : t('common.saveChanges')}
             </button>
           </div>
         )}
         {tab === 'manual' && (
-          <div className="px-6 py-4 border-t border-theme-border flex justify-end shrink-0">
-            <button onClick={onClose} className="border border-theme-border rounded-xl px-6 py-2 text-sm text-text-muted hover:bg-hover-bg transition">
+          <div className="px-4 py-3 md:px-6 md:py-4 border-t border-theme-border flex justify-end shrink-0">
+            <button onClick={onClose} className="border border-theme-border rounded-lg md:rounded-xl px-4 py-1.5 md:px-6 md:py-2 text-[11px] md:text-sm text-text-muted hover:bg-hover-bg transition">
               {t('common.close')}
             </button>
           </div>
@@ -463,22 +464,22 @@ function EmployeeAssignModal({ employee, allEmployees, onClose, onSave }) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-sm p-6">
-        <div className="flex items-center justify-between mb-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-sm p-4 md:p-6">
+        <div className="flex items-center justify-between mb-3 md:mb-4">
           <div>
-            <h3 className="text-base font-bold text-on-surface">{employee.name}</h3>
-            <p className="text-xs text-text-muted">{employee.position || '—'}</p>
+            <h3 className="text-sm md:text-base font-bold text-on-surface leading-tight">{employee.name}</h3>
+            <p className="text-[10px] md:text-xs text-text-muted mt-0.5">{employee.position || '—'}</p>
           </div>
-          <button onClick={onClose} className="text-text-muted hover:text-error">
-            <span className="material-symbols-outlined">close</span>
+          <button onClick={onClose} className="p-1 rounded-md text-text-muted hover:text-on-surface hover:bg-hover-bg transition">
+            <span className="material-symbols-outlined text-sm md:text-base">close</span>
           </button>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-3 md:space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">Department</label>
+            <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">Department</label>
             <select
-              className="w-full bg-surface-container border border-theme-border rounded-lg px-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
+              className="w-full bg-surface-container border border-theme-border rounded-lg px-2.5 py-1.5 md:px-3 md:py-2 text-[11px] md:text-sm text-on-surface outline-none focus:border-primary"
               value={form.department}
               onChange={(e) => setForm((p) => ({ ...p, department: e.target.value }))}
             >
@@ -487,9 +488,9 @@ function EmployeeAssignModal({ employee, allEmployees, onClose, onSave }) {
             </select>
           </div>
           <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">Manager (Supervisor)</label>
+            <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">Manager (Supervisor)</label>
             <select
-              className="w-full bg-surface-container border border-theme-border rounded-lg px-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
+              className="w-full bg-surface-container border border-theme-border rounded-lg px-2.5 py-1.5 md:px-3 md:py-2 text-[11px] md:text-sm text-on-surface outline-none focus:border-primary"
               value={form.supervisorId}
               onChange={(e) => setForm((p) => ({ ...p, supervisorId: e.target.value }))}
             >
@@ -500,9 +501,9 @@ function EmployeeAssignModal({ employee, allEmployees, onClose, onSave }) {
             </select>
           </div>
         </div>
-        <div className="flex gap-3 mt-5">
-          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition">Cancel</button>
-          <button onClick={handleSave} disabled={saving} className="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition disabled:opacity-40">
+        <div className="flex gap-2 md:gap-3 mt-4 md:mt-5">
+          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg md:rounded-xl py-1.5 md:py-2 text-[11px] md:text-sm text-text-muted hover:bg-hover-bg transition">Cancel</button>
+          <button onClick={handleSave} disabled={saving} className="flex-1 bg-primary text-white rounded-lg md:rounded-xl py-1.5 md:py-2 text-[11px] md:text-sm font-semibold hover:opacity-90 transition disabled:opacity-40">
             {saving ? 'Saving…' : 'Save'}
           </button>
         </div>
@@ -541,7 +542,10 @@ function UserRolesTab() {
 
   async function handleAddDept() {
     const name = newDept.trim()
-    if (!name) return
+    if (!name) {
+      setAddError('Lütfen bir departman adı yazın.')
+      return
+    }
     try {
       setAddError('')
       await addRole(name)
@@ -591,7 +595,7 @@ function UserRolesTab() {
       {/* Add Department */}
       <div className="flex gap-2">
         <input
-          className="flex-1 bg-surface-container-lowest border border-theme-border rounded-xl px-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
+          className="flex-1 bg-surface-container-lowest border border-theme-border rounded-lg px-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
           placeholder="New department name…"
           value={newDept}
           onChange={(e) => setNewDept(e.target.value)}
@@ -599,9 +603,9 @@ function UserRolesTab() {
         />
         <button
           onClick={handleAddDept}
-          className="flex items-center gap-1.5 primary-gradient text-white px-4 py-2 rounded-xl text-sm font-bold shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity"
+          className="flex items-center gap-1.5 primary-gradient text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm shadow-primary/10 hover:opacity-90 transition-opacity shrink-0"
         >
-          <span className="material-symbols-outlined text-base">add</span>
+          <span className="material-symbols-outlined text-sm">add</span>
           {t('common.add')}
         </button>
       </div>
@@ -612,7 +616,7 @@ function UserRolesTab() {
       )}
 
       {/* Compact department grid */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {departments.map((dept) => {
           const count = employees.filter((e) => (e.department || 'Unassigned') === dept).length
           const role = roles.find((r) => r.name === dept)
@@ -654,40 +658,40 @@ function UserRolesTab() {
 
       {/* Department detail popup */}
       {viewDept && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-sm mx-4 overflow-hidden">
-            <div className="flex items-center gap-3 px-5 py-4 bg-primary">
-              <span className="material-symbols-outlined text-white text-base">corporate_fare</span>
-              <h3 className="text-base font-bold text-white flex-1">{viewDept}</h3>
-              <span className="text-xs text-white/70 bg-white/20 px-2 py-0.5 rounded-full">{viewEmps.length} {viewEmps.length === 1 ? 'person' : 'people'}</span>
-              <button onClick={() => setViewDept(null)} className="ml-2 text-white/70 hover:text-white transition">
-                <span className="material-symbols-outlined text-base">close</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+            <div className="flex items-center gap-2.5 px-4 py-3 md:py-4 primary-gradient">
+              <span className="material-symbols-outlined text-white text-[13px] md:text-base">corporate_fare</span>
+              <h3 className="text-sm md:text-base font-bold text-white flex-1">{viewDept}</h3>
+              <span className="text-[10px] md:text-xs font-medium text-white/90 bg-white/20 px-1.5 py-0.5 rounded-full">{viewEmps.length} {viewEmps.length === 1 ? 'person' : 'people'}</span>
+              <button onClick={() => setViewDept(null)} className="ml-1 p-1 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-colors">
+                <span className="material-symbols-outlined text-sm md:text-base">close</span>
               </button>
             </div>
-            <div className="p-4 max-h-96 overflow-y-auto space-y-1">
+            <div className="p-3 max-h-80 overflow-y-auto space-y-1">
               {viewEmps.length === 0 && (
-                <p className="text-sm text-text-muted text-center py-6">No employees in this department.</p>
+                <p className="text-[11px] md:text-sm text-text-muted text-center py-6">No employees in this department.</p>
               )}
               {viewManagers.map((emp) => (
-                <div key={emp.id} className="flex items-center gap-3 px-3 py-2 rounded-xl bg-amber-500/5 border border-amber-500/15">
-                  <div className="w-7 h-7 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-sm text-amber-600">manage_accounts</span>
+                <div key={emp.id} className="flex items-center gap-2.5 px-3 py-2 md:py-2.5 rounded-xl bg-amber-500/5 border border-amber-500/15">
+                  <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-amber-500/15 flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-[12px] md:text-sm text-amber-600">manage_accounts</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-on-surface truncate">{emp.name}</p>
-                    <p className="text-xs text-text-muted">{emp.position || '—'}</p>
+                    <p className="text-[11px] md:text-sm font-semibold text-on-surface truncate leading-tight">{emp.name}</p>
+                    <p className="text-[9px] md:text-[11px] text-text-muted mt-0.5">{emp.position || '—'}</p>
                   </div>
-                  <span className="text-[10px] font-bold bg-amber-500/15 text-amber-600 px-1.5 py-0.5 rounded-full whitespace-nowrap">MANAGER</span>
+                  <span className="text-[9px] md:text-[10px] font-bold bg-amber-500/15 text-amber-600 px-1.5 md:px-2 py-0.5 rounded-full whitespace-nowrap">MANAGER</span>
                 </div>
               ))}
               {viewMembers.map((emp) => (
-                <div key={emp.id} className="flex items-center gap-3 px-3 py-2 rounded-xl hover:bg-hover-bg transition">
-                  <div className="w-7 h-7 rounded-full bg-surface-container flex items-center justify-center shrink-0">
-                    <span className="material-symbols-outlined text-sm text-text-muted">person</span>
+                <div key={emp.id} className="flex items-center gap-2.5 px-3 py-2 md:py-2.5 rounded-xl hover:bg-hover-bg transition">
+                  <div className="w-6 h-6 md:w-8 md:h-8 rounded-full bg-surface-container flex items-center justify-center shrink-0">
+                    <span className="material-symbols-outlined text-[12px] md:text-sm text-text-muted">person</span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm text-on-surface truncate">{emp.name}</p>
-                    <p className="text-xs text-text-muted">{emp.position || '—'}</p>
+                    <p className="text-[11px] md:text-sm font-medium text-on-surface truncate leading-tight">{emp.name}</p>
+                    <p className="text-[9px] md:text-[11px] text-text-muted mt-0.5">{emp.position || '—'}</p>
                   </div>
                 </div>
               ))}
@@ -698,32 +702,32 @@ function UserRolesTab() {
 
       {/* Rename modal */}
       {renamingRole && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-sm p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-primary">edit</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-sm p-4 md:p-6">
+            <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-primary text-[18px] md:text-2xl">edit</span>
               </div>
               <div>
-                <h3 className="text-base font-bold text-on-surface">Rename Department</h3>
-                <p className="text-xs text-text-muted">Current: <span className="font-semibold text-on-surface">{renamingRole.name}</span></p>
+                <h3 className="text-sm md:text-base font-bold text-on-surface">Rename Department</h3>
+                <p className="text-[10px] md:text-xs text-text-muted">Current: <span className="font-semibold text-on-surface">{renamingRole.name}</span></p>
               </div>
             </div>
             <input
-              className="w-full bg-surface-container border border-theme-border rounded-lg px-3 py-2 text-sm text-on-surface outline-none focus:border-primary mb-1"
+              className="w-full bg-surface-container border border-theme-border rounded-lg px-2.5 py-1.5 md:px-3 md:py-2 text-[11px] md:text-sm text-on-surface outline-none focus:border-primary mb-1"
               placeholder="New department name…"
               value={renameText}
               onChange={(e) => setRenameText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleRenameDept()}
               autoFocus
             />
-            {renameError && <p className="text-xs text-error mb-2">{renameError}</p>}
-            <div className="flex gap-3 mt-4">
-              <button onClick={() => { setRenamingRole(null); setRenameText(''); setRenameError('') }} className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
+            {renameError && <p className="text-[10px] md:text-xs text-error mb-2">{renameError}</p>}
+            <div className="flex gap-2 md:gap-3 mt-3 md:mt-4">
+              <button onClick={() => { setRenamingRole(null); setRenameText(''); setRenameError('') }} className="flex-1 border border-theme-border rounded-lg md:rounded-xl py-1.5 md:py-2 text-[11px] md:text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
               <button
                 onClick={handleRenameDept}
                 disabled={!renameText.trim() || renameText.trim() === renamingRole.name}
-                className="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex-1 bg-primary text-white rounded-lg md:rounded-xl py-1.5 md:py-2 text-[11px] md:text-sm font-semibold hover:opacity-90 transition disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 {t('common.edit')}
               </button>
@@ -734,34 +738,34 @@ function UserRolesTab() {
 
       {/* Delete modal */}
       {deletingRole && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-sm p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-xl bg-error/10 flex items-center justify-center shrink-0">
-                <span className="material-symbols-outlined text-error">delete</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-sm p-4 md:p-6">
+            <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+              <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-error/10 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-error text-[18px] md:text-2xl">delete</span>
               </div>
               <div>
-                <h3 className="text-base font-bold text-on-surface">Delete Department</h3>
-                <p className="text-xs text-text-muted">This action cannot be undone.</p>
+                <h3 className="text-sm md:text-base font-bold text-on-surface">Delete Department</h3>
+                <p className="text-[10px] md:text-xs text-text-muted">This action cannot be undone.</p>
               </div>
             </div>
-            <p className="text-sm text-text-muted mb-3">
+            <p className="text-[11px] md:text-sm text-text-muted mb-2 md:mb-3">
               Type <span className="font-semibold text-on-surface">{deletingRole.name}</span> to confirm.
             </p>
             <input
-              className="w-full bg-surface-container border border-theme-border rounded-lg px-3 py-2 text-sm text-on-surface outline-none focus:border-error mb-4"
+              className="w-full bg-surface-container border border-theme-border rounded-lg px-2.5 py-1.5 md:px-3 md:py-2 text-[11px] md:text-sm text-on-surface outline-none focus:border-error mb-3 md:mb-4"
               placeholder={deletingRole.name}
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && deleteConfirmText === deletingRole.name && handleDeleteDept()}
               autoFocus
             />
-            <div className="flex gap-3">
-              <button onClick={() => { setDeletingRole(null); setDeleteConfirmText('') }} className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
+            <div className="flex gap-2 md:gap-3">
+              <button onClick={() => { setDeletingRole(null); setDeleteConfirmText('') }} className="flex-1 border border-theme-border rounded-lg md:rounded-xl py-1.5 md:py-2 text-[11px] md:text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
               <button
                 onClick={handleDeleteDept}
                 disabled={deleteConfirmText !== deletingRole.name}
-                className="flex-1 bg-error text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex-1 bg-error text-white rounded-lg md:rounded-xl py-1.5 md:py-2 text-[11px] md:text-sm font-semibold hover:opacity-90 transition disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 {t('common.delete')}
               </button>
@@ -942,12 +946,14 @@ function PermissionsTab() {
 // ─── Machines Tab ─────────────────────────────────────────────────────────────
 function MachinesTab() {
   const { t } = useTranslation()
-  const { machines, addMachine, updateMachine, deleteMachine } = useData()
+  const { machines: realMachines, addMachine, updateMachine, deleteMachine } = useData()
   const [modal, setModal] = useState(null) // null | 'new' | machine object
   const [viewMachine, setViewMachine] = useState(null)
   const [error, setError] = useState('')
   const [deletingId, setDeletingId] = useState(null)
   const [search, setSearch] = useState('')
+
+  const machines = realMachines || []
 
   const filtered = machines.filter((m) =>
     m.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -988,23 +994,23 @@ function MachinesTab() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-5">
-        <p className="text-sm text-text-muted">Manage factory machines and maintenance records.</p>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-xs text-text-muted">Manage factory machines and maintenance records.</p>
         <button
           onClick={() => { setError(''); setModal('new') }}
-          className="flex items-center gap-1.5 primary-gradient text-white px-4 py-2 rounded-xl text-sm font-bold shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity"
+          className="flex items-center gap-1.5 primary-gradient text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm shadow-primary/10 hover:opacity-90 transition-opacity whitespace-nowrap shrink-0"
         >
-          <span className="material-symbols-outlined text-base">add</span>
-          {t('settings.addMachine')}
+          <span className="material-symbols-outlined text-sm">add</span>
+          {t('settings.addMachine', 'Makine Ekle')}
         </button>
       </div>
 
       {error && <p className="text-xs text-error mb-3">{error}</p>}
 
       <div className="relative mb-4 max-w-sm">
-        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-lg">search</span>
+        <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted text-sm">search</span>
         <input
-          className="w-full bg-surface-container-lowest border border-theme-border rounded-xl pl-9 pr-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
+          className="w-full bg-surface-container-lowest border border-theme-border rounded-lg pl-8 pr-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
           placeholder="Search machines…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
@@ -1063,9 +1069,9 @@ function MachinesTab() {
                     <span className="material-symbols-outlined text-base">edit</span>
                   </button>
                   {deletingId === m.id ? (
-                    <span className="flex items-center gap-1">
-                      <button onClick={async () => { await deleteMachine(m.id); setDeletingId(null) }} className="text-xs font-semibold text-white bg-error px-2 py-1 rounded-lg transition">{t('common.yes')}</button>
-                      <button onClick={() => setDeletingId(null)} className="text-xs text-text-muted px-1 transition">{t('common.no')}</button>
+                    <span className="flex flex-col md:flex-row items-center gap-1 md:gap-1.5 bg-surface-container-high md:bg-transparent p-1 md:p-0 rounded-lg">
+                      <button onClick={async () => { await deleteMachine(m.id); setDeletingId(null) }} className="text-[10px] md:text-xs font-bold text-white bg-error px-2 py-0.5 md:py-1 rounded-md transition whitespace-nowrap">{t('common.yes')}</button>
+                      <button onClick={() => setDeletingId(null)} className="text-[10px] md:text-xs font-semibold text-text-muted hover:text-on-surface px-1.5 py-0.5 md:py-1 transition whitespace-nowrap">{t('common.no')}</button>
                     </span>
                   ) : (
                     <button onClick={() => setDeletingId(m.id)} className="p-1.5 rounded-lg hover:bg-hover-bg text-text-muted hover:text-error transition">
@@ -1161,37 +1167,37 @@ function OrderStatusTab() {
       <p className="text-sm text-text-muted mb-6">
         Configure which employees can advance orders from each status to the next.
       </p>
-      <div className="grid grid-cols-2 gap-4" ref={dropdownRef}>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3" ref={dropdownRef}>
         {STATUS_KEYS.map((status) => {
           const assignedIds = getAssignedUserIds(status)
           const assignedUsers = users.filter((u) => assignedIds.includes(u.id))
           const isOpen = openDropdown === status
           return (
             <div key={status} className="bg-surface-container-lowest rounded-xl border border-theme-border overflow-visible">
-              <div className="px-4 py-3 border-b border-theme-border flex items-center gap-2">
-                <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${orderStatusColor[status] || 'bg-surface-container-high text-text-muted'}`}>
+              <div className="px-3 py-2 md:px-4 md:py-3 border-b border-theme-border flex items-center gap-2 min-h-[40px] md:min-h-[48px]">
+                <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] md:text-[10px] font-extrabold uppercase tracking-widest ${orderStatusColor[status] || 'bg-surface-container-high text-text-muted'}`}>
                   {status}
                 </span>
                 {saving[status] && (
-                  <span className="material-symbols-outlined text-sm text-text-muted animate-spin ml-auto">progress_activity</span>
+                  <span className="material-symbols-outlined text-[13px] md:text-base text-text-muted animate-spin ml-auto">progress_activity</span>
                 )}
               </div>
-              <div className="px-4 py-3 space-y-2">
+              <div className="px-3 py-2.5 md:px-4 md:py-3 space-y-2">
                 {/* Assigned user chips */}
                 {assignedUsers.length > 0 && (
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className="flex flex-wrap gap-1.5 md:gap-2">
                     {assignedUsers.map((u) => (
                       <span
                         key={u.id}
-                        className="flex items-center gap-1 bg-primary/10 text-primary text-xs font-medium px-2 py-1 rounded-full"
+                        className="flex items-center gap-1 bg-primary/10 text-primary text-[10px] md:text-xs font-semibold px-2 py-0.5 md:px-2.5 md:py-1 rounded-full"
                       >
                         {u.name}
                         <button
                           onClick={() => toggleUserForStatus(status, u.id)}
                           disabled={!!saving[status]}
-                          className="hover:text-error transition disabled:opacity-40"
+                          className="hover:text-error transition disabled:opacity-40 flex items-center"
                         >
-                          <span className="material-symbols-outlined text-xs leading-none">close</span>
+                          <span className="material-symbols-outlined text-[11px] md:text-sm leading-none">close</span>
                         </button>
                       </span>
                     ))}
@@ -1199,13 +1205,13 @@ function OrderStatusTab() {
                 )}
 
                 {/* Add employee dropdown */}
-                <div className="relative">
+                <div className="relative mt-0.5 md:mt-1">
                   <button
                     onClick={() => setOpenDropdown(isOpen ? null : status)}
                     disabled={!!saving[status]}
-                    className="flex items-center gap-1.5 text-xs text-text-muted hover:text-primary border border-dashed border-theme-border rounded-lg px-3 py-1.5 w-full justify-center hover:border-primary transition disabled:opacity-40"
+                    className="flex items-center gap-1.5 text-[10px] md:text-xs font-semibold text-text-muted hover:text-primary border border-dashed border-theme-border rounded-lg px-2 py-1.5 md:px-3 md:py-2 w-full justify-center hover:border-primary transition disabled:opacity-40"
                   >
-                    <span className="material-symbols-outlined text-sm">person_add</span>
+                    <span className="material-symbols-outlined text-[12px] md:text-[14px]">person_add</span>
                     Add employee
                   </button>
                   {isOpen && (
@@ -1312,22 +1318,22 @@ function PurchasingStatusTab() {
       <p className="text-sm text-text-muted mb-6">
         Configure which user can advance purchasing requests from each stage to the next.
       </p>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
         {PURCHASING_STATUS_KEYS.map((status) => {
           const assignedUserId = getAssignedUserId(status)
           return (
             <div key={status} className="bg-surface-container-lowest rounded-xl border border-theme-border overflow-hidden">
-              <div className="px-4 py-3 border-b border-theme-border flex items-center gap-2">
-                <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${purchasingStatusColor[status] || 'bg-surface-container-high text-text-muted'}`}>
+              <div className="px-3 py-2 md:px-4 md:py-3 border-b border-theme-border flex items-center gap-2 min-h-[40px] md:min-h-[48px]">
+                <span className={`inline-flex px-2 py-0.5 rounded-full text-[9px] md:text-[10px] font-extrabold uppercase tracking-widest ${purchasingStatusColor[status] || 'bg-surface-container-high text-text-muted'}`}>
                   {status}
                 </span>
               </div>
-              <div className="px-4 py-3 flex items-center gap-2">
+              <div className="px-3 py-2.5 md:px-4 md:py-3 flex items-center gap-2">
                 <select
                   value={assignedUserId}
                   onChange={(e) => setPending({ status, newUserId: e.target.value })}
                   disabled={!!saving[status]}
-                  className="flex-1 text-sm bg-surface-container border border-theme-border rounded-lg px-3 py-2 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="flex-1 text-[11px] md:text-xs font-medium bg-surface-container border border-theme-border rounded-lg px-2.5 py-1.5 md:px-3 md:py-2 text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="">— Unassigned —</option>
                   {users.map((user) => (
@@ -1337,7 +1343,7 @@ function PurchasingStatusTab() {
                   ))}
                 </select>
                 {saving[status] && (
-                  <span className="material-symbols-outlined text-sm text-text-muted animate-spin">progress_activity</span>
+                  <span className="material-symbols-outlined text-[13px] md:text-base text-text-muted animate-spin">progress_activity</span>
                 )}
               </div>
             </div>
@@ -1347,26 +1353,26 @@ function PurchasingStatusTab() {
 
       {/* Confirmation modal */}
       {pending && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-surface-container-low rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6">
-            <h3 className="text-base font-semibold text-on-surface mb-2">Confirm Assignment</h3>
-            <p className="text-sm text-text-muted mb-1">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-surface-container-low rounded-xl shadow-xl w-full max-w-sm p-4 md:p-6">
+            <h3 className="text-sm md:text-base font-bold text-on-surface mb-1.5 md:mb-2">Confirm Assignment</h3>
+            <p className="text-xs md:text-sm text-text-muted mb-1 md:mb-2 leading-snug">
               Assign <span className="font-semibold text-on-surface">{pendingUser ? pendingUser.name : 'Unassigned'}</span> to the{' '}
-              <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-semibold ${purchasingStatusColor[pending.status] || 'bg-surface-container-high text-text-muted'}`}>
+              <span className={`inline-flex px-1.5 py-0.5 rounded-full text-[9px] md:text-[10px] font-extrabold uppercase tracking-widest ${purchasingStatusColor[pending.status] || 'bg-surface-container-high text-text-muted'}`}>
                 {pending.status}
               </span>{' '}
               stage?
             </p>
-            <div className="flex gap-3 mt-5">
+            <div className="flex gap-2 mt-4 md:mt-5">
               <button
                 onClick={() => setPending(null)}
-                className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition"
+                className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-[11px] md:text-sm font-semibold text-text-muted hover:bg-hover-bg transition"
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={confirmAssign}
-                className="flex-1 bg-primary text-on-primary rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition"
+                className="flex-1 bg-primary text-on-primary rounded-lg py-1.5 md:py-2 text-[11px] md:text-sm font-bold hover:opacity-90 transition"
               >
                 {t('common.confirm')}
               </button>
@@ -1384,32 +1390,32 @@ export default function Settings() {
 
   const TABS = [
     { key: 'users',               label: t('settings.users'),    icon: 'manage_accounts' },
-    { key: 'roles',               label: 'Departments',          icon: 'corporate_fare' },
-    { key: 'order-status',        label: 'Order Status',         icon: 'swap_horiz' },
-    { key: 'purchasing-status',   label: 'Purchasing Status',    icon: 'shopping_cart' },
+    { key: 'roles',               label: t('settings.departments', 'Departments'), icon: 'corporate_fare' },
+    { key: 'order-status',        label: t('settings.orderStatus', 'Order Status'), icon: 'swap_horiz' },
+    { key: 'purchasing-status',   label: t('settings.purchasingStatus', 'Purchasing Status'), icon: 'shopping_cart' },
     { key: 'machines',            label: t('settings.machines'), icon: 'precision_manufacturing' },
   ]
 
   return (
-    <div className="p-8 max-w-5xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-on-surface">{t('settings.title')}</h1>
-        <p className="text-sm text-text-muted mt-0.5">System configuration</p>
+    <div className="p-4 md:p-6 max-w-5xl mx-auto">
+      <div className="mb-4 md:mb-5">
+        <h1 className="text-lg md:text-xl font-extrabold text-on-surface">{t('settings.title')}</h1>
+        <p className="text-[10px] md:text-xs text-text-muted mt-0.5">System configuration</p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-8 border-b border-theme-border">
+      <div className="flex gap-1 md:gap-1.5 mb-5 md:mb-6 border-b border-theme-border overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-bold border-b-2 -mb-px transition rounded-t-lg ${
+            className={`flex items-center gap-1 md:gap-1.5 px-3 md:px-3.5 py-1.5 md:py-2 text-[10px] md:text-xs font-bold border-b-2 -mb-[3px] transition rounded-t-lg whitespace-nowrap shrink-0 ${
               tab === t.key
-                ? 'primary-gradient text-white border-primary shadow-lg shadow-primary/10'
-                : 'border-transparent text-text-muted hover:text-on-surface'
+                ? 'primary-gradient text-white border-primary shadow-sm shadow-primary/10'
+                : 'border-transparent text-text-muted hover:text-on-surface hover:bg-surface-container-high/50'
             }`}
           >
-            <span className="material-symbols-outlined text-base">{t.icon}</span>
+            <span className="material-symbols-outlined text-sm md:text-base">{t.icon}</span>
             {t.label}
           </button>
         ))}
