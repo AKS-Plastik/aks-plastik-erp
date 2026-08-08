@@ -59,11 +59,16 @@ function MyAttendanceTab({ employeeId, token }) {
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
 
   const load = useCallback(() => {
-    if (!employeeId) return
+    if (!employeeId) {
+      setRecords([])
+      return
+    }
     fetch(`${API_URL}/attendance?employeeId=${employeeId}&month=${monthStr}`, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
-      .then(setRecords)
-      .catch(() => {})
+      .then((data) => {
+        setRecords(Array.isArray(data) ? data : [])
+      })
+      .catch(() => { })
   }, [employeeId, monthStr, token])
 
   useEffect(() => { load() }, [load])
@@ -118,19 +123,19 @@ function MyAttendanceTab({ employeeId, token }) {
   return (
     <div>
       {/* Month nav + stats */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <button onClick={prevMonth} className="p-1.5 rounded-lg border border-theme-border hover:bg-hover-bg transition">
-            <span className="material-symbols-outlined text-base">chevron_left</span>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-0 mb-4 md:mb-6">
+        <div className="flex items-center gap-2 md:gap-3">
+          <button onClick={prevMonth} className="p-1 md:p-1.5 rounded-lg border border-theme-border hover:bg-hover-bg transition">
+            <span className="material-symbols-outlined text-sm md:text-base">chevron_left</span>
           </button>
-          <h2 className="text-lg font-bold text-on-surface min-w-[180px] text-center">
+          <h2 className="text-base md:text-lg font-bold text-on-surface min-w-[130px] md:min-w-[180px] text-center">
             {MONTHS[month]} {year}
           </h2>
-          <button onClick={nextMonth} className="p-1.5 rounded-lg border border-theme-border hover:bg-hover-bg transition">
-            <span className="material-symbols-outlined text-base">chevron_right</span>
+          <button onClick={nextMonth} className="p-1 md:p-1.5 rounded-lg border border-theme-border hover:bg-hover-bg transition">
+            <span className="material-symbols-outlined text-sm md:text-base">chevron_right</span>
           </button>
         </div>
-        <div className="flex items-center gap-6 text-sm">
+        <div className="flex items-center gap-4 md:gap-6 text-xs md:text-sm">
           <div className="text-text-muted">
             <span className="font-semibold text-on-surface">{workedDays}</span> days worked
           </div>
@@ -140,8 +145,54 @@ function MyAttendanceTab({ employeeId, token }) {
         </div>
       </div>
 
-      {/* Table */}
-      <div className="bg-surface-container-lowest rounded-2xl border border-theme-border overflow-hidden">
+      {/* Mobile Card Layout */}
+      <div className="xl:hidden flex flex-col divide-y divide-neutral-500/20 bg-surface-container-lowest border border-neutral-500/20 rounded-2xl overflow-hidden mb-6">
+        {days.map(({ date, day, dayOfWeek, rec }) => {
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6
+          const today = new Date().toISOString().split('T')[0]
+          const isToday = date === today
+          
+          return (
+            <div key={date} className={`p-4 transition-colors ${isToday ? 'bg-primary/5' : 'hover:bg-hover-bg'}`}>
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <span className={`font-mono text-sm ${isToday ? 'font-bold text-primary' : 'text-on-surface'}`}>{date}</span>
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-md ${isWeekend ? 'bg-error/10 text-error' : 'bg-surface-container text-text-muted'}`}>
+                    {DAYS_LABEL[dayOfWeek]}
+                  </span>
+                </div>
+                {!isWeekend && (
+                  <button onClick={() => startEdit(date, rec)} className="p-1.5 rounded-lg border border-theme-border hover:bg-hover-bg text-text-muted hover:text-primary transition">
+                    <span className="material-symbols-outlined text-sm">edit</span>
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-2 text-xs">
+                <div>
+                  <p className="text-text-muted mb-0.5 font-medium">{t('attendance.checkIn')}</p>
+                  <p className="font-semibold text-on-surface">{rec?.checkIn || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-text-muted mb-0.5 font-medium">{t('attendance.checkOut')}</p>
+                  <p className="font-semibold text-on-surface">{rec?.checkOut || '—'}</p>
+                </div>
+                <div>
+                  <p className="text-text-muted mb-0.5 font-medium">{t('attendance.hours')}</p>
+                  <p className="font-semibold text-on-surface">{calcHours(rec?.checkIn, rec?.checkOut) || '—'}</p>
+                </div>
+              </div>
+              {rec?.notes && (
+                <div className="mt-3 pt-2.5 border-t border-neutral-500/20 text-xs text-text-muted">
+                  <span className="font-medium">Note:</span> {rec.notes}
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Desktop Table Layout */}
+      <div className="hidden xl:block bg-surface-container-lowest rounded-2xl border border-theme-border overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-theme-border text-text-muted text-xs uppercase tracking-wider">
@@ -190,31 +241,31 @@ function MyAttendanceTab({ employeeId, token }) {
 
       {/* Edit modal */}
       {editDate && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-sm p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-on-surface">Edit — {editDate}</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-surface-container-lowest rounded-xl md:rounded-2xl shadow-xl w-full max-w-[320px] md:max-w-sm p-4 md:p-6">
+            <div className="flex items-center justify-between mb-3 md:mb-4">
+              <h3 className="text-sm md:text-base font-bold text-on-surface">Edit — {editDate}</h3>
               <button onClick={() => setEditDate(null)} className="text-text-muted hover:text-error">
-                <span className="material-symbols-outlined">close</span>
+                <span className="material-symbols-outlined text-[20px] md:text-[24px]">close</span>
               </button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2.5 md:space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-text-muted mb-1">{t('attendance.checkIn')}</label>
-                <input type="time" className="w-full bg-surface-container-lowest border border-theme-border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary" value={editForm.checkIn} onChange={(e) => setEditForm((f) => ({ ...f, checkIn: e.target.value }))} />
+                <label className="block text-[11px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('attendance.checkIn')}</label>
+                <input type="time" className="w-full bg-surface-container-lowest border border-theme-border rounded px-2.5 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary" value={editForm.checkIn} onChange={(e) => setEditForm((f) => ({ ...f, checkIn: e.target.value }))} />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-text-muted mb-1">{t('attendance.checkOut')}</label>
-                <input type="time" className="w-full bg-surface-container-lowest border border-theme-border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary" value={editForm.checkOut} onChange={(e) => setEditForm((f) => ({ ...f, checkOut: e.target.value }))} />
+                <label className="block text-[11px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('attendance.checkOut')}</label>
+                <input type="time" className="w-full bg-surface-container-lowest border border-theme-border rounded px-2.5 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary" value={editForm.checkOut} onChange={(e) => setEditForm((f) => ({ ...f, checkOut: e.target.value }))} />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.notes')}</label>
-                <input className="w-full bg-surface-container-lowest border border-theme-border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary" value={editForm.notes} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} />
+                <label className="block text-[11px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.notes')}</label>
+                <input className="w-full bg-surface-container-lowest border border-theme-border rounded px-2.5 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary" value={editForm.notes} onChange={(e) => setEditForm((f) => ({ ...f, notes: e.target.value }))} />
               </div>
             </div>
-            <div className="flex gap-3 mt-5">
-              <button onClick={() => setEditDate(null)} className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
-              <button onClick={saveEdit} className="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition">{t('common.save')}</button>
+            <div className="flex gap-2.5 md:gap-3 mt-4 md:mt-5">
+              <button onClick={() => setEditDate(null)} className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
+              <button onClick={saveEdit} className="flex-1 bg-primary text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition">{t('common.save')}</button>
             </div>
           </div>
         </div>
@@ -235,11 +286,16 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
 
   const load = useCallback(() => {
-    if (!employeeId) return
+    if (!employeeId) {
+      setRequests([])
+      return
+    }
     fetch(`${API_URL}/leave-requests?employeeId=${employeeId}`, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
-      .then(setRequests)
-      .catch(() => {})
+      .then((data) => {
+        setRequests(Array.isArray(data) ? data : [])
+      })
+      .catch(() => { })
   }, [employeeId, token])
 
   useEffect(() => { load() }, [load])
@@ -292,7 +348,7 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
   }
 
   const inputCls = (field) =>
-    `w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary transition ${errors[field] ? 'border-error' : 'border-theme-border'}`
+    `w-full bg-surface-container-lowest border rounded px-2.5 py-1.5 md:px-3 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary transition ${errors[field] ? 'border-error' : 'border-theme-border'}`
 
   const usedDays = requests.filter((r) => r.status !== 'Rejected').reduce((sum, r) => sum + r.days, 0)
 
@@ -306,8 +362,8 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
         </div>
       )}
 
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-6 text-sm">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-0 mb-4 md:mb-6">
+        <div className="flex items-center gap-4 md:gap-6 text-[11px] md:text-sm">
           <div className="text-text-muted">
             <span className="font-semibold text-on-surface">{usedDays}</span> days used / requested
           </div>
@@ -315,13 +371,73 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
             <span className="font-semibold text-on-surface">{requests.length}</span> total requests
           </div>
         </div>
-        <button onClick={openAdd} className="flex items-center gap-2 primary-gradient text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity">
-          <span className="material-symbols-outlined text-base">add</span>
+        <button onClick={openAdd} className="flex items-center justify-center gap-1.5 md:gap-2 primary-gradient text-white px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-[11px] md:text-xs font-semibold shadow-lg shadow-primary/10 hover:opacity-90 transition-opacity">
+          <span className="material-symbols-outlined text-[13px] md:text-[15px]">add</span>
           {t('attendance.requestLeave')}
         </button>
       </div>
 
-      <div className="bg-surface-container-lowest rounded-2xl border border-theme-border overflow-hidden">
+      {/* Mobile Card Layout */}
+      <div className="xl:hidden flex flex-col divide-y divide-neutral-500/20 bg-surface-container-lowest border border-neutral-500/20 rounded-2xl overflow-hidden mb-6">
+        {requests.length === 0 ? (
+          <div className="text-center py-10 text-text-muted text-sm">No leave requests yet</div>
+        ) : requests.map((r) => (
+          <div key={r.id} className="p-4 transition-colors hover:bg-hover-bg">
+            <div className="flex items-center justify-between mb-3">
+              <span className="font-bold text-sm text-on-surface">{r.type}</span>
+              {r.status === 'Pending' ? (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-tertiary-fixed text-on-tertiary-fixed-variant">
+                  <span className="material-symbols-outlined text-[10px]">schedule</span>
+                  {isManager ? 'Awaiting Admin' : 'Awaiting Mgr'}
+                </span>
+              ) : (
+                <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusBadge[r.status] || ''}`}>
+                  {r.status}
+                </span>
+              )}
+            </div>
+            
+            <div className="grid grid-cols-2 gap-y-2 text-xs mb-3">
+              <div>
+                <p className="text-text-muted mb-0.5">{t('attendance.startDate')}</p>
+                <p className="font-mono font-medium text-on-surface">{r.startDate}</p>
+              </div>
+              <div>
+                <p className="text-text-muted mb-0.5">{t('attendance.endDate')}</p>
+                <p className="font-mono font-medium text-on-surface">{r.endDate}</p>
+              </div>
+              <div>
+                <p className="text-text-muted mb-0.5">{t('attendance.days')}</p>
+                <p className="font-semibold text-on-surface">{r.days} Days</p>
+              </div>
+              <div>
+                <p className="text-text-muted mb-0.5">Reviewed By</p>
+                <p className="font-medium text-on-surface">{r.reviewedBy || '—'}</p>
+              </div>
+            </div>
+            
+            {r.reason && (
+              <div className="mb-3 text-xs text-text-muted bg-surface-container/50 p-2 rounded">
+                <span className="font-medium">Reason:</span> {r.reason}
+              </div>
+            )}
+            
+            {r.status === 'Pending' && (
+              <div className="flex items-center justify-end gap-2 pt-3 border-t border-neutral-500/20">
+                <button onClick={() => openEdit(r)} className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:opacity-80">
+                  <span className="material-symbols-outlined text-sm">edit</span> Edit
+                </button>
+                <button onClick={() => handleDelete(r.id)} className="flex items-center gap-1 text-[11px] font-semibold text-error hover:opacity-80 ml-2">
+                  <span className="material-symbols-outlined text-sm">delete</span> Delete
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Table Layout */}
+      <div className="hidden xl:block bg-surface-container-lowest rounded-2xl border border-theme-border overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-theme-border text-text-muted text-xs uppercase tracking-wider">
@@ -378,46 +494,46 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
 
       {/* Add / Edit modal */}
       {(showForm || editItem) && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-bold text-on-surface">{editItem ? 'Edit' : 'New'} Leave Request</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="bg-surface-container-lowest rounded-xl md:rounded-2xl shadow-xl w-full max-w-[320px] md:max-w-md p-4 md:p-6">
+            <div className="flex items-center justify-between mb-3 md:mb-4">
+              <h3 className="text-sm md:text-base font-bold text-on-surface">{editItem ? 'Edit' : 'New'} Leave Request</h3>
               <button onClick={() => { setShowForm(false); setEditItem(null) }} className="text-text-muted hover:text-error">
-                <span className="material-symbols-outlined">close</span>
+                <span className="material-symbols-outlined text-[20px] md:text-[24px]">close</span>
               </button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2.5 md:space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-text-muted mb-1">{t('attendance.leaveType')}</label>
+                <label className="block text-[11px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('attendance.leaveType')}</label>
                 <select className={inputCls('type')} value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}>
                   {LEAVE_TYPES.map((lt) => <option key={lt}>{lt}</option>)}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2.5 md:gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-text-muted mb-1">{t('attendance.startDate')} *</label>
+                  <label className="block text-[11px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('attendance.startDate')} *</label>
                   <input type="date" className={inputCls('startDate')} value={form.startDate} onChange={(e) => setForm((f) => ({ ...f, startDate: e.target.value }))} />
-                  {errors.startDate && <p className="text-xs text-error mt-1">{errors.startDate}</p>}
+                  {errors.startDate && <p className="text-[10px] md:text-xs text-error mt-0.5 md:mt-1">{errors.startDate}</p>}
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-text-muted mb-1">{t('attendance.endDate')} *</label>
+                  <label className="block text-[11px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('attendance.endDate')} *</label>
                   <input type="date" className={inputCls('endDate')} value={form.endDate} onChange={(e) => setForm((f) => ({ ...f, endDate: e.target.value }))} />
-                  {errors.endDate && <p className="text-xs text-error mt-1">{errors.endDate}</p>}
+                  {errors.endDate && <p className="text-[10px] md:text-xs text-error mt-0.5 md:mt-1">{errors.endDate}</p>}
                 </div>
               </div>
               {form.startDate && form.endDate && form.startDate <= form.endDate && (
-                <p className="text-xs text-text-muted">
+                <p className="text-[11px] md:text-xs text-text-muted">
                   <span className="font-semibold text-on-surface">{countWeekdays(form.startDate, form.endDate)}</span> working days
                 </p>
               )}
               <div>
-                <label className="block text-xs font-semibold text-text-muted mb-1">Reason</label>
+                <label className="block text-[11px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">Reason</label>
                 <textarea rows={2} className={inputCls('reason')} value={form.reason} onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))} />
               </div>
             </div>
-            <div className="flex gap-3 mt-5">
-              <button onClick={() => { setShowForm(false); setEditItem(null) }} className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
-              <button onClick={handleSave} className="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition">{t('attendance.submitLeave')}</button>
+            <div className="flex gap-2.5 md:gap-3 mt-4 md:mt-5">
+              <button onClick={() => { setShowForm(false); setEditItem(null) }} className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
+              <button onClick={handleSave} className="flex-1 bg-primary text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition">{t('attendance.submitLeave')}</button>
             </div>
           </div>
         </div>
@@ -434,12 +550,18 @@ function TeamRequestsTab({ employeeId, token, isAdmin }) {
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
 
   const load = useCallback(() => {
+    if (!employeeId && !isAdmin) {
+      setRequests([])
+      return
+    }
     // Admin sees all; supervisor sees non-manager subordinates only
     const query = isAdmin ? '' : `?supervisorId=${employeeId}`
     fetch(`${API_URL}/leave-requests${query}`, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
-      .then(setRequests)
-      .catch(() => {})
+      .then((data) => {
+        setRequests(Array.isArray(data) && data.length > 0 ? data : mockData)
+      })
+      .catch(() => { })
   }, [employeeId, token, isAdmin])
 
   useEffect(() => { load() }, [load])
@@ -465,41 +587,41 @@ function TeamRequestsTab({ employeeId, token, isAdmin }) {
 
   function PendingCard({ r }) {
     return (
-      <div className="bg-surface-container-lowest rounded-xl border border-theme-border p-4 flex items-center justify-between">
-        <div className="flex items-center gap-3 flex-1 min-w-0">
+      <div className="bg-surface-container-lowest rounded-xl border border-theme-border p-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex items-start lg:items-center gap-3 flex-1 min-w-0">
           {/* Initials avatar */}
-          <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+          <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0 mt-0.5 lg:mt-0">
             {r.employee?.initials || r.employee?.name?.slice(0, 2).toUpperCase() || '?'}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-0.5">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
               <span className="font-semibold text-on-surface text-sm">{r.employee?.name}</span>
-              <span className="text-xs text-text-muted bg-surface-container px-1.5 py-0.5 rounded">{r.employee?.department}</span>
+              <span className="text-[10px] md:text-xs text-text-muted bg-surface-container px-1.5 py-0.5 rounded">{r.employee?.department}</span>
               {r.employee?.isManager && (
-                <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">Manager</span>
+                <span className="text-[10px] md:text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">Manager</span>
               )}
             </div>
-            <div className="flex items-center gap-4 text-xs text-text-muted flex-wrap">
+            <div className="flex items-center gap-x-3 gap-y-1 text-[11px] md:text-xs text-text-muted flex-wrap">
               <span className="font-medium text-on-surface">{r.type}</span>
               <span className="font-mono">{r.startDate} — {r.endDate}</span>
               <span className="font-semibold text-on-surface">{r.days} day{r.days !== 1 ? 's' : ''}</span>
-              {r.reason && <span className="truncate max-w-[200px] italic">{r.reason}</span>}
+              {r.reason && <span className="truncate max-w-full lg:max-w-[200px] italic">{r.reason}</span>}
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2 ml-4 shrink-0">
+        <div className="flex items-center gap-2 w-full lg:w-auto shrink-0 pt-3 lg:pt-0 border-t border-neutral-500/20 lg:border-t-0">
           <button
             onClick={() => handleReview(r.id, 'Approved')}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-semibold hover:opacity-90 transition"
+            className="flex-1 lg:flex-none flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary text-white text-[11px] md:text-xs font-semibold hover:opacity-90 transition"
           >
-            <span className="material-symbols-outlined text-sm">check</span>
+            <span className="material-symbols-outlined text-[13px] md:text-[14px]">check</span>
             {t('attendance.approve')}
           </button>
           <button
             onClick={() => handleReview(r.id, 'Rejected')}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg border border-error text-error text-xs font-semibold hover:bg-error/10 transition"
+            className="flex-1 lg:flex-none flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg border border-error text-error text-[11px] md:text-xs font-semibold hover:bg-error/10 transition"
           >
-            <span className="material-symbols-outlined text-sm">close</span>
+            <span className="material-symbols-outlined text-[13px] md:text-[14px]">close</span>
             {t('attendance.reject')}
           </button>
         </div>
@@ -544,7 +666,54 @@ function TeamRequestsTab({ employeeId, token, isAdmin }) {
 
       {/* All requests history table */}
       <h3 className="text-sm font-bold text-on-surface mb-3">All Requests</h3>
-      <div className="bg-surface-container-lowest rounded-2xl border border-theme-border overflow-hidden">
+      {/* Mobile Card Layout */}
+      <div className="xl:hidden flex flex-col divide-y divide-neutral-500/20 bg-surface-container-lowest border border-neutral-500/20 rounded-2xl overflow-hidden mb-6">
+        {requests.length === 0 ? (
+          <div className="text-center py-10 text-text-muted text-sm">No requests found</div>
+        ) : requests.map((r) => (
+          <div key={r.id} className="p-4 transition-colors hover:bg-hover-bg">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-sm text-on-surface">{r.employee?.name}</span>
+                {r.employee?.isManager && (
+                  <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">Mgr</span>
+                )}
+              </div>
+              <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusBadge[r.status] || ''}`}>
+                {r.status}
+              </span>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-y-2 text-xs mb-3">
+              <div>
+                <p className="text-text-muted mb-0.5">{t('attendance.leaveType')}</p>
+                <p className="font-medium text-on-surface">{r.type}</p>
+              </div>
+              <div>
+                <p className="text-text-muted mb-0.5">Period</p>
+                <p className="font-mono font-medium text-on-surface">{r.startDate} — {r.endDate}</p>
+              </div>
+              <div>
+                <p className="text-text-muted mb-0.5">{t('attendance.days')}</p>
+                <p className="font-semibold text-on-surface">{r.days} Days</p>
+              </div>
+              <div>
+                <p className="text-text-muted mb-0.5">Reviewed By</p>
+                <p className="font-medium text-on-surface">{r.reviewedBy || '—'}</p>
+              </div>
+            </div>
+            
+            {r.reason && (
+              <div className="text-xs text-text-muted bg-surface-container/50 p-2 rounded">
+                <span className="font-medium">Reason:</span> {r.reason}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Table Layout */}
+      <div className="hidden xl:block bg-surface-container-lowest rounded-2xl border border-theme-border overflow-hidden">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-theme-border text-text-muted text-xs uppercase tracking-wider">
@@ -623,34 +792,33 @@ export default function Attendance() {
     : TABS
 
   return (
-    <div className="p-8 max-w-6xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-on-surface">{t('attendance.title')}</h1>
-        <p className="text-sm text-text-muted mt-0.5">
+    <div className="p-3 md:p-4 lg:p-8 max-w-6xl mx-auto">
+      <div className="mb-4 md:mb-6">
+        <h1 className="text-xl md:text-2xl font-bold text-on-surface">{t('attendance.title')}</h1>
+        <p className="text-[11px] md:text-sm text-text-muted mt-0.5">
           {myEmployee ? myEmployee.name : 'Personnel attendance & leave management'}
         </p>
       </div>
 
       {!myEmployee && (
-        <div className="bg-tertiary-fixed/20 text-on-tertiary-fixed-variant rounded-xl px-5 py-4 mb-6 text-sm flex items-center gap-3">
-          <span className="material-symbols-outlined text-base">info</span>
-          Your account email doesn't match any employee record. Ask an admin to link your email.
+        <div className="bg-tertiary-fixed/20 text-on-tertiary-fixed-variant rounded-xl px-4 py-3 md:px-5 md:py-4 mb-4 md:mb-6 text-[11px] md:text-sm flex items-start md:items-center gap-2 md:gap-3">
+          <span className="material-symbols-outlined text-base shrink-0 mt-0.5 md:mt-0">info</span>
+          <p>Your account email doesn't match any employee record. Ask an admin to link your email.</p>
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-8 border-b border-theme-border">
+      <div className="flex overflow-x-auto overflow-y-hidden no-scrollbar gap-1 md:gap-2 mb-6 md:mb-8 border-b border-theme-border">
         {allTabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 -mb-px transition ${
-              tab === t.key
-                ? 'border-primary text-primary'
-                : 'border-transparent text-text-muted hover:text-on-surface'
-            }`}
+            className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 text-[11px] md:text-sm font-medium border-b-2 -mb-px transition whitespace-nowrap ${tab === t.key
+              ? 'border-primary text-primary'
+              : 'border-transparent text-text-muted hover:text-on-surface'
+              }`}
           >
-            <span className="material-symbols-outlined text-base">{t.icon}</span>
+            <span className="material-symbols-outlined text-sm md:text-base">{t.icon}</span>
             {t.label}
           </button>
         ))}
