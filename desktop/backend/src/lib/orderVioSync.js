@@ -35,75 +35,75 @@ function parseVioDate(vioDate) {
  * PULL ORDERS FROM VIO
  */
 async function pullOrdersFromVio(days) {
-  try {
-    let headersUrl;
-    if (days) {
-      const end = new Date();
-      const start = new Date(end);
-      start.setDate(end.getDate() - days);
-      const startDateStr = start.toISOString().split('T')[0];
+  //try {
+  let headersUrl;
+  if (days) {
+    const end = new Date();
+    const start = new Date(end);
+    start.setDate(end.getDate() - days);
+    const startDateStr = start.toISOString().split('T')[0];
 
-      console.log(`\n--- Pulling orders from Vio (since ${startDateStr}) ---`);
-      headersUrl = getVioRestUrl('siparisler', { tarihBasi: startDateStr });
-    } else {
-      console.log(`\n--- Pulling ALL orders from Vio ---`);
-      headersUrl = getVioRestUrl('siparisler');
-    }
+    console.log(`\n--- Pulling orders from Vio (since ${startDateStr}) ---`);
+    headersUrl = getVioRestUrl('siparisler', { tarihBasi: startDateStr });
+  } else {
+    console.log(`\n--- Pulling ALL orders from Vio ---`);
+    headersUrl = getVioRestUrl('siparisler');
+  }
 
-    const response = await fetch(headersUrl, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
-    });
-    console.log("pull orders from vio req-res:", response);
+  const response = await fetch(headersUrl, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' }
+  });
+  console.log("pull orders from vio req-res:", response);
 
-    if (!response.ok) {
-      console.error(`[VIO SYNC] Error fetching orders: ${response.statusText}`);
-      return [];
-    }
-
-    const headersText = await response.text();
-    let headersData = [];
-    try {
-      headersData = JSON.parse(headersText.trim() || '[]');
-    } catch (e) {
-      console.error('[VIO SYNC] Error parsing orders response', e);
-      return [];
-    }
-
-    const orders = Array.isArray(headersData) ? headersData : [];
-    console.log(`[VIO SYNC] ${orders.length} sipariş başlığı bulundu. Detaylar çekiliyor...`);
-
-    for (const header of orders) {
-      try {
-        const fissayac = header.fissayac;
-        if (!fissayac) continue;
-
-        const detailsUrl = getVioRestUrl('siparisler_detaylar', { fisSayac: fissayac });
-        const detailsResponse = await fetch(detailsUrl, { method: 'GET' });
-
-        let detaylar = [];
-        if (detailsResponse.ok) {
-          const detailsText = await detailsResponse.text();
-          const dData = JSON.parse(detailsText.trim() || '[]');
-          detaylar = Array.isArray(dData) ? dData : [];
-        } else {
-          console.error(`[VIO SYNC] Detaylar çekilemedi for fissayac ${fissayac}`);
-        }
-
-        header.detaylar = detaylar; // Attach details
-      } catch (err) {
-        console.error(`[VIO SYNC] Error fetching details for order ${header.fissayac}`, err);
-        header.detaylar = [];
-      }
-    }
-
-    // Now upsert into ERP
-    await syncVioOrdersToErp(orders);
-    return orders;
-  } catch (err) {
-    console.error('[VIO SYNC] pullOrdersFromVio error:', err);
+  if (!response.ok) {
+    console.error(`[VIO SYNC] Error fetching orders: ${response.statusText}`);
     return [];
   }
+
+  const headersText = await response.text();
+  let headersData = [];
+  try {
+    headersData = JSON.parse(headersText.trim() || '[]');
+  } catch (e) {
+    console.error('[VIO SYNC] Error parsing orders response', e);
+    return [];
+  }
+
+  const orders = Array.isArray(headersData) ? headersData : [];
+  console.log(`[VIO SYNC] ${orders.length} sipariş başlığı bulundu. Detaylar çekiliyor...`);
+
+  for (const header of orders) {
+    try {
+      const fissayac = header.fissayac;
+      if (!fissayac) continue;
+
+      const detailsUrl = getVioRestUrl('siparisler_detaylar', { fisSayac: fissayac });
+      const detailsResponse = await fetch(detailsUrl, { method: 'GET' });
+
+      let detaylar = [];
+      if (detailsResponse.ok) {
+        const detailsText = await detailsResponse.text();
+        const dData = JSON.parse(detailsText.trim() || '[]');
+        detaylar = Array.isArray(dData) ? dData : [];
+      } else {
+        console.error(`[VIO SYNC] Detaylar çekilemedi for fissayac ${fissayac}`);
+      }
+
+      header.detaylar = detaylar; // Attach details
+    } catch (err) {
+      console.error(`[VIO SYNC] Error fetching details for order ${header.fissayac}`, err);
+      header.detaylar = [];
+    }
+  }
+
+  // Now upsert into ERP
+  await syncVioOrdersToErp(orders);
+  return orders;
+  //} catch (err) {
+  //console.error('[VIO SYNC] pullOrdersFromVio error:', err);
+  //return [];
+  //}
 }
 
 async function syncVioOrdersToErp(vioOrders) {
