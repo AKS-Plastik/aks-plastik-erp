@@ -32,7 +32,10 @@ export default function Login() {
   }, [isElectron])
 
   const handleInstallClick = async () => {
-    if (!installPromptEvent) return
+    if (!installPromptEvent) {
+      alert("Tablet veya telefonunuza uygulamayı kurmak için:\n\nTarayıcınızın (Chrome/Safari) menüsüne tıklayın ve 'Ana Ekrana Ekle' (Add to Home Screen) seçeneğini seçin.\n\n(Not: Güvenlik gereği otomatik indirme penceresi yalnızca HTTPS bağlantılarında açılmaktadır.)")
+      return
+    }
     installPromptEvent.prompt()
     const { outcome } = await installPromptEvent.userChoice
     if (outcome === 'accepted') {
@@ -116,13 +119,13 @@ export default function Login() {
             )}
           </button>
 
-          {installPromptEvent && (
+          {!isElectron && (
             <button
               onClick={handleInstallClick}
               className="w-full py-2 md:py-2.5 rounded-lg border border-theme-border text-on-surface text-xs md:text-sm font-bold hover:bg-surface-container-low transition-colors flex items-center justify-center gap-2 mt-3"
             >
-              <span className="material-symbols-outlined text-sm md:text-base">download</span>
-              Uygulamayı İndir
+              <span className="material-symbols-outlined text-sm md:text-base">install_mobile</span>
+              Uygulamayı Kur
             </button>
           )}
 
