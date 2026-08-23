@@ -80,8 +80,7 @@ export default function App() {
 }
 
 function LoginGuard() {
-  const { user, loading } = useAuth()
-  if (loading) return null
+  const { user } = useAuth()
   if (user) return <Navigate to="/dashboard" replace />
   return <Login />
 }
