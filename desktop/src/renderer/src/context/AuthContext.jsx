@@ -22,7 +22,45 @@ export function AuthProvider({ children }) {
   const [user, setUser]   = useState(null)
   const [token, setToken] = useState(null)
   const [loading, setLoading] = useState(false)
-  const refreshTokenRef = useRef(null)
+  const refreshTokenRef = useRef(!window.electron ? localStorage.getItem('aks_refresh_token') : null)
+
+  // Web-only: Restore session on mount if we have a refresh token saved
+  useEffect(() => {
+    if (window.electron || !refreshTokenRef.current) return
+
+    async function restoreWebSession() {
+      setLoading(true)
+      try {
+        const rt = refreshTokenRef.current
+        const res = await fetch(`${API_URL}/auth/web-refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: rt })
+        })
+        const result = await res.json()
+        if (!result.ok) throw new Error('Session expired')
+
+        const newRt = result.tokens.refresh_token
+        const newAt = result.tokens.access_token
+
+        refreshTokenRef.current = newRt
+        localStorage.setItem('aks_refresh_token', newRt)
+
+        const profileRes = await fetch(`${API_URL}/auth/me`, {
+          headers: { Authorization: `Bearer ${newAt}` },
+        })
+        if (!profileRes.ok) throw new Error('Failed to fetch profile')
+        
+        setToken(newAt)
+        setUser(await profileRes.json())
+      } catch (err) {
+        logout()
+      } finally {
+        setLoading(false)
+      }
+    }
+    restoreWebSession()
+  }, [])
 
   // Auto-refresh: when access token nears expiry, get a new one
   useEffect(() => {
@@ -79,6 +117,9 @@ export function AuthProvider({ children }) {
 
       const { access_token, refresh_token } = result.tokens
       refreshTokenRef.current = refresh_token
+      if (!window.electron) {
+        localStorage.setItem('aks_refresh_token', refresh_token)
+      }
 
       // Fetch full user profile from our backend (includes role, department, etc.)
       const profileRes = await fetch(`${API_URL}/auth/me`, {
@@ -101,6 +142,9 @@ export function AuthProvider({ children }) {
     refreshTokenRef.current = null
     setToken(null)
     setUser(null)
+    if (!window.electron) {
+      localStorage.removeItem('aks_refresh_token')
+    }
     if (rt) {
       if (window.electron) {
         window.api.authLogout(rt).catch(() => {})
@@ -135,9 +179,16 @@ export function AuthProvider({ children }) {
 
     if (!result.ok) { logout(); return null }
 
-    refreshTokenRef.current = result.tokens.refresh_token
-    setToken(result.tokens.access_token)
-    return result.tokens.access_token
+    const newRt = result.tokens.refresh_token
+    const newAt = result.tokens.access_token
+
+    refreshTokenRef.current = newRt
+    if (!window.electron) {
+      localStorage.setItem('aks_refresh_token', newRt)
+    }
+    
+    setToken(newAt)
+    return newAt
   }
 
   const isAdmin = user?.role === 'admin'
