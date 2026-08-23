@@ -10,6 +10,8 @@ export default function Login() {
   const { login, loading } = useAuth()
   const { dark, toggleTheme } = useTheme()
   const [error, setError] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [installPromptEvent, setInstallPromptEvent] = useState(null)
   
   const isElectron = !!window.electron
@@ -41,7 +43,7 @@ export default function Login() {
   async function handleLogin() {
     setError('')
     try {
-      await login()
+      await login(email, password)
     } catch (err) {
       setError(err.message || t('login.loginFailed'))
     }
@@ -73,6 +75,26 @@ export default function Login() {
           {error && (
             <div className="bg-error-container text-on-error-container text-sm px-4 py-2.5 rounded-lg border border-error/20">
               {error}
+            </div>
+          )}
+
+          {!isElectron && (
+            <div className="space-y-3">
+              <input
+                type="email"
+                placeholder="E-posta"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="w-full bg-surface-container border border-theme-border rounded-lg px-4 py-2.5 text-sm text-on-surface focus:outline-none focus:border-primary transition-colors"
+              />
+              <input
+                type="password"
+                placeholder="Şifre"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleLogin()}
+                className="w-full bg-surface-container border border-theme-border rounded-lg px-4 py-2.5 text-sm text-on-surface focus:outline-none focus:border-primary transition-colors"
+              />
             </div>
           )}
 

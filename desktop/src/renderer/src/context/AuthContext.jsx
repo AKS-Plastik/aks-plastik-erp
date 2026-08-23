@@ -35,7 +35,19 @@ export function AuthProvider({ children }) {
 
     const timer = setTimeout(async () => {
       if (!refreshTokenRef.current) return
-      const result = await window.api.authRefresh(refreshTokenRef.current)
+      
+      let result;
+      if (window.electron) {
+        result = await window.api.authRefresh(refreshTokenRef.current)
+      } else {
+        const res = await fetch(`${API_URL}/auth/web-refresh`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: refreshTokenRef.current })
+        })
+        result = await res.json()
+      }
+
       if (result.ok) {
         refreshTokenRef.current = result.tokens.refresh_token
         setToken(result.tokens.access_token)
@@ -47,10 +59,22 @@ export function AuthProvider({ children }) {
     return () => clearTimeout(timer)
   }, [token])
 
-  async function login() {
+  async function login(email, password) {
     setLoading(true)
     try {
-      const result = await window.api.authLogin()
+      let result;
+      if (window.electron) {
+        result = await window.api.authLogin()
+      } else {
+        if (!email || !password) throw new Error('Kullanıcı adı ve şifre zorunludur')
+        const res = await fetch(`${API_URL}/auth/web-login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        })
+        result = await res.json()
+      }
+
       if (!result.ok) throw new Error(result.error || 'Login failed')
 
       const { access_token, refresh_token } = result.tokens
@@ -77,7 +101,17 @@ export function AuthProvider({ children }) {
     refreshTokenRef.current = null
     setToken(null)
     setUser(null)
-    if (rt) window.api.authLogout(rt).catch(() => {})
+    if (rt) {
+      if (window.electron) {
+        window.api.authLogout(rt).catch(() => {})
+      } else {
+        fetch(`${API_URL}/auth/web-logout`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: rt })
+        }).catch(() => {})
+      }
+    }
   }
 
   // Expose a helper so other contexts can get a fresh token
@@ -86,7 +120,19 @@ export function AuthProvider({ children }) {
     if (!isExpired(token)) return token
 
     if (!refreshTokenRef.current) { logout(); return null }
-    const result = await window.api.authRefresh(refreshTokenRef.current)
+    
+    let result;
+    if (window.electron) {
+      result = await window.api.authRefresh(refreshTokenRef.current)
+    } else {
+      const res = await fetch(`${API_URL}/auth/web-refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshTokenRef.current })
+      })
+      result = await res.json()
+    }
+
     if (!result.ok) { logout(); return null }
 
     refreshTokenRef.current = result.tokens.refresh_token
