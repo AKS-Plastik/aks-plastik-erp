@@ -54,6 +54,7 @@ async function pullOrdersFromVio(days) {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     });
+    console.log("pull orders from vio req-res:", response);
 
     if (!response.ok) {
       console.error(`[VIO SYNC] Error fetching orders: ${response.statusText}`);
@@ -79,7 +80,7 @@ async function pullOrdersFromVio(days) {
 
         const detailsUrl = getVioRestUrl('siparisler_detaylar', { fisSayac: fissayac });
         const detailsResponse = await fetch(detailsUrl, { method: 'GET' });
-        
+
         let detaylar = [];
         if (detailsResponse.ok) {
           const detailsText = await detailsResponse.text();
@@ -114,16 +115,16 @@ async function syncVioOrdersToErp(vioOrders) {
   for (const vio of vioOrders) {
     try {
       const externalId = String(vio.fissayac);
-      
+
       if (!vio.must) {
         console.log(`[VIO SYNC] Order ${externalId} skipped: No customer code (must)`);
         continue;
       }
-      
+
       const customer = await prisma.customer.findUnique({
         where: { code: String(vio.must).trim() }
       });
-      
+
       if (!customer) {
         console.log(`[VIO SYNC] Order ${externalId} skipped: Customer code ${vio.must} not found in ERP`);
         continue;
@@ -135,21 +136,21 @@ async function syncVioOrdersToErp(vioOrders) {
       });
 
       const datePart = vio.tarih ? vio.tarih.split(' ')[0] : '';
-      
+
       // Sipariş Durumu (onayTipi) Mantığı
       let erpStatus = 'Confirmed'; // varsayılan
       const onay = (vio.onayTipi || '').trim();
       if (onay === 'ON') erpStatus = 'Processing'; // Onay Bekliyor
       else if (onay === 'RD') erpStatus = 'Cancelled'; // Reddedildi
       else if (onay === '') erpStatus = 'Confirmed'; // Boş = Onaylı
-      
+
       // Döviz Kodu Mantığı
       const headCurrency = (vio.dvkod || '').trim().toUpperCase();
       let orderCurrency = 'TRY';
       if (headCurrency && headCurrency !== 'TL' && headCurrency !== 'TRY') {
         orderCurrency = headCurrency; // Örn: USD, EUR
       }
-      
+
       const baseOrderData = {
         orderDate: parseVioDate(datePart),
         notes: [vio.aciklama, vio.sevkadi, vio.sevkadres].filter(Boolean).join(' '),
@@ -157,14 +158,14 @@ async function syncVioOrdersToErp(vioOrders) {
         vat: Number(vio.topkdv) || 0,
         status: erpStatus
       };
-      
+
       const detaylar = vio.detaylar || [];
       const mappedCustomerId = customer.id;
 
       if (!existing) {
         // CREATE
         const newCode = `${vio.seri || 'VIO'}-${vio.no || externalId}-${Date.now().toString().slice(-4)}`;
-        
+
         try {
           const created = await prisma.order.create({
             data: {
@@ -203,9 +204,9 @@ async function syncVioOrdersToErp(vioOrders) {
         if (existing.notes !== baseOrderData.notes) diff.notes = baseOrderData.notes;
         if (existing.totalAmount !== baseOrderData.totalAmount) diff.totalAmount = baseOrderData.totalAmount;
         if (existing.vat !== baseOrderData.vat) diff.vat = baseOrderData.vat;
-        
+
         if (existing.status !== baseOrderData.status) diff.status = baseOrderData.status;
-        
+
         const existingDate = existing.orderDate ? existing.orderDate.getTime() : 0;
         const newDate = baseOrderData.orderDate.getTime();
         if (existingDate !== newDate) diff.orderDate = baseOrderData.orderDate;
@@ -281,12 +282,12 @@ async function pushOrderToVio(orderId) {
 
     // Skip if it came from Vio (has externalId) to prevent circular pushing
     if (order.externalId) {
-       console.log(`[VIO SYNC] Order ${orderId} skipped (already originated from Vio).`);
-       return true;
+      console.log(`[VIO SYNC] Order ${orderId} skipped (already originated from Vio).`);
+      return true;
     }
 
     const oDate = order.orderDate || order.createdAt;
-    const tarih = `${String(oDate.getDate()).padStart(2, '0')}.${String(oDate.getMonth()+1).padStart(2, '0')}.${oDate.getFullYear()}`;
+    const tarih = `${String(oDate.getDate()).padStart(2, '0')}.${String(oDate.getMonth() + 1).padStart(2, '0')}.${oDate.getFullYear()}`;
 
     const payloadArray = [
       {
@@ -310,7 +311,7 @@ async function pushOrderToVio(orderId) {
     }
 
     const url = getVioRestUrl('siparisKaydet');
-    
+
     console.log(`[VIO SYNC] Pushing order ${orderId} to Vio...`);
     const response = await fetch(url, {
       method: 'POST',
@@ -327,7 +328,7 @@ async function pushOrderToVio(orderId) {
     let result;
     try {
       result = JSON.parse(responseText);
-    } catch(e) {
+    } catch (e) {
       result = {};
     }
 
@@ -337,7 +338,7 @@ async function pushOrderToVio(orderId) {
     }
 
     console.log(`[VIO SYNC] Order ${orderId} successfully pushed to Vio.`);
-    
+
     // Vio'dan dönen JSON'dan fissayac, seri ve no'yu alıp yerel siparişi kalıcı olarak WEB-12 formatında güncelliyoruz
     let vioResponseData = null;
     if (Array.isArray(result) && result.length > 0) {
@@ -349,7 +350,7 @@ async function pushOrderToVio(orderId) {
     if (vioResponseData) {
       // Vio'nun dönderdiği gerçek JSON alanları: ID, Seri, FisNo (Büyük harf duyarlılığına dikkat)
       const fissayac = vioResponseData.ID || vioResponseData.FisNo || vioResponseData.fissayac || vioResponseData.fisSayac || vioResponseData.id;
-      
+
       if (fissayac) {
         const seri = vioResponseData.Seri || vioResponseData.seri || 'WEB';
         const no = vioResponseData.FisNo || vioResponseData.no || fissayac;
@@ -358,7 +359,7 @@ async function pushOrderToVio(orderId) {
         try {
           await prisma.order.update({
             where: { id: orderId },
-            data: { 
+            data: {
               externalId: String(fissayac),
               code: newCode
             }
