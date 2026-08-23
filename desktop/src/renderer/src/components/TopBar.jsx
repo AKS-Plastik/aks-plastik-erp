@@ -6,7 +6,7 @@ import { useTheme } from '../context/ThemeContext'
 import { useData } from '../context/DataContext'
 import { API_URL } from '../config'
 
-export default function TopBar() {
+export default function TopBar({ setSidebarOpen }) {
   const { t, i18n } = useTranslation()
   const { user, token, isAdmin } = useAuth()
   const { dark, toggleTheme } = useTheme()
@@ -48,8 +48,8 @@ export default function TopBar() {
   const matchedEmployee = user?.employeeId
     ? (employees || []).find((e) => e.id === user.employeeId)
     : user?.email
-    ? (employees || []).find((e) => e.email && e.email.toLowerCase() === user.email.toLowerCase())
-    : null
+      ? (employees || []).find((e) => e.email && e.email.toLowerCase() === user.email.toLowerCase())
+      : null
 
   // Fetch leave alerts — admin sees all pending, managers see their subordinates'
   useEffect(() => {
@@ -66,7 +66,7 @@ export default function TopBar() {
     fetch(url, { headers: { Authorization: `Bearer ${token}` } })
       .then((r) => r.json())
       .then((data) => setLeaveAlerts(Array.isArray(data) ? data.filter((r) => r.status === 'Pending') : []))
-      .catch(() => {})
+      .catch(() => { })
   }, [token, isAdmin, matchedEmployee?.id, matchedEmployee?.isManager, employees.length])
 
   // Alert computations
@@ -80,16 +80,16 @@ export default function TopBar() {
 
   const upcomingVisits = canSee('work-orders')
     ? (siteVisits || []).filter((v) => {
-        const d = new Date(v.date)
-        return v.status === 'Scheduled' && d >= today && d <= in3Days
-      })
+      const d = new Date(v.date)
+      return v.status === 'Scheduled' && d >= today && d <= in3Days
+    })
     : []
 
   const maintenanceAlerts = canSee('maintenance')
     ? (machines || []).filter((m) => {
-        if (!m.nextMaintenanceDue) return false
-        return new Date(m.nextMaintenanceDue) <= in7Days
-      })
+      if (!m.nextMaintenanceDue) return false
+      return new Date(m.nextMaintenanceDue) <= in7Days
+    })
     : []
 
   const totalAlarms = overdueReports.length + upcomingVisits.length + maintenanceAlerts.length + leaveAlerts.length
@@ -106,30 +106,40 @@ export default function TopBar() {
   const roleBadge = user?.role === 'admin' ? t('topbar.admin') : t('topbar.user')
 
   return (
-    <header className="w-full h-16 sticky top-0 z-30 bg-surface-container-lowest flex items-center justify-between px-6">
-      {/* Date & Time */}
-      <div className="flex items-center gap-3">
-        <span className="material-symbols-outlined text-primary text-xl">schedule</span>
-        <div>
-          <div className="flex items-baseline gap-2">
-            <span className="text-sm font-bold text-on-surface" style={{ fontVariantNumeric: 'tabular-nums', minWidth: '5.5em' }}>{time}</span>
-            <span className="text-[10px] font-medium text-text-subtle">{timezone}</span>
+    <header className="w-full h-12 md:h-16 sticky top-0 z-30 bg-surface-container-lowest flex items-center justify-between px-3 md:px-6">
+      {/* Left section: Hamburger + Date & Time */}
+      <div className="flex items-center gap-2 md:gap-4">
+        {/* Hamburger Menu (Mobile Only) */}
+        <button
+          onClick={() => setSidebarOpen(true)}
+          className="p-1.5 md:p-2 -ml-1.5 md:-ml-2 text-text-muted hover:text-primary transition-colors rounded-full hover:bg-hover-bg md:hidden flex items-center justify-center"
+        >
+          <span className="material-symbols-outlined text-[20px] md:text-[24px]">menu</span>
+        </button>
+
+        {/* Date & Time */}
+        <div className="flex items-center gap-2 md:gap-3">
+          <span className="material-symbols-outlined text-primary text-xl hidden sm:block">schedule</span>
+          <div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-xs md:text-sm font-bold text-on-surface" style={{ fontVariantNumeric: 'tabular-nums', minWidth: '5.5em' }}>{time}</span>
+            </div>
           </div>
-          <p className="text-[11px] text-text-muted mt-0.5">{date}</p>
+          <p className="text-[11px] text-text-muted mt-0.5 hidden sm:block">{date}</p>
         </div>
       </div>
 
       {/* Right Actions */}
       <div className="flex items-center gap-4">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 md:gap-2">
 
           {/* Alarm Bell */}
           <div className="relative" ref={alarmsRef}>
             <button
               onClick={() => setShowAlarms((v) => !v)}
-              className="p-2 text-text-muted hover:text-primary transition-colors rounded-full hover:bg-hover-bg relative"
+              className="p-1.5 md:p-2 text-text-muted hover:text-primary transition-colors rounded-full hover:bg-hover-bg relative"
             >
-              <span className="material-symbols-outlined">notifications</span>
+              <span className="material-symbols-outlined text-[20px] md:text-[24px]">notifications</span>
               {totalAlarms > 0 && (
                 <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-error text-on-error text-[9px] font-black flex items-center justify-center">
                   {totalAlarms > 9 ? '9+' : totalAlarms}
@@ -138,7 +148,7 @@ export default function TopBar() {
             </button>
 
             {showAlarms && (
-              <div className="absolute right-0 top-full mt-2 w-96 bg-surface-container-lowest rounded-2xl shadow-2xl shadow-inverse-surface/20 border border-surface-container-low overflow-hidden z-50">
+              <div className="fixed right-3 md:right-6 top-14 md:top-[4.5rem] w-96 max-w-[calc(100vw-1.5rem)] bg-surface-container-lowest rounded-2xl shadow-2xl shadow-inverse-surface/20 border border-surface-container-low overflow-hidden z-[100]">
                 <div className="px-4 pt-4 pb-3 border-b border-surface-container-low flex items-center justify-between">
                   <span className="text-xs font-extrabold text-on-surface">{t('topbar.alerts')}</span>
                   {totalAlarms > 0 && (
@@ -243,8 +253,8 @@ export default function TopBar() {
                                     {diff < 0
                                       ? t('topbar.dOverdue', { n: Math.abs(diff) })
                                       : diff === 0
-                                      ? t('topbar.dueToday')
-                                      : t('topbar.inNDays', { n: diff })}
+                                        ? t('topbar.dueToday')
+                                        : t('topbar.inNDays', { n: diff })}
                                   </span>
                                 </div>
                                 <p className="text-[11px] text-on-surface-variant mt-0.5 truncate">
@@ -290,31 +300,35 @@ export default function TopBar() {
             )}
           </div>
 
-          <button className="p-2 text-text-muted hover:text-primary transition-colors rounded-full hover:bg-hover-bg">
-            <span className="material-symbols-outlined">help_outline</span>
-          </button>
+          {/* Desktop Only Actions */}
+          <div className="hidden md:flex items-center gap-1">
 
-          {/* Language toggle */}
-          <button
-            onClick={toggleLang}
-            className="px-2.5 py-1.5 text-text-muted hover:text-primary transition-colors rounded-lg hover:bg-hover-bg text-xs font-bold tracking-wide"
-            title={i18n.language === 'tr' ? 'Switch to English' : "Türkçe'ye geç"}
-          >
-            {i18n.language === 'tr' ? 'EN' : 'TR'}
-          </button>
+            <button className="hidden p-2 text-text-muted hover:text-primary transition-colors rounded-full hover:bg-hover-bg">
+              <span className="material-symbols-outlined">help_outline</span>
+            </button>
 
-          {/* Theme toggle */}
-          <button onClick={toggleTheme} className="p-2 text-text-muted hover:text-primary transition-colors rounded-full hover:bg-hover-bg" title={dark ? 'Light mode' : 'Dark mode'}>
-            <span className="material-symbols-outlined">{dark ? 'light_mode' : 'dark_mode'}</span>
-          </button>
+            {/* Language toggle */}
+            <button
+              onClick={toggleLang}
+              className="px-2.5 py-1.5 text-text-muted hover:text-primary transition-colors rounded-lg hover:bg-hover-bg text-xs font-bold tracking-wide"
+              title={i18n.language === 'tr' ? 'Switch to English' : "Türkçe'ye geç"}
+            >
+              {i18n.language === 'tr' ? 'EN' : 'TR'}
+            </button>
+
+            {/* Theme toggle */}
+            <button onClick={toggleTheme} className="p-2 text-text-muted hover:text-primary transition-colors rounded-full hover:bg-hover-bg" title={dark ? 'Light mode' : 'Dark mode'}>
+              <span className="material-symbols-outlined">{dark ? 'light_mode' : 'dark_mode'}</span>
+            </button>
+          </div>
         </div>
 
         <div className="relative" ref={userMenuRef}>
           <button
             onClick={() => setShowUserMenu((v) => !v)}
-            className="flex items-center gap-3 pl-4 border-l border-theme-border hover:opacity-80 transition-opacity cursor-pointer"
+            className="flex items-center gap-2 md:gap-3 pl-2 md:pl-4 border-l border-theme-border hover:opacity-80 transition-opacity cursor-pointer"
           >
-            <div className="text-right">
+            <div className="hidden sm:block text-right">
               <p className="text-xs font-bold text-on-surface leading-none">{user?.name || 'User'}</p>
               <p className="text-[10px] text-text-muted mt-0.5">{roleBadge}</p>
               {matchedEmployee && (
@@ -324,27 +338,42 @@ export default function TopBar() {
                 </p>
               )}
             </div>
-            <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0">
+            <div className="w-7 h-7 md:w-9 md:h-9 rounded-full overflow-hidden flex-shrink-0">
               {matchedEmployee?.photo
                 ? <img src={`${API_URL.replace('/api', '')}${matchedEmployee.photo}`} alt={user?.name} className="w-full h-full object-cover" />
-                : <div className="w-full h-full primary-gradient flex items-center justify-center text-white text-sm font-bold">{initials}</div>
+                : <div className="w-full h-full primary-gradient flex items-center justify-center text-white text-xs md:text-sm font-bold">{initials}</div>
               }
             </div>
           </button>
           {showUserMenu && (
             <div className="absolute right-0 top-full mt-2 w-48 bg-surface-container-lowest rounded-xl shadow-2xl shadow-inverse-surface/20 border border-surface-container-low overflow-hidden z-50">
+              <div className="md:hidden border-b border-surface-container-low py-1">
+                <button className="hidden flex items-center gap-2.5 md:gap-3 w-full px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm text-on-surface hover:bg-hover-bg transition-colors">
+                  <span className="material-symbols-outlined text-[14px] md:text-base text-text-muted">help_outline</span>
+                  {i18n.language === 'tr' ? 'Yardım' : 'Help'}
+                </button>
+                <button onClick={toggleLang} className="flex items-center gap-2.5 md:gap-3 w-full px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm text-on-surface hover:bg-hover-bg transition-colors">
+                  <span className="material-symbols-outlined text-[14px] md:text-base text-text-muted">language</span>
+                  {i18n.language === 'tr' ? 'English' : 'Türkçe'}
+                </button>
+                <button onClick={toggleTheme} className="flex items-center gap-2.5 md:gap-3 w-full px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm text-on-surface hover:bg-hover-bg transition-colors">
+                  <span className="material-symbols-outlined text-[14px] md:text-base text-text-muted">{dark ? 'light_mode' : 'dark_mode'}</span>
+                  {dark ? (i18n.language === 'tr' ? 'Açık Tema' : 'Light Mode') : (i18n.language === 'tr' ? 'Koyu Tema' : 'Dark Mode')}
+                </button>
+              </div>
+
               <button
                 onClick={() => { navigate('/account'); setShowUserMenu(false) }}
-                className="flex items-center gap-3 w-full px-4 py-3 text-sm text-on-surface hover:bg-hover-bg transition-colors"
+                className="flex items-center gap-2.5 md:gap-3 w-full px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm text-on-surface hover:bg-hover-bg transition-colors"
               >
-                <span className="material-symbols-outlined text-base text-text-muted">person</span>
+                <span className="material-symbols-outlined text-[14px] md:text-base text-text-muted">person</span>
                 {t('topbar.myAccount')}
               </button>
               <button
                 onClick={() => { navigate('/attendance'); setShowUserMenu(false) }}
-                className="flex items-center gap-3 w-full px-4 py-3 text-sm text-on-surface hover:bg-hover-bg transition-colors border-t border-surface-container-low"
+                className="flex items-center gap-2.5 md:gap-3 w-full px-3 md:px-4 py-2.5 md:py-3 text-xs md:text-sm text-on-surface hover:bg-hover-bg transition-colors border-t border-surface-container-low"
               >
-                <span className="material-symbols-outlined text-base text-text-muted">schedule</span>
+                <span className="material-symbols-outlined text-[14px] md:text-base text-text-muted">schedule</span>
                 {t('topbar.attendance')}
               </button>
             </div>

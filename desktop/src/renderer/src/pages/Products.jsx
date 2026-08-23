@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as XLSX from 'xlsx'
 import { useData } from '../context/DataContext'
+import Pagination from '../components/Pagination'
 
 const ITEMS_PER_PAGE = 10
 
@@ -40,66 +41,68 @@ function Modal({ title, form, setForm, onClose, onSave, errors, isEdit }) {
   const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
 
   const inputCls = (field) =>
-    `w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary transition ${
+    `w-full bg-surface-container-lowest border rounded-lg px-2.5 py-1.5 sm:px-3 sm:py-2 text-[13px] sm:text-sm text-on-surface outline-none focus:border-primary transition ${
       errors[field] ? 'border-error' : 'border-theme-border'
     }`
 
+  const handleSave = () => onSave();
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-lg p-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-bold text-on-surface">{title}</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-error">
-            <span className="material-symbols-outlined">close</span>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-lg p-4 sm:p-8 max-h-[90vh] overflow-y-auto flex flex-col">
+        <div className="flex items-center justify-between mb-4 md:mb-6">
+          <h2 className="text-base md:text-lg font-bold text-on-surface">{title}</h2>
+          <button onClick={onClose} className="p-1.5 md:p-2 rounded-xl text-text-muted hover:text-error hover:bg-surface-container-low transition-colors">
+            <span className="material-symbols-outlined text-xl md:text-2xl">close</span>
           </button>
         </div>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-3 sm:space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('products.stockNo')} *</label>
+              <label className="block text-[10px] sm:text-xs font-semibold text-text-muted mb-1">{t('products.stockNo')} *</label>
               <input disabled={isEdit} className={`${inputCls('stockNo')} ${isEdit ? 'opacity-50 cursor-not-allowed bg-surface-container-high' : ''}`} value={form.stockNo} onChange={set('stockNo')} placeholder={t('products.stockNoPh')} />
               {errors.stockNo && <p className="text-xs text-error mt-1">{errors.stockNo}</p>}
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.name')} *</label>
+              <label className="block text-[10px] sm:text-xs font-semibold text-text-muted mb-1">{t('common.name')} *</label>
               <input className={inputCls('name')} value={form.name} onChange={set('name')} />
               {errors.name && <p className="text-xs text-error mt-1">{errors.name}</p>}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.category')}</label>
+              <label className="block text-[10px] sm:text-xs font-semibold text-text-muted mb-1">{t('common.category')}</label>
               <select className={inputCls('category')} value={form.category} onChange={set('category')}>
                 {CATEGORIES.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.unit')}</label>
+              <label className="block text-[10px] sm:text-xs font-semibold text-text-muted mb-1">{t('common.unit')}</label>
               <select className={inputCls('unit')} value={form.unit} onChange={set('unit')}>
                 {UNITS.map((u) => <option key={u} value={u}>{u}</option>)}
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.currency')}</label>
+              <label className="block text-[10px] sm:text-xs font-semibold text-text-muted mb-1">{t('common.currency')}</label>
               <select className={inputCls('currency')} value={form.currency} onChange={set('currency')}>
                 {CURRENCIES.map((c) => <option key={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.price')} *</label>
+              <label className="block text-[10px] sm:text-xs font-semibold text-text-muted mb-1">{t('common.price')} *</label>
               <input type="number" min="0" step="0.01" className={inputCls('price')} value={form.price} onChange={set('price')} />
               {errors.price && <p className="text-xs text-error mt-1">{errors.price}</p>}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('products.inStock')}</label>
+              <label className="block text-[10px] sm:text-xs font-semibold text-text-muted mb-1">{t('products.inStock')}</label>
               <input type="number" min="0" className={inputCls('stock')} value={form.stock} onChange={set('stock')} />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('products.minStock')}</label>
+              <label className="block text-[10px] sm:text-xs font-semibold text-text-muted mb-1">{t('products.criticalStock')}</label>
               <input type="number" min="0" className={inputCls('minStock')} value={form.minStock} onChange={set('minStock')} />
             </div>
           </div>
@@ -108,14 +111,14 @@ function Modal({ title, form, setForm, onClose, onSave, errors, isEdit }) {
             <textarea rows={2} className={inputCls('description')} value={form.description} onChange={set('description')} />
           </div>
         </div>
-        <div className="flex gap-3 mt-6">
-          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition">
-            {t('common.cancel')}
-          </button>
-          <button onClick={onSave} className="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition">
-            {t('common.save')}
-          </button>
-        </div>
+          <div className="flex items-center gap-2 mt-4 sm:mt-6 border-t border-surface-container-low pt-4">
+            <button onClick={onClose} className="flex-1 bg-surface-container border border-theme-border text-on-surface px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[11px] md:text-sm font-semibold hover:bg-hover-bg transition">
+              {t('common.cancel')}
+            </button>
+            <button onClick={handleSave} className="flex-1 primary-gradient text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[11px] md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition">
+              {t('common.save')}
+            </button>
+          </div>
       </div>
     </div>
   )
@@ -187,96 +190,96 @@ function ProductDetailModal({ product, onClose, onEdit, onDelete, isAdmin }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
       <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden">
         {/* Header */}
-        <div className="primary-gradient px-6 pt-6 pb-5">
+        <div className="primary-gradient px-4 md:px-6 pt-5 pb-4 md:pt-6 md:pb-5 flex-shrink-0">
           <div className="flex items-start justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 bg-surface-container-lowest/20 rounded-xl flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-white">inventory_2</span>
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-surface-container-lowest/20 rounded-lg sm:rounded-xl flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-white text-[18px] md:text-[24px]">inventory_2</span>
               </div>
               <div>
-                <h2 className="text-lg font-extrabold text-white leading-tight">{product.name}</h2>
+                <h2 className="text-base md:text-lg font-extrabold text-white leading-tight">{product.name}</h2>
                 {product.stockNo && (
-                  <p className="text-blue-200 text-xs font-mono mt-0.5">{product.stockNo}</p>
+                  <p className="text-blue-200 text-[10px] md:text-xs font-mono mt-0.5">{product.stockNo}</p>
                 )}
               </div>
             </div>
-            <button onClick={onClose} className="p-2 rounded-xl text-white/70 hover:text-white hover:bg-surface-container-lowest/10 transition-colors">
-              <span className="material-symbols-outlined">close</span>
+            <button onClick={onClose} className="p-1.5 md:p-2 rounded-xl text-white/70 hover:text-white hover:bg-surface-container-lowest/10 transition-colors">
+              <span className="material-symbols-outlined text-xl md:text-2xl">close</span>
             </button>
           </div>
         </div>
 
         {/* Details */}
-        <div className="p-6 space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-surface-container-low rounded-xl p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">{t('common.category')}</p>
-              <p className="text-sm font-semibold text-on-surface">
+        <div className="p-4 md:p-6 space-y-2 md:space-y-3">
+          <div className="grid grid-cols-2 gap-2 md:gap-3">
+            <div className="bg-surface-container-low rounded-xl p-3 md:p-4">
+              <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-0.5 md:mb-1">{t('common.category')}</p>
+              <p className="text-xs md:text-sm font-semibold text-on-surface">
                 {CATEGORIES.find((c) => c.id === product.category)?.name || product.category || '—'}
               </p>
             </div>
-            <div className="bg-surface-container-low rounded-xl p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">{t('common.unit')}</p>
-              <p className="text-sm font-semibold text-on-surface">{product.unit || 'pcs'}</p>
+            <div className="bg-surface-container-low rounded-xl p-3 md:p-4">
+              <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-0.5 md:mb-1">{t('common.unit')}</p>
+              <p className="text-xs md:text-sm font-semibold text-on-surface">{product.unit || 'pcs'}</p>
             </div>
-            <div className="bg-surface-container-low rounded-xl p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">{t('common.price')}</p>
-              <p className="text-sm font-semibold text-on-surface">
-                <span className="text-xs text-on-surface-variant mr-1">{product.currency || 'USD'}</span>
+            <div className="bg-surface-container-low rounded-xl p-3 md:p-4">
+              <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-0.5 md:mb-1">{t('common.price')}</p>
+              <p className="text-xs md:text-sm font-semibold text-on-surface">
+                <span className="text-[10px] md:text-xs text-on-surface-variant mr-1">{product.currency || 'USD'}</span>
                 {parseFloat(product.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
-            <div className="bg-surface-container-low rounded-xl p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">{t('common.status')}</p>
-              <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${badge.cls}`}>
+            <div className="bg-surface-container-low rounded-xl p-3 md:p-4">
+              <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-0.5 md:mb-1">{t('common.status')}</p>
+              <span className={`inline-flex px-2 md:px-2.5 py-0.5 rounded-full text-[10px] md:text-xs font-semibold ${badge.cls}`}>
                 {badge.label}
               </span>
             </div>
-            <div className="bg-surface-container-low rounded-xl p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">{t('products.inStock')}</p>
-              <p className="text-sm font-semibold text-on-surface">
-                {product.stock} <span className="text-xs text-on-surface-variant">{product.unit || 'pcs'}</span>
+            <div className="bg-surface-container-low rounded-xl p-3 md:p-4">
+              <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-0.5 md:mb-1">{t('products.inStock')}</p>
+              <p className="text-xs md:text-sm font-semibold text-on-surface">
+                {product.stock} <span className="text-[10px] md:text-xs text-on-surface-variant">{product.unit || 'pcs'}</span>
               </p>
             </div>
-            <div className="bg-surface-container-low rounded-xl p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">{t('products.minStock')}</p>
-              <p className="text-sm font-semibold text-on-surface">
-                {product.minStock} <span className="text-xs text-on-surface-variant">{product.unit || 'pcs'}</span>
+            <div className="bg-surface-container-low rounded-xl p-3 md:p-4">
+              <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-0.5 md:mb-1">{t('products.minStock')}</p>
+              <p className="text-xs md:text-sm font-semibold text-on-surface">
+                {product.minStock} <span className="text-[10px] md:text-xs text-on-surface-variant">{product.unit || 'pcs'}</span>
               </p>
             </div>
           </div>
 
           {product.description && (
-            <div className="bg-surface-container-low rounded-xl p-4">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1">{t('common.description')}</p>
-              <p className="text-sm text-on-surface">{product.description}</p>
+            <div className="bg-surface-container-low rounded-xl p-3 md:p-4">
+              <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-0.5 md:mb-1">{t('common.description')}</p>
+              <p className="text-xs md:text-sm text-on-surface">{product.description}</p>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-6 pb-6 flex gap-3">
+        <div className="px-4 md:px-6 pb-4 pt-3 md:pb-6 md:pt-4 flex gap-2 md:gap-3 border-t border-surface-container-low">
           {isAdmin && (
             <>
               <button
                 onClick={onDelete}
-                className="px-4 py-2.5 rounded-xl border-2 border-error/40 text-error text-sm font-bold hover:bg-error hover:text-white transition-all flex items-center gap-2"
+                className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 border-error/40 text-error text-[11px] md:text-sm font-bold hover:bg-error hover:text-white transition-all flex items-center gap-1 md:gap-1.5"
               >
-                <span className="material-symbols-outlined text-base">delete</span>
+                <span className="material-symbols-outlined text-[14px] md:text-base">delete</span>
                 {t('common.delete')}
               </button>
               <button
                 onClick={onEdit}
-                className="flex-1 py-2.5 rounded-xl border-2 border-primary text-primary text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-2"
+                className="flex-1 py-1.5 md:py-2 rounded-lg md:rounded-xl border-2 border-primary text-primary text-[11px] md:text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-1 md:gap-1.5"
               >
-                <span className="material-symbols-outlined text-base">edit</span>
+                <span className="material-symbols-outlined text-[14px] md:text-base">edit</span>
                 {t('common.edit')}
               </button>
             </>
           )}
           <button
             onClick={onClose}
-            className={`${isAdmin ? '' : 'flex-1'} py-2.5 px-5 rounded-xl primary-gradient text-white text-sm font-bold hover:opacity-90 transition-opacity`}
+            className="flex-1 bg-primary text-white text-[11px] md:text-sm font-bold py-1.5 md:py-2 rounded-lg md:rounded-xl hover:opacity-90 transition-all shadow-lg shadow-primary/20"
           >
             {t('common.close')}
           </button>
@@ -430,32 +433,36 @@ export default function Products() {
   }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
+    <div className="p-2 sm:p-4 lg:p-8 max-w-7xl mx-auto">
       <input ref={importRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={handleImport} />
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-on-surface">{t('products.title')}</h1>
-          <p className="text-sm text-text-muted mt-0.5">{t('products.totalProducts', { count: products.length })}</p>
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 mb-6 lg:mb-12">
+        <div className="max-w-2xl">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold tracking-tight text-on-surface mb-2">
+            {t('products.title')}
+          </h1>
+          <p className="text-on-surface-variant text-xs sm:text-sm lg:text-base leading-relaxed">
+            {t('products.totalProducts', { count: products.length })}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={handleTemplate} className="flex items-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition">
-            <span className="material-symbols-outlined text-base">download</span>
-            {t('common.template')}
+        <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full md:w-auto max-w-full pb-2 md:pb-0">
+          <button onClick={handleTemplate} className="flex items-center justify-center gap-1.5 border border-theme-border px-2.5 py-2 lg:px-3 lg:py-2 rounded-xl text-[11px] lg:text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap flex-shrink-0">
+            <span className="material-symbols-outlined text-[14px] lg:text-base">download</span>
+            <span className="hidden lg:inline">{t('common.template')}</span>
           </button>
-          <button onClick={() => importRef.current.click()} disabled={importing} className="flex items-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-40">
-            <span className="material-symbols-outlined text-base">upload</span>
-            {importing ? t('products.importing') : t('common.import')}
+          <button onClick={() => importRef.current.click()} disabled={importing} className="flex items-center justify-center gap-1.5 border border-theme-border px-2.5 py-2 lg:px-3 lg:py-2 rounded-xl text-[11px] lg:text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-40 whitespace-nowrap flex-shrink-0">
+            <span className="material-symbols-outlined text-[14px] lg:text-base">upload</span>
+            <span className="hidden lg:inline">{importing ? t('products.importing') : t('common.import')}</span>
           </button>
-          <button onClick={handleExport} className="flex items-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition">
-            <span className="material-symbols-outlined text-base">table_view</span>
-            {t('common.export')}
+          <button onClick={handleExport} className="flex items-center justify-center gap-1.5 border border-theme-border px-2.5 py-2 lg:px-3 lg:py-2 rounded-xl text-[11px] lg:text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap flex-shrink-0">
+            <span className="material-symbols-outlined text-[14px] lg:text-base">table_view</span>
+            <span className="hidden lg:inline">{t('common.export')}</span>
           </button>
-          <button onClick={syncAndRefreshProducts} className="flex items-center gap-1.5 border border-theme-border px-3 py-2 rounded-xl text-sm text-text-muted hover:bg-hover-bg transition">
-            <span className="material-symbols-outlined text-base">sync</span>
-            {t('common.refresh', 'Yenile/Senkronize Et')}
+          <button onClick={syncAndRefreshProducts} className="flex items-center justify-center gap-1.5 border border-theme-border px-2.5 py-2 lg:px-3 lg:py-2 rounded-xl text-[11px] lg:text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap flex-shrink-0">
+            <span className="material-symbols-outlined text-[14px] lg:text-base">sync</span>
+            <span className="hidden lg:inline">{t('common.refresh', 'Yenile/Senkronize Et')}</span>
           </button>
-          <button onClick={openAdd} className="flex items-center gap-2 primary-gradient text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity">
-            <span className="material-symbols-outlined text-base">add</span>
+          <button onClick={openAdd} className="flex items-center justify-center gap-1.5 primary-gradient text-white px-3 py-2 lg:px-4 lg:py-2.5 rounded-xl text-[11px] lg:text-sm font-bold shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity whitespace-nowrap flex-shrink-0">
+            <span className="material-symbols-outlined text-[14px] lg:text-base">add</span>
             {t('products.addProduct')}
           </button>
         </div>
@@ -463,9 +470,9 @@ export default function Products() {
 
       <div className="flex items-center gap-3 mb-4">
         <div className="relative flex-1 max-w-sm">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-lg">search</span>
+          <span className="material-symbols-outlined absolute left-2.5 md:left-3 top-1/2 -translate-y-1/2 text-text-muted text-[16px] md:text-lg">search</span>
           <input
-            className="w-full bg-surface-container-lowest border border-theme-border rounded-xl pl-9 pr-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
+            className="w-full bg-surface-container-lowest border border-theme-border rounded-xl pl-8 md:pl-9 pr-2 md:pr-3 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary"
             placeholder={t('products.searchPlaceholder')}
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(1) }}
@@ -474,8 +481,8 @@ export default function Products() {
       </div>
 
       <div className="bg-surface-container-lowest rounded-2xl border border-theme-border overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
+        <table className="w-full text-sm block xl:table">
+          <thead className="hidden xl:table-header-group">
             <tr className="border-b border-theme-border text-text-muted text-xs uppercase tracking-wider">
               <th className="text-left px-6 py-4 font-semibold">{t('products.stockNo')}</th>
               <th className="text-left px-6 py-4 font-semibold">{t('common.name')}</th>
@@ -485,10 +492,10 @@ export default function Products() {
               <th className="text-left px-6 py-4 font-semibold">{t('common.status')}</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="block xl:table-row-group">
             {paginated.length === 0 ? (
-              <tr>
-                <td colSpan={6} className="text-center py-16 text-text-muted">
+              <tr className="block xl:table-row">
+                <td colSpan={6} className="block xl:table-cell text-center py-16 text-text-muted">
                   {t('products.noProducts')}
                 </td>
               </tr>
@@ -496,20 +503,34 @@ export default function Products() {
               paginated.map((p) => {
                 const badge = stockBadge(p)
                 return (
-                  <tr key={p.id} onClick={() => setViewProduct(p)} className="border-b border-theme-border hover:bg-hover-bg transition-colors cursor-pointer">
-                    <td className="px-6 py-4 font-mono text-xs font-semibold text-on-surface">{p.stockNo || '—'}</td>
-                    <td className="px-6 py-4 font-semibold text-on-surface">{p.name}</td>
-                    <td className="px-6 py-4 text-text-muted">
-                      {CATEGORIES.find((c) => c.id === p.category)?.name || p.category || '—'}
+                  <tr key={p.id} onClick={() => setViewProduct(p)} className="block xl:table-row border-b border-surface-container-low xl:border-theme-border hover:bg-hover-bg transition-colors cursor-pointer p-3 xl:p-0">
+                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-1.5 xl:mb-0">
+                      <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-0.5">{t('products.stockNo')}</span>
+                      <span className="font-mono text-xs font-semibold text-on-surface">{p.stockNo || '—'}</span>
                     </td>
-                    <td className="px-6 py-4 text-right font-medium text-on-surface">
-                      <span className="text-xs text-text-muted mr-1">{p.currency || 'USD'}</span>
-                      {parseFloat(p.price).toFixed(2)}
-                      <span className="text-xs text-text-muted"> /{p.unit}</span>
+                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-1.5 xl:mb-0">
+                      <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-0.5">{t('common.name')}</span>
+                      <span className="font-semibold text-on-surface">{p.name}</span>
                     </td>
-                    <td className="px-6 py-4 text-right text-on-surface">{p.stock}<span className="text-xs text-text-muted ml-1">{p.unit || 'pcs'}</span></td>
-                    <td className="px-6 py-4">
-                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${badge.cls}`}>
+                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-1.5 xl:mb-0 text-left xl:text-left">
+                      <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-0.5">{t('common.category')}</span>
+                      <span className="text-text-muted text-xs xl:text-sm">{CATEGORIES.find((c) => c.id === p.category)?.name || p.category || '—'}</span>
+                    </td>
+                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-1.5 xl:mb-0 text-left xl:text-right">
+                      <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-0.5">{t('common.price')}</span>
+                      <div className="font-medium text-on-surface text-sm">
+                        <span className="text-xs text-text-muted mr-1">{p.currency || 'USD'}</span>
+                        {parseFloat(p.price).toFixed(2)}
+                        <span className="text-[10px] xl:text-xs text-text-muted"> /{p.unit}</span>
+                      </div>
+                    </td>
+                    <td className="block xl:table-cell xl:px-6 xl:py-4 mb-2 xl:mb-0 text-left xl:text-right">
+                      <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-0.5">{t('products.inStock')}</span>
+                      <span className="text-on-surface text-sm font-semibold">{p.stock}</span><span className="text-[10px] xl:text-xs text-text-muted ml-1">{p.unit || 'pcs'}</span>
+                    </td>
+                    <td className="block xl:table-cell xl:px-6 xl:py-4">
+                      <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-0.5">{t('common.status')}</span>
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] xl:text-xs font-semibold ${badge.cls}`}>
                         {badge.label}
                       </span>
                     </td>
@@ -521,16 +542,14 @@ export default function Products() {
         </table>
       </div>
 
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4 text-sm text-text-muted">
-          <span>{filtered.length} products</span>
-          <div className="flex gap-2">
-            <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="px-3 py-1.5 rounded-lg border border-theme-border disabled:opacity-40 hover:bg-hover-bg transition">{t('common.prev')}</button>
-            <span className="px-3 py-1.5">{page} / {totalPages}</span>
-            <button disabled={page === totalPages} onClick={() => setPage((p) => p + 1)} className="px-3 py-1.5 rounded-lg border border-theme-border disabled:opacity-40 hover:bg-hover-bg transition">{t('common.next')}</button>
-          </div>
-        </div>
-      )}
+      <Pagination
+        page={page}
+        setPage={setPage}
+        totalPages={totalPages}
+        totalItems={filtered.length}
+        itemsPerPage={ITEMS_PER_PAGE}
+        label="products.showingOf"
+      />
 
       {showAdd && (
         <Modal title={t('products.addProduct')} form={form} setForm={setForm} errors={errors} onClose={() => setShowAdd(false)} onSave={handleAdd} />

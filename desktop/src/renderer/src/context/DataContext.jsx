@@ -58,12 +58,14 @@ export function DataProvider({ children }) {
       .then((r) => r.json())
       .then((data) => {
         const today = new Date().toISOString().split('T')[0]
-        const mapped = data.map((v) => ({
+
+        let mapped = (Array.isArray(data) ? data : []).map((v) => ({
           ...v,
           customerName: v.customer?.name || '',
           employeeName: v.employee?.name || '',
           status: v.status === 'Scheduled' && v.date <= today ? 'In Progress' : v.status,
         }))
+
         setSiteVisits(mapped)
         setVisitsReady(true)
         mapped.filter((v, i) => v.status !== data[i].status).forEach((v) => {
@@ -82,7 +84,7 @@ export function DataProvider({ children }) {
     fetch(`${API_URL}/products`, { headers: authHeaders })
       .then((r) => r.json())
       .then((data) => setProducts(data))
-      .catch(() => {})
+      .catch(() => { })
   }, [token])
   useEffect(() => { refreshProducts() }, [token])
 
@@ -100,7 +102,7 @@ export function DataProvider({ children }) {
     fetch(`${API_URL}/employees`, { headers: authHeaders })
       .then((r) => r.json())
       .then((data) => setEmployees(data))
-      .catch(() => {})
+      .catch(() => { })
   }, [token])
   useEffect(() => { refreshEmployees() }, [token])
 
@@ -108,7 +110,7 @@ export function DataProvider({ children }) {
     fetch(`${API_URL}/orders`, { headers: authHeaders })
       .then((r) => r.json())
       .then((data) => setOrders(data))
-      .catch(() => {})
+      .catch(() => { })
   }, [token])
   useEffect(() => { refreshOrders() }, [token])
 
@@ -126,7 +128,7 @@ export function DataProvider({ children }) {
     fetch(`${API_URL}/finance`, { headers: authHeaders })
       .then((r) => r.json())
       .then((data) => setFinanceRecords(data))
-      .catch(() => {})
+      .catch(() => { })
   }, [token])
   useEffect(() => { refreshFinanceRecords() }, [token])
 
@@ -134,7 +136,7 @@ export function DataProvider({ children }) {
     fetch(`${API_URL}/roles`, { headers: authHeaders })
       .then((r) => r.json())
       .then((data) => setRoles(Array.isArray(data) ? data : []))
-      .catch(() => {})
+      .catch(() => { })
   }, [token])
   useEffect(() => { refreshRoles() }, [token])
 
@@ -142,7 +144,7 @@ export function DataProvider({ children }) {
     fetch(`${API_URL}/permissions`, { headers: authHeaders })
       .then((r) => r.json())
       .then((data) => setPermissions(data || {}))
-      .catch(() => {})
+      .catch(() => { })
   }, [token])
   useEffect(() => { refreshPermissions() }, [token])
 
@@ -150,7 +152,7 @@ export function DataProvider({ children }) {
     fetch(`${API_URL}/status-permissions`, { headers: authHeaders })
       .then((r) => r.json())
       .then((data) => setStatusPermissions(data || {}))
-      .catch(() => {})
+      .catch(() => { })
   }, [token])
   useEffect(() => { refreshStatusPermissions() }, [token])
 
@@ -158,7 +160,7 @@ export function DataProvider({ children }) {
     fetch(`${API_URL}/user-status-permissions`, { headers: authHeaders })
       .then((r) => r.json())
       .then((data) => setUserStatusPermissions(data || {}))
-      .catch(() => {})
+      .catch(() => { })
   }, [token])
   useEffect(() => { refreshUserStatusPermissions() }, [token])
 
@@ -166,7 +168,7 @@ export function DataProvider({ children }) {
     fetch(`${API_URL}/user-purchasing-status-permissions`, { headers: authHeaders })
       .then((r) => r.json())
       .then((data) => setUserPurchasingStatusPermissions(data || {}))
-      .catch(() => {})
+      .catch(() => { })
   }, [token])
   useEffect(() => { refreshUserPurchasingStatusPermissions() }, [token])
 
@@ -174,7 +176,7 @@ export function DataProvider({ children }) {
     fetch(`${API_URL}/machines`, { headers: authHeaders })
       .then((r) => r.json())
       .then((data) => setMachines(Array.isArray(data) ? data : []))
-      .catch(() => {})
+      .catch(() => { })
   }, [token])
   useEffect(() => { refreshMachines() }, [token])
 

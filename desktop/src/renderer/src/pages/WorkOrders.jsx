@@ -23,14 +23,14 @@ function fmtTime(t) {
   return t
 }
 
-const inputCls = 'bg-transparent border-none outline-none text-sm text-on-surface w-full placeholder-slate-400'
+const inputCls = 'bg-transparent border-none outline-none text-xs md:text-sm text-on-surface w-full placeholder-slate-400'
 
 function Field({ label, icon, children, span2 = false }) {
   return (
-    <div className={span2 ? 'col-span-2' : ''}>
-      <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">{label}</label>
-      <div className="flex items-center gap-2 bg-surface-container-high rounded-lg px-3 py-2.5 focus-within:ring-2 focus-within:ring-primary transition-all">
-        <span className="material-symbols-outlined text-on-surface-variant text-[18px] flex-shrink-0">{icon}</span>
+    <div className={span2 ? 'col-span-1 md:col-span-2' : ''}>
+      <label className="block text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1 md:mb-1.5">{label}</label>
+      <div className="flex items-center gap-1.5 md:gap-2 bg-surface-container-high rounded-lg px-2.5 py-2 md:px-3 md:py-2.5 focus-within:ring-2 focus-within:ring-primary transition-all">
+        <span className="material-symbols-outlined text-on-surface-variant text-[16px] md:text-[18px] flex-shrink-0">{icon}</span>
         {children}
       </div>
     </div>
@@ -39,13 +39,13 @@ function Field({ label, icon, children, span2 = false }) {
 
 function FieldErr({ label, icon, error, children, span2 = false }) {
   return (
-    <div className={span2 ? 'col-span-2' : ''}>
-      <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">{label}</label>
-      <div className={`flex items-center gap-2 bg-surface-container-high rounded-lg px-3 py-2.5 transition-all ${error ? 'ring-2 ring-error' : 'focus-within:ring-2 focus-within:ring-primary'}`}>
-        <span className="material-symbols-outlined text-on-surface-variant text-[18px] flex-shrink-0">{icon}</span>
+    <div className={span2 ? 'col-span-1 md:col-span-2' : ''}>
+      <label className="block text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1 md:mb-1.5">{label}</label>
+      <div className={`flex items-center gap-1.5 md:gap-2 bg-surface-container-high rounded-lg px-2.5 py-2 md:px-3 md:py-2.5 transition-all ${error ? 'ring-2 ring-error' : 'focus-within:ring-2 focus-within:ring-primary'}`}>
+        <span className="material-symbols-outlined text-on-surface-variant text-[16px] md:text-[18px] flex-shrink-0">{icon}</span>
         {children}
       </div>
-      {error && <p className="text-[10px] text-error font-medium mt-1">{error}</p>}
+      {error && <p className="text-[9px] md:text-[10px] text-error font-medium mt-1">{error}</p>}
     </div>
   )
 }
@@ -80,22 +80,22 @@ function AddVisitModal({ customers, employees, onClose, onSave }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={onClose} />
       <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl shadow-inverse-surface/20 w-full max-w-lg mx-4 overflow-hidden">
-        <div className="flex items-center justify-between px-8 pt-8 pb-6 border-b border-surface-container-low">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 primary-gradient rounded-xl flex items-center justify-center text-white">
-              <span className="material-symbols-outlined fill-icon">add_location_alt</span>
+        <div className="flex items-center justify-between px-4 pt-5 pb-4 md:px-6 md:pt-6 md:pb-5 border-b border-surface-container-low">
+          <div className="flex items-center gap-3 md:gap-4">
+            <div className="w-10 h-10 md:w-12 md:h-12 primary-gradient rounded-xl md:rounded-2xl flex items-center justify-center text-white">
+              <span className="material-symbols-outlined fill-icon text-xl md:text-2xl">add_location_alt</span>
             </div>
             <div>
-              <h2 className="text-lg font-extrabold text-on-surface">{t('workOrders.newVisit')}</h2>
-              <p className="text-xs text-on-surface-variant">{t('workOrders.scheduleField')}</p>
+              <h2 className="text-lg md:text-xl font-extrabold text-on-surface">{t('workOrders.newVisit')}</h2>
+              <p className="text-[10px] md:text-xs text-on-surface-variant">{t('workOrders.scheduleField')}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors">
-            <span className="material-symbols-outlined">close</span>
+          <button onClick={onClose} className="p-1.5 md:p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors">
+            <span className="material-symbols-outlined text-xl md:text-2xl">close</span>
           </button>
         </div>
 
-        <div className="px-8 py-6 grid grid-cols-2 gap-5">
+        <div className="px-4 md:px-6 py-4 md:py-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 overflow-y-auto max-h-[60vh]">
           <FieldErr label={t('workOrders.visitTitle')} icon="title" error={errors.title} span2>
             <input type="text" placeholder="e.g. HVAC Inspection" value={form.title} onChange={set('title')} className={inputCls} />
           </FieldErr>
@@ -106,7 +106,7 @@ function AddVisitModal({ customers, employees, onClose, onSave }) {
             </select>
           </Field>
           <Field label={t('common.location')} icon="location_on" span2>
-            <input type="text" placeholder="Address or site name" value={form.location} onChange={set('location')} className={inputCls} />
+            <input type="text" placeholder="e.g. Building A" value={form.location} onChange={set('location')} className={inputCls} />
           </Field>
           <Field label={t('common.employee')} icon="badge" span2>
             <select value={form.employeeId} onChange={set('employeeId')} className={inputCls}>
@@ -120,19 +120,19 @@ function AddVisitModal({ customers, employees, onClose, onSave }) {
           <Field label={t('workOrders.time')} icon="schedule">
             <input type="time" value={form.time} onChange={set('time')} className={inputCls} />
           </Field>
-          <div className="col-span-2">
-            <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">{t('common.notes')}</label>
-            <div className="flex items-start gap-2 bg-surface-container-high rounded-lg px-3 py-2.5 focus-within:ring-2 focus-within:ring-primary transition-all">
-              <span className="material-symbols-outlined text-on-surface-variant text-[18px] flex-shrink-0 mt-0.5">notes</span>
+          <div className="col-span-1 md:col-span-2">
+            <label className="block text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1 md:mb-1.5">{t('common.notes')}</label>
+            <div className="flex items-start gap-1.5 md:gap-2 bg-surface-container-high rounded-lg px-2.5 py-2 md:px-3 md:py-2.5 focus-within:ring-2 focus-within:ring-primary transition-all">
+              <span className="material-symbols-outlined text-on-surface-variant text-[16px] md:text-[18px] flex-shrink-0 mt-0.5">notes</span>
               <textarea rows={3} placeholder="Optional notes…" value={form.notes} onChange={set('notes')} className={`${inputCls} resize-none`} />
             </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 px-8 pb-8">
-          <button onClick={onClose} className="px-5 py-2.5 rounded-xl text-on-surface-variant text-sm font-semibold hover:bg-surface-container-low transition-colors">{t('common.cancel')}</button>
-          <button onClick={handleSave} className="px-6 py-2.5 rounded-xl primary-gradient text-white text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center gap-2">
-            <span className="material-symbols-outlined text-base">save</span>
+        <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-3 px-4 md:px-6 pb-4 md:pb-6 pt-2">
+          <button onClick={onClose} className="w-full sm:w-auto px-4 py-1.5 md:px-5 md:py-2.5 rounded-lg md:rounded-xl text-on-surface-variant text-xs md:text-sm font-semibold hover:bg-surface-container-low transition-colors">{t('common.cancel')}</button>
+          <button onClick={handleSave} className="w-full sm:w-auto px-4 py-1.5 md:px-6 md:py-2.5 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 md:gap-2">
+            <span className="material-symbols-outlined text-[14px] md:text-[18px]">save</span>
             {t('workOrders.scheduleVisit')}
           </button>
         </div>
@@ -143,13 +143,13 @@ function AddVisitModal({ customers, employees, onClose, onSave }) {
 
 function DetailRow({ icon, label, value }) {
   return (
-    <div className="flex items-start gap-3 py-3 border-b border-surface-container-low last:border-0">
-      <div className="w-8 h-8 rounded-lg bg-surface-container-high flex items-center justify-center flex-shrink-0 mt-0.5">
-        <span className="material-symbols-outlined text-on-surface-variant text-[18px]">{icon}</span>
+    <div className="flex items-start gap-3 md:gap-4 py-3 md:py-4 border-b border-surface-container-low last:border-0">
+      <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-surface-container-low flex items-center justify-center flex-shrink-0">
+        <span className="material-symbols-outlined text-on-surface-variant text-[18px] md:text-[24px]">{icon}</span>
       </div>
       <div>
-        <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{label}</p>
-        <p className="text-sm font-semibold text-on-surface mt-0.5">{value || '—'}</p>
+        <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-on-surface-variant">{label}</p>
+        <p className="text-xs md:text-sm font-semibold text-on-surface mt-0.5">{value || '—'}</p>
       </div>
     </div>
   )
@@ -248,36 +248,36 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
       <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl shadow-inverse-surface/20 w-full max-w-lg mx-4 flex flex-col max-h-[90vh]">
 
         {/* Banner */}
-        <div className="primary-gradient px-8 pt-8 pb-6 flex-shrink-0 rounded-t-3xl">
+        <div className="primary-gradient px-4 pt-5 pb-4 md:px-6 md:pt-5 md:pb-4 flex-shrink-0 rounded-t-3xl">
           <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-surface-container-lowest/20 rounded-2xl flex items-center justify-center flex-shrink-0">
-                <span className="material-symbols-outlined text-white text-2xl">location_on</span>
+            <div className="flex items-center gap-3 md:gap-4">
+              <div className="w-10 h-10 md:w-12 md:h-12 bg-surface-container-lowest/20 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
+                <span className="material-symbols-outlined text-white text-[18px] md:text-[24px]">location_on</span>
               </div>
               <div>
-                <h2 className="text-xl font-extrabold text-white leading-tight">
+                <h2 className="text-base md:text-lg font-extrabold text-white leading-tight">
                   {editing ? t('workOrders.editVisit') : visit.title}
                 </h2>
-                <p className="text-blue-200 text-xs font-medium mt-0.5">#{visit.id}</p>
+                <p className="text-blue-200 text-[10px] md:text-xs font-mono mt-0.5">#{visit.id}</p>
               </div>
             </div>
-            <button onClick={onClose} className="p-2 rounded-xl text-white/70 hover:text-white hover:bg-surface-container-lowest/10 transition-colors flex-shrink-0">
-              <span className="material-symbols-outlined">close</span>
+            <button onClick={onClose} className="p-1.5 md:p-2 rounded-xl text-white/70 hover:text-white hover:bg-surface-container-lowest/10 transition-colors flex-shrink-0">
+              <span className="material-symbols-outlined text-xl md:text-2xl">close</span>
             </button>
           </div>
           {!editing && (
-            <div className="flex items-center gap-3 mt-5">
-              <span className={`px-3 py-1.5 rounded-lg text-[11px] font-bold inline-flex items-center gap-1.5 bg-surface-container-lowest/20 text-white`}>
+            <div className="flex flex-wrap items-center gap-2 md:gap-3 mt-3 md:mt-4">
+              <span className={`px-2 py-1 md:px-3 md:py-1.5 rounded-lg text-[9px] md:text-[11px] font-bold inline-flex items-center gap-1 md:gap-1.5 bg-surface-container-lowest/20 text-white`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
                 {visit.status}
               </span>
-              <span className="bg-surface-container-lowest/15 text-white text-[11px] font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-[14px]">calendar_today</span>
+              <span className="bg-surface-container-lowest/15 text-white text-[9px] md:text-[11px] font-semibold px-2 py-1 md:px-3 md:py-1.5 rounded-lg flex items-center gap-1 md:gap-1.5">
+                <span className="material-symbols-outlined text-[12px] md:text-[14px]">calendar_today</span>
                 {fmtDate(visit.date)}
               </span>
               {visit.time && (
-                <span className="bg-surface-container-lowest/15 text-white text-[11px] font-semibold px-3 py-1.5 rounded-lg flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-[14px]">schedule</span>
+                <span className="bg-surface-container-lowest/15 text-white text-[9px] md:text-[11px] font-semibold px-2 py-1 md:px-3 md:py-1.5 rounded-lg flex items-center gap-1 md:gap-1.5">
+                  <span className="material-symbols-outlined text-[12px] md:text-[14px]">schedule</span>
                   {fmtTime(visit.time)}
                 </span>
               )}
@@ -287,7 +287,7 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
 
         {/* View */}
         {!editing && (
-          <div className="px-8 py-4 overflow-y-auto flex-1">
+          <div className="px-4 md:px-6 py-2 md:py-4 overflow-y-auto flex-1">
             <DetailRow icon="business"      label={t('common.customer')}    value={visit.customerName} />
             <DetailRow icon="location_on"   label={t('common.location')}    value={visit.location} />
             <DetailRow icon="badge"         label={t('common.employee')}    value={visit.employeeName} />
@@ -300,7 +300,7 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
 
         {/* Edit */}
         {editing && (
-          <div className="px-8 py-6 grid grid-cols-2 gap-5 overflow-y-auto flex-1">
+          <div className="px-4 md:px-6 py-4 md:py-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 overflow-y-auto flex-1">
             <FieldErr label={t('workOrders.visitTitle')} icon="title" error={errors.title} span2>
               <input type="text" value={form.title} onChange={set('title')} className={inputCls} />
             </FieldErr>
@@ -330,10 +330,10 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
             <Field label={t('workOrders.time')} icon="schedule">
               <input type="time" value={form.time} onChange={set('time')} className={inputCls} />
             </Field>
-            <div className="col-span-2">
-              <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">{t('common.notes')}</label>
-              <div className="flex items-start gap-2 bg-surface-container-high rounded-lg px-3 py-2.5 focus-within:ring-2 focus-within:ring-primary transition-all">
-                <span className="material-symbols-outlined text-on-surface-variant text-[18px] flex-shrink-0 mt-0.5">notes</span>
+            <div className="col-span-1 md:col-span-2">
+              <label className="block text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1 md:mb-1.5">{t('common.notes')}</label>
+              <div className="flex items-start gap-1.5 md:gap-2 bg-surface-container-high rounded-lg px-2.5 py-2 md:px-3 md:py-2.5 focus-within:ring-2 focus-within:ring-primary transition-all">
+                <span className="material-symbols-outlined text-on-surface-variant text-[16px] md:text-[18px] flex-shrink-0 mt-0.5">notes</span>
                 <textarea rows={3} value={form.notes} onChange={set('notes')} className={`${inputCls} resize-none`} />
               </div>
             </div>
@@ -342,7 +342,7 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
 
         {/* Status change panel */}
         {!editing && showStatusPanel && (
-          <div className="mx-8 mb-4 p-5 bg-surface-container-low rounded-2xl space-y-4 flex-shrink-0 border border-outline-variant/30">
+          <div className="mx-4 md:mx-6 mb-4 p-4 md:p-5 bg-surface-container-low rounded-2xl space-y-4 flex-shrink-0 border border-outline-variant/30">
             <p className="text-xs font-bold uppercase tracking-wider text-on-surface-variant">{t('workOrders.changeStatus')}</p>
             <div className="flex flex-wrap gap-2">
               {STATUSES.map((s) => (
@@ -398,17 +398,17 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
 
         {/* Confirm complete */}
         {confirmComplete && (
-          <div className="mx-8 mb-4 px-5 py-4 bg-emerald-50 rounded-2xl flex items-center justify-between gap-4 flex-shrink-0">
-            <div className="flex items-center gap-3">
+          <div className="mx-4 md:mx-6 mb-4 px-4 py-3 md:px-5 md:py-4 bg-emerald-50 rounded-2xl flex flex-col sm:flex-row items-center sm:justify-between gap-3 sm:gap-4 flex-shrink-0 text-center sm:text-left">
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
               <span className="material-symbols-outlined text-emerald-700">check_circle</span>
               <div>
                 <p className="text-sm font-bold text-emerald-800">{t('workOrders.markCompleted')}</p>
-                <p className="text-xs text-emerald-700/70 mt-0.5">{t('workOrders.confirmComplete')}</p>
+                <p className="text-[10px] md:text-xs text-emerald-700/70 mt-0.5">{t('workOrders.confirmComplete')}</p>
               </div>
             </div>
             <div className="flex gap-2 flex-shrink-0">
-              <button onClick={() => setConfirmComplete(false)} className="px-4 py-2 rounded-xl text-emerald-800 text-xs font-bold hover:bg-emerald-100 transition-colors">{t('common.cancel')}</button>
-              <button onClick={() => { setForm((p) => ({ ...p, status: 'Completed' })); setConfirmComplete(false) }} className="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5">
+              <button onClick={() => setConfirmComplete(false)} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-emerald-800 text-[10px] md:text-xs font-bold hover:bg-emerald-100 transition-colors">{t('common.cancel')}</button>
+              <button onClick={() => { setForm((p) => ({ ...p, status: 'Completed' })); setConfirmComplete(false) }} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl bg-emerald-600 text-white text-[10px] md:text-xs font-bold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-sm">check</span>
                 {t('workOrders.yesComplete')}
               </button>
@@ -418,17 +418,17 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
 
         {/* Confirm delete */}
         {isAdmin && confirming && (
-          <div className="mx-8 mb-4 px-5 py-4 bg-error-container rounded-2xl flex items-center justify-between gap-4 flex-shrink-0">
-            <div className="flex items-center gap-3">
+          <div className="mx-4 md:mx-6 mb-4 px-4 py-3 md:px-5 md:py-4 bg-error-container rounded-2xl flex flex-col sm:flex-row items-center sm:justify-between gap-3 sm:gap-4 flex-shrink-0 text-center sm:text-left">
+            <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3">
               <span className="material-symbols-outlined text-on-error-container">warning</span>
               <div>
                 <p className="text-sm font-bold text-on-error-container">{t('workOrders.deleteVisit')}</p>
-                <p className="text-xs text-on-error-container/70 mt-0.5">{t('common.cantUndo')}</p>
+                <p className="text-[10px] md:text-xs text-on-error-container/70 mt-0.5">{t('common.cantUndo')}</p>
               </div>
             </div>
             <div className="flex gap-2 flex-shrink-0">
-              <button onClick={() => setConfirming(false)} className="px-4 py-2 rounded-xl text-on-error-container text-xs font-bold hover:bg-error-container/60 transition-colors">{t('common.cancel')}</button>
-              <button onClick={() => onDelete(visit.id)} className="px-4 py-2 rounded-xl bg-error text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5">
+              <button onClick={() => setConfirming(false)} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-on-error-container text-[10px] md:text-xs font-bold hover:bg-error-container/60 transition-colors">{t('common.cancel')}</button>
+              <button onClick={() => onDelete(visit.id)} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl bg-error text-white text-[10px] md:text-xs font-bold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5">
                 <span className="material-symbols-outlined text-sm">delete</span>
                 {t('common.yesDelete')}
               </button>
@@ -437,37 +437,37 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
         )}
 
         {/* Footer */}
-        <div className="px-8 pb-8 pt-4 flex items-center justify-between flex-shrink-0 border-t border-surface-container-low">
+        <div className="px-4 md:px-6 pb-4 pt-3 md:pb-6 md:pt-4 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0 border-t border-surface-container-low">
           {!editing ? (
             <>
-              <div className="flex items-center gap-2">
-                <button onClick={() => setEditing(true)} className="px-5 py-2.5 rounded-xl border-2 border-primary text-primary text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center gap-2">
-                  <span className="material-symbols-outlined text-base">edit</span>{t('common.edit')}
+              <div className="flex items-center gap-1.5 md:gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
+                <button onClick={() => setEditing(true)} className="whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 border-primary text-primary text-[11px] md:text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center gap-1 md:gap-1.5">
+                  <span className="material-symbols-outlined text-[14px] md:text-[18px]">edit</span>{t('common.edit')}
                 </button>
                 {canChangeStatus && (
                   <button
                     onClick={() => { setShowStatusPanel((v) => !v); setPendingStatus(visit.status); setCancelNote(''); setCancelNoteError(false) }}
-                    className={`px-5 py-2.5 rounded-xl border-2 text-sm font-bold transition-all flex items-center gap-2 ${showStatusPanel ? 'border-secondary bg-secondary text-white' : 'border-secondary text-secondary hover:bg-secondary hover:text-white'}`}
+                    className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 text-[11px] md:text-sm font-bold transition-all flex items-center gap-1 md:gap-1.5 ${showStatusPanel ? 'border-secondary bg-secondary text-white' : 'border-secondary text-secondary hover:bg-secondary hover:text-white'}`}
                   >
-                    <span className="material-symbols-outlined text-base">flag</span>{t('common.status')}
+                    <span className="material-symbols-outlined text-[14px] md:text-[18px]">flag</span>{t('common.status')}
                   </button>
                 )}
                 {isAdmin && (
                 <button
                   onClick={() => setConfirming((v) => !v)}
-                  className={`px-5 py-2.5 rounded-xl border-2 text-sm font-bold transition-all flex items-center gap-2 ${confirming ? 'border-error bg-error text-white' : 'border-error text-error hover:bg-error hover:text-white'}`}
+                  className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 text-[11px] md:text-sm font-bold transition-all flex items-center gap-1 md:gap-1.5 ${confirming ? 'border-error bg-error text-white' : 'border-error text-error hover:bg-error hover:text-white'}`}
                 >
-                  <span className="material-symbols-outlined text-base">delete</span>{t('common.delete')}
+                  <span className="material-symbols-outlined text-[14px] md:text-[18px]">delete</span>{t('common.delete')}
                 </button>
                 )}
               </div>
-              <button onClick={onClose} className="px-6 py-2.5 rounded-xl primary-gradient text-white text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity">{t('common.close')}</button>
+              <button onClick={onClose} className="w-full sm:w-auto px-4 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity">{t('common.close')}</button>
             </>
           ) : (
             <>
-              <button onClick={handleCancel} className="px-5 py-2.5 rounded-xl text-on-surface-variant text-sm font-semibold hover:bg-surface-container-low transition-colors">{t('common.cancel')}</button>
-              <button onClick={handleSave} className="px-6 py-2.5 rounded-xl primary-gradient text-white text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center gap-2">
-                <span className="material-symbols-outlined text-base">save</span>{t('common.saveChanges')}
+              <button onClick={handleCancel} className="w-full sm:w-auto px-4 py-1.5 md:px-5 md:py-2 rounded-lg md:rounded-xl text-on-surface-variant text-xs md:text-sm font-semibold hover:bg-surface-container-low transition-colors">{t('common.cancel')}</button>
+              <button onClick={handleSave} className="w-full sm:w-auto px-4 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 md:gap-2">
+                <span className="material-symbols-outlined text-[14px] md:text-[18px]">save</span>{t('common.saveChanges')}
               </button>
             </>
           )}
@@ -510,8 +510,8 @@ function VisitCard({ visit, onClick }) {
       <div className="mx-5 h-px bg-surface-container-low" />
 
       {/* Card body */}
-      <div className="px-5 py-4 space-y-3">
-        <h3 className="font-bold text-on-surface text-base leading-snug">{visit.title}</h3>
+      <div className="px-5 py-4 space-y-3 min-w-0">
+        <h3 className="font-bold text-on-surface text-base leading-snug break-words">{visit.title}</h3>
 
         {visit.customerName && (
           <div className="flex items-center gap-2 text-sm text-on-surface-variant">
@@ -604,7 +604,7 @@ export default function SiteVisits() {
   })
 
   return (
-    <div className="p-8 pb-24 min-h-screen bg-page-bg">
+    <div className="p-4 md:p-6 lg:p-8 pb-24 min-h-screen bg-page-bg">
       {showModal && (
         <AddVisitModal
           customers={customers}
@@ -625,56 +625,71 @@ export default function SiteVisits() {
       )}
 
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 mb-6 md:mb-8">
         <div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-on-surface mb-2">{t('workOrders.title')}</h1>
-          <p className="text-on-surface-variant text-base">
+          <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-on-surface mb-1 md:mb-2">{t('workOrders.title')}</h1>
+          <p className="text-on-surface-variant text-xs md:text-sm lg:text-base">
             {t('workOrders.subtitle')}
           </p>
         </div>
         <button
           onClick={() => setShowModal(true)}
-          className="primary-gradient text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-xl shadow-primary/20 flex items-center gap-2 hover:opacity-90 hover:scale-[1.02] transition-all self-start md:self-auto"
+          className="primary-gradient text-white px-4 lg:px-6 py-2 lg:py-2.5 rounded-lg lg:rounded-xl font-bold text-xs lg:text-sm shadow-xl shadow-primary/20 flex items-center gap-1.5 lg:gap-2 hover:opacity-90 hover:scale-[1.02] transition-all self-start md:self-auto"
         >
-          <span className="material-symbols-outlined">add_location_alt</span>
+          <span className="material-symbols-outlined text-[18px] lg:text-[24px]">add_location_alt</span>
           {t('workOrders.scheduleVisit')}
         </button>
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 md:gap-4 mb-8">
         {stats.map(({ label, value, icon, color }) => (
-          <div key={label} className="bg-surface-container-lowest rounded-2xl p-5 flex items-center gap-4 relative overflow-hidden">
+          <div key={label} className="bg-surface-container-lowest rounded-xl xl:rounded-2xl p-3 md:p-4 xl:p-5 flex items-center gap-2 md:gap-3 xl:gap-4 relative overflow-hidden">
             <div className={`absolute top-0 left-0 w-1 h-full ${color}`} />
-            <div className="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center flex-shrink-0">
-              <span className="material-symbols-outlined text-on-surface-variant text-[20px]">{icon}</span>
+            <div className="w-8 h-8 md:w-9 md:h-9 xl:w-10 xl:h-10 rounded-lg xl:rounded-xl bg-surface-container-high flex items-center justify-center flex-shrink-0">
+              <span className="material-symbols-outlined text-on-surface-variant text-[16px] md:text-[18px] xl:text-[20px]">{icon}</span>
             </div>
-            <div>
-              <p className="text-2xl font-black text-on-surface leading-none">{value}</p>
-              <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mt-1">{label}</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-lg md:text-xl xl:text-2xl font-black text-on-surface leading-none truncate">{value}</p>
+              <p className="text-[9px] xl:text-[11px] font-bold text-on-surface-variant uppercase tracking-wider mt-0.5 xl:mt-1 truncate">{label}</p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3 mb-8">
-        <div className="flex items-center gap-2 bg-surface-container-low px-4 py-2.5 rounded-xl flex-1 min-w-[200px] max-w-sm">
-          <span className="material-symbols-outlined text-on-surface-variant text-lg">search</span>
-          <input
-            type="text"
-            placeholder={t('workOrders.searchPlaceholder')}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="bg-transparent border-none outline-none text-sm w-full placeholder-slate-400"
-          />
+      {/* Filters Section */}
+      <div className="flex flex-col gap-3 lg:gap-4 mb-6 lg:mb-8">
+        {/* Top Row: Search and Export */}
+        <div className="flex items-center justify-between gap-2 lg:gap-3">
+          {/* Search */}
+          <div className="flex items-center gap-1.5 lg:gap-2 bg-surface-container-low px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg lg:rounded-xl flex-1 max-w-sm">
+            <span className="material-symbols-outlined text-on-surface-variant text-base lg:text-lg">search</span>
+            <input
+              type="text"
+              placeholder={t('workOrders.searchPlaceholder')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="bg-transparent border-none outline-none text-xs lg:text-sm w-full placeholder-slate-400"
+            />
+          </div>
+
+          {/* Export Button */}
+          <button
+            onClick={handleExport}
+            className="primary-gradient text-white px-4 lg:px-6 py-2 lg:py-2.5 rounded-lg lg:rounded-xl font-bold text-xs lg:text-sm shadow-xl shadow-primary/20 flex items-center gap-1.5 lg:gap-2 hover:opacity-90 hover:scale-[1.02] transition-all flex-shrink-0"
+          >
+            <span className="material-symbols-outlined text-[18px] lg:text-[24px]">download</span>
+            <span className="hidden sm:inline">{t('common.export')}</span>
+          </button>
         </div>
-        <div className="flex items-center gap-2">
+
+        {/* Bottom Row: Status Filters */}
+        <div className="flex items-center gap-1.5 lg:gap-2 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full pb-1">
           {['', ...STATUSES].map((s) => (
             <button
               key={s || 'all'}
               onClick={() => setStatusFilter(s)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold border-2 transition-all ${
+              className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 lg:px-4 lg:py-2 rounded-lg lg:rounded-xl text-[10px] lg:text-xs font-bold border-2 transition-all ${
                 statusFilter === s
                   ? 'primary-gradient border-transparent text-white'
                   : 'border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary'
@@ -684,26 +699,17 @@ export default function SiteVisits() {
             </button>
           ))}
         </div>
-        <div className="ml-auto">
-          <button
-            onClick={handleExport}
-            className="primary-gradient text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-xl shadow-primary/20 flex items-center gap-2 hover:opacity-90 hover:scale-[1.02] transition-all"
-          >
-            <span className="material-symbols-outlined text-lg">download</span>
-            {t('common.export')}
-          </button>
-        </div>
       </div>
 
       {/* Cards grid */}
       {sorted.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-on-surface-variant/40">
-          <span className="material-symbols-outlined text-6xl mb-4">location_off</span>
-          <p className="text-lg font-bold">{t('workOrders.noVisits')}</p>
-          <p className="text-sm mt-1">{t('workOrders.scheduleFirst')}</p>
+        <div className="flex flex-col items-center justify-center py-16 md:py-24 text-on-surface-variant/40 text-center px-4">
+          <span className="material-symbols-outlined text-4xl md:text-5xl mb-3">location_off</span>
+          <p className="text-base md:text-lg font-bold">{t('workOrders.noVisits')}</p>
+          <p className="text-xs md:text-sm mt-1">{t('workOrders.scheduleFirst')}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 max-h-[560px] overflow-y-auto pr-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
           {sorted.map((visit) => (
             <VisitCard key={visit.id} visit={visit} onClick={() => setSelected(visit)} />
           ))}

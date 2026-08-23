@@ -212,7 +212,8 @@
   --color-priority-critical-text: #f87171;
 }
 
-select, option {
+select,
+option {
   background-color: var(--color-input-bg);
   color: var(--color-on-surface);
 }
@@ -224,7 +225,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
   font-family: 'Manrope', sans-serif;
 }
 
@@ -238,44 +242,127 @@ h1, h2, h3, h4 {
   white-space: nowrap;
   direction: ltr;
   vertical-align: middle;
+  align-items: center;
+  justify-content: center;
 }
+
+
 
 .fill-icon {
   font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
 
 /* Technician status styles */
-.tech-active-badge { background: var(--color-tech-active-bg); color: var(--color-tech-active-text); }
-.tech-active-dot { background: var(--color-tech-active-dot); }
-.tech-busy-badge { background: var(--color-tech-busy-bg); color: var(--color-tech-busy-text); }
-.tech-busy-dot { background: var(--color-tech-busy-dot); }
-.tech-offduty-badge { background: var(--color-tech-offduty-bg); color: var(--color-tech-offduty-text); }
-.tech-offduty-dot { background: var(--color-tech-offduty-dot); }
+.tech-active-badge {
+  background: var(--color-tech-active-bg);
+  color: var(--color-tech-active-text);
+}
+
+.tech-active-dot {
+  background: var(--color-tech-active-dot);
+}
+
+.tech-busy-badge {
+  background: var(--color-tech-busy-bg);
+  color: var(--color-tech-busy-text);
+}
+
+.tech-busy-dot {
+  background: var(--color-tech-busy-dot);
+}
+
+.tech-offduty-badge {
+  background: var(--color-tech-offduty-bg);
+  color: var(--color-tech-offduty-text);
+}
+
+.tech-offduty-dot {
+  background: var(--color-tech-offduty-dot);
+}
 
 /* Avatar styles */
-.avatar-circle { background: var(--color-avatar-bg); color: var(--color-avatar-text); }
+.avatar-circle {
+  background: var(--color-avatar-bg);
+  color: var(--color-avatar-text);
+}
 
 /* Priority styles */
-.status-progress-card { background: var(--color-status-progress-card-bg); }
+.status-progress-card {
+  background: var(--color-status-progress-card-bg);
+}
 
-.priority-low { background: var(--color-priority-low-bg); color: var(--color-priority-low-text); }
-.priority-medium { background: var(--color-priority-medium-bg); color: var(--color-priority-medium-text); }
-.priority-high { background: var(--color-priority-high-bg); color: var(--color-priority-high-text); }
-.priority-critical { background: var(--color-priority-critical-bg); color: var(--color-priority-critical-text); }
+.priority-low {
+  background: var(--color-priority-low-bg);
+  color: var(--color-priority-low-text);
+}
+
+.priority-medium {
+  background: var(--color-priority-medium-bg);
+  color: var(--color-priority-medium-text);
+}
+
+.priority-high {
+  background: var(--color-priority-high-bg);
+  color: var(--color-priority-high-text);
+}
+
+.priority-critical {
+  background: var(--color-priority-critical-bg);
+  color: var(--color-priority-critical-text);
+}
 
 /* Status styles */
-.status-scheduled-badge { background: var(--color-status-scheduled-bg); color: var(--color-status-scheduled-text); }
-.status-scheduled-dot { background: var(--color-status-scheduled-dot); }
-.status-scheduled-accent { border-color: var(--color-status-scheduled-border); }
-.status-progress-badge { background: var(--color-status-progress-bg); color: var(--color-status-progress-text); }
-.status-progress-dot { background: var(--color-status-progress-dot); }
-.status-progress-accent { border-color: var(--color-status-progress-border); }
-.status-completed-badge { background: var(--color-status-completed-bg); color: var(--color-status-completed-text); }
-.status-completed-dot { background: var(--color-status-completed-dot); }
-.status-completed-accent { border-color: var(--color-status-completed-border); }
-.status-cancelled-badge { background: var(--color-status-cancelled-bg); color: var(--color-status-cancelled-text); }
-.status-cancelled-dot { background: var(--color-status-cancelled-dot); }
-.status-cancelled-accent { border-color: var(--color-status-cancelled-border); }
+.status-scheduled-badge {
+  background: var(--color-status-scheduled-bg);
+  color: var(--color-status-scheduled-text);
+}
+
+.status-scheduled-dot {
+  background: var(--color-status-scheduled-dot);
+}
+
+.status-scheduled-accent {
+  border-color: var(--color-status-scheduled-border);
+}
+
+.status-progress-badge {
+  background: var(--color-status-progress-bg);
+  color: var(--color-status-progress-text);
+}
+
+.status-progress-dot {
+  background: var(--color-status-progress-dot);
+}
+
+.status-progress-accent {
+  border-color: var(--color-status-progress-border);
+}
+
+.status-completed-badge {
+  background: var(--color-status-completed-bg);
+  color: var(--color-status-completed-text);
+}
+
+.status-completed-dot {
+  background: var(--color-status-completed-dot);
+}
+
+.status-completed-accent {
+  border-color: var(--color-status-completed-border);
+}
+
+.status-cancelled-badge {
+  background: var(--color-status-cancelled-bg);
+  color: var(--color-status-cancelled-text);
+}
+
+.status-cancelled-dot {
+  background: var(--color-status-cancelled-dot);
+}
+
+.status-cancelled-accent {
+  border-color: var(--color-status-cancelled-border);
+}
 
 .primary-gradient {
   background: linear-gradient(135deg, var(--gradient-primary-start) 0%, var(--gradient-primary-end) 100%);
@@ -285,13 +372,16 @@ h1, h2, h3, h4 {
 ::-webkit-scrollbar {
   width: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: var(--scrollbar-track);
 }
+
 ::-webkit-scrollbar-thumb {
   background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
 }

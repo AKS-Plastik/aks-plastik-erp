@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
@@ -72,7 +72,7 @@ const TABS = [
 
 // ─── Field helpers ────────────────────────────────────────────────────────────
 function inp(errors, field) {
-  return `w-full bg-surface-container-lowest border rounded-xl px-3 py-2 text-sm text-on-surface outline-none focus:border-primary transition ${
+  return `w-full bg-surface-container-lowest border rounded-lg md:rounded-xl px-2.5 md:px-3 py-1.5 md:py-2 text-[11px] md:text-sm text-on-surface outline-none focus:border-primary transition ${
     errors[field] ? 'border-error' : 'border-theme-border'
   }`
 }
@@ -80,18 +80,18 @@ function inp(errors, field) {
 function Field({ label, error, children }) {
   return (
     <div>
-      <label className="block text-[10px] font-bold uppercase tracking-widest text-text-muted mb-1">{label}</label>
+      <label className="block text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-text-muted mb-0.5 md:mb-1">{label}</label>
       {children}
-      {error && <p className="text-xs text-error mt-1">{error}</p>}
+      {error && <p className="text-[10px] md:text-xs text-error mt-1">{error}</p>}
     </div>
   )
 }
 
 function Divider({ label }) {
   return (
-    <div className="col-span-2 flex items-center gap-3 pt-1">
+    <div className="col-span-2 flex items-center gap-2 md:gap-3 pt-1">
       <div className="flex-1 h-px bg-surface-container-high" />
-      <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">{label}</span>
+      <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-muted">{label}</span>
       <div className="flex-1 h-px bg-surface-container-high" />
     </div>
   )
@@ -102,13 +102,13 @@ function DocCheckbox({ label, checked, onChange }) {
     <button
       type="button"
       onClick={() => onChange(!checked)}
-      className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border transition text-sm ${
+      className={`flex items-center gap-2 md:gap-2.5 px-2.5 md:px-3 py-1.5 md:py-2 rounded-lg md:rounded-xl border transition text-[11px] md:text-sm ${
         checked
           ? 'bg-primary/10 border-primary text-primary'
           : 'bg-surface-container-lowest border-theme-border text-text-muted hover:bg-hover-bg'
       }`}
     >
-      <span className="material-symbols-outlined text-base">
+      <span className="material-symbols-outlined text-[14px] md:text-base">
         {checked ? 'check_circle' : 'radio_button_unchecked'}
       </span>
       {label}
@@ -206,43 +206,43 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 md:p-0" onClick={onClose}>
       <div
         className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 pt-5 pb-3 border-b border-theme-border shrink-0">
-          <h2 className="text-base font-bold text-on-surface">{title}</h2>
+        <div className="flex items-center justify-between px-4 md:px-6 pt-4 md:pt-5 pb-3 md:pb-3 border-b border-theme-border shrink-0">
+          <h2 className="text-sm md:text-base font-bold text-on-surface">{title}</h2>
           <button onClick={onClose} className="text-text-muted hover:text-error transition">
-            <span className="material-symbols-outlined">close</span>
+            <span className="material-symbols-outlined text-lg md:text-xl">close</span>
           </button>
         </div>
 
         {/* Tabs */}
-        <div className="flex overflow-x-auto shrink-0 border-b border-theme-border">
+        <div className="flex overflow-x-auto shrink-0 border-b border-theme-border [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
           {TABS.map(tabItem => (
             <button
               key={tabItem.id}
               onClick={() => setTab(tabItem.id)}
-              className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold whitespace-nowrap border-b-2 transition -mb-px ${
+              className={`flex items-center gap-1 md:gap-1.5 px-3 md:px-4 py-2 md:py-2.5 text-[11px] md:text-xs font-semibold whitespace-nowrap border-b-2 transition -mb-px ${
                 tab === tabItem.id
                   ? 'border-primary text-primary'
                   : 'border-transparent text-text-muted hover:text-on-surface'
               }`}
             >
-              <span className="material-symbols-outlined text-sm">{tabItem.icon}</span>
+              <span className="material-symbols-outlined text-[14px] md:text-sm">{tabItem.icon}</span>
               {t(tabItem.labelKey)}
             </button>
           ))}
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto px-6 py-5">
+        <div className="flex-1 overflow-auto px-4 md:px-6 py-4 md:py-5">
 
           {/* ── Identity ── */}
           {tab === 'identity' && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               {/* Photo upload — spans full width */}
               <div className="col-span-2 flex items-center gap-5 pb-2">
                 <div className="relative shrink-0">
@@ -322,7 +322,7 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
 
           {/* ── Contact & Job ── */}
           {tab === 'contact' && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <Divider label="Contact Information" />
               <Field label="Mobile Phone">
                 <input type="tel" className={inp(errors, 'phone')} value={form.phone} onChange={set('phone')} placeholder="+90 (555) 000-0000" />
@@ -345,7 +345,7 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
 
           {/* ── Salary & Finance ── */}
           {tab === 'finance' && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <Divider label="Salary" />
               <Field label="Gross Salary (Brüt Maaş)">
                 <input type="number" min="0" step="0.01" className={inp(errors, 'salary')} value={form.salary} onChange={set('salary')} placeholder="0.00" />
@@ -381,7 +381,7 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
 
           {/* ── SGK & Legal ── */}
           {tab === 'legal' && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <Divider label="SGK Information" />
               <Field label="SGK Sicil No">
                 <input className={inp(errors, 'sgkNo')} value={form.sgkNo} onChange={set('sgkNo')} placeholder="SGK registration number" />
@@ -406,7 +406,7 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
 
           {/* ── Education ── */}
           {tab === 'education' && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <Divider label="Education" />
               <Field label="Education Level (Eğitim Durumu)">
                 <select className={inp(errors, 'educationLevel')} value={form.educationLevel} onChange={set('educationLevel')}>
@@ -436,7 +436,7 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
 
           {/* ── Docs & System ── */}
           {tab === 'operational' && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <Divider label="Documents Received" />
               <div className="col-span-2 grid grid-cols-2 gap-2">
                 {[
@@ -476,7 +476,7 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
           {/* ── Access & Role ── */}
           {/* ── Job Info ── */}
           {tab === 'job' && (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-3 md:gap-4">
               <Field label="Personnel No.">
                 <input className={inp(errors, 'personnelNo')} value={form.personnelNo} onChange={set('personnelNo')} placeholder="e.g. P-001" />
               </Field>
@@ -513,54 +513,54 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
           {tab === 'access' && (
             <div className="space-y-5">
               {!employee?.id ? (
-                <div className="flex flex-col items-center justify-center py-10 text-center text-text-muted">
-                  <span className="material-symbols-outlined text-4xl mb-2 opacity-30">shield_person</span>
-                  <p className="text-sm">Save the employee first to configure access and role settings.</p>
+                <div className="flex flex-col items-center justify-center py-6 md:py-10 text-center text-text-muted px-4">
+                  <span className="material-symbols-outlined text-3xl md:text-4xl mb-1.5 md:mb-2 opacity-30">shield_person</span>
+                  <p className="text-[11px] md:text-sm leading-relaxed">Save the employee first to configure access and role settings.</p>
                 </div>
               ) : (
                 <>
                   {/* Manager checkbox */}
-                  <div className={`flex items-center gap-4 p-4 rounded-xl border-2 transition cursor-pointer ${isManagerLocal ? 'border-amber-400 bg-amber-500/5' : 'border-theme-border bg-surface-container hover:bg-hover-bg'}`}
+                  <div className={`flex items-center gap-3 md:gap-4 p-3 md:p-4 rounded-lg md:rounded-xl border-2 transition cursor-pointer ${isManagerLocal ? 'border-amber-400 bg-amber-500/5' : 'border-theme-border bg-surface-container hover:bg-hover-bg'}`}
                     onClick={!managerSaving ? requestManagerToggle : undefined}
                   >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isManagerLocal ? 'bg-amber-500/15' : 'bg-surface-container-high'}`}>
+                    <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg md:rounded-xl flex items-center justify-center shrink-0 ${isManagerLocal ? 'bg-amber-500/15' : 'bg-surface-container-high'}`}>
                       {managerSaving
-                        ? <span className="material-symbols-outlined text-text-muted animate-spin">progress_activity</span>
-                        : <span className={`material-symbols-outlined ${isManagerLocal ? 'text-amber-600' : 'text-text-muted'}`}>manage_accounts</span>
+                        ? <span className="material-symbols-outlined text-[16px] md:text-xl text-text-muted animate-spin">progress_activity</span>
+                        : <span className={`material-symbols-outlined text-[16px] md:text-xl ${isManagerLocal ? 'text-amber-600' : 'text-text-muted'}`}>manage_accounts</span>
                       }
                     </div>
                     <div className="flex-1">
-                      <p className={`text-sm font-semibold ${isManagerLocal ? 'text-amber-700' : 'text-on-surface'}`}>
+                      <p className={`text-xs md:text-sm font-semibold ${isManagerLocal ? 'text-amber-700' : 'text-on-surface'}`}>
                         {dept
                           ? `This employee is "${dept}" department manager`
                           : 'This employee is a department manager'}
                       </p>
-                      <p className="text-xs text-text-muted mt-0.5">
+                      <p className="text-[10px] md:text-xs text-text-muted mt-0.5 md:mt-1">
                         {isManagerLocal ? 'Currently set as manager of this department' : 'Click to set as manager of their department'}
                       </p>
                     </div>
-                    <span className={`material-symbols-outlined text-xl ${isManagerLocal ? 'text-amber-500' : 'text-text-muted'}`}>
+                    <span className={`material-symbols-outlined text-[16px] md:text-xl ${isManagerLocal ? 'text-amber-500' : 'text-text-muted'}`}>
                       {isManagerLocal ? 'check_circle' : 'radio_button_unchecked'}
                     </span>
                   </div>
 
                   {/* Manager confirmation dialog */}
                   {confirmManager && (
-                    <div className="rounded-xl border-2 border-amber-400 bg-amber-500/5 p-4 space-y-3">
-                      <div className="flex items-start gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0 mt-0.5">
-                          <span className="material-symbols-outlined text-amber-600">warning</span>
+                    <div className="rounded-lg md:rounded-xl border-2 border-amber-400 bg-amber-500/5 p-3 md:p-4 space-y-2 md:space-y-3">
+                      <div className="flex items-start gap-2.5 md:gap-3">
+                        <div className="w-8 h-8 md:w-9 md:h-9 rounded-lg md:rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0 md:mt-0.5">
+                          <span className="material-symbols-outlined text-[16px] md:text-xl text-amber-600">warning</span>
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-on-surface">
+                          <p className="text-xs md:text-sm font-semibold text-on-surface">
                             {confirmManager.next ? 'Set as department manager?' : 'Remove manager role?'}
                           </p>
                           {confirmManager.next && confirmManager.existingManager ? (
-                            <p className="text-xs text-text-muted mt-1">
+                            <p className="text-[10px] md:text-xs text-text-muted mt-1 leading-relaxed">
                               <span className="font-semibold text-amber-700">{confirmManager.existingManager.name}</span> is currently the manager of <span className="font-semibold">{dept}</span>. They will be removed as manager when you confirm.
                             </p>
                           ) : (
-                            <p className="text-xs text-text-muted mt-1">
+                            <p className="text-[10px] md:text-xs text-text-muted mt-1 leading-relaxed">
                               Are you sure you want to {confirmManager.next ? `set this employee as manager of ${dept}` : 'remove this employee\'s manager role'}?
                             </p>
                           )}
@@ -569,13 +569,13 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
                       <div className="flex gap-2">
                         <button
                           onClick={() => setConfirmManager(null)}
-                          className="flex-1 py-2 rounded-lg border border-theme-border text-sm text-text-muted hover:bg-hover-bg transition"
+                          className="flex-1 py-1.5 md:py-2 rounded-lg border border-theme-border text-[11px] md:text-sm text-text-muted hover:bg-hover-bg transition"
                         >
                           {t('common.cancel')}
                         </button>
                         <button
                           onClick={confirmManagerToggle}
-                          className="flex-1 py-2 rounded-lg bg-amber-500 text-white text-sm font-semibold hover:opacity-90 transition"
+                          className="flex-1 py-1.5 md:py-2 rounded-lg bg-amber-500 text-white text-[11px] md:text-sm font-semibold hover:opacity-90 transition"
                         >
                           {t('common.confirm')}
                         </button>
@@ -585,11 +585,11 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
 
                   {/* Page access */}
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-widest text-text-muted mb-3">Page Access {dept ? `— ${dept}` : ''}</p>
+                    <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-text-muted mb-2 md:mb-3">Page Access {dept ? `— ${dept}` : ''}</p>
                     {!dept ? (
-                      <p className="text-sm text-text-muted">Assign a department first to configure page access.</p>
+                      <p className="text-[11px] md:text-sm text-text-muted">Assign a department first to configure page access.</p>
                     ) : (
-                      <div className="space-y-1.5">
+                      <div className="space-y-1 md:space-y-1.5">
                         {PAGES.map((page) => {
                           const enabled = (permissions[dept] || []).includes(page.key)
                           const saving = !!permSaving[page.key]
@@ -602,34 +602,34 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
                               <button
                                 onClick={() => togglePermission(page.key)}
                                 disabled={saving}
-                                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border transition text-sm ${
+                                className={`w-full flex items-center gap-2 md:gap-3 px-2.5 md:px-3 py-1.5 md:py-2.5 rounded-lg md:rounded-xl border transition text-[11px] md:text-sm ${
                                   enabled
                                     ? 'bg-primary/10 border-primary text-primary'
                                     : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
                                 }`}
                               >
-                                <span className="material-symbols-outlined text-base">{page.icon}</span>
+                                <span className="material-symbols-outlined text-[14px] md:text-base">{page.icon}</span>
                                 <span className="flex-1 text-left font-medium">{page.label}</span>
                                 {saving
-                                  ? <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
-                                  : <span className="material-symbols-outlined text-sm">{enabled ? 'check_circle' : 'radio_button_unchecked'}</span>
+                                  ? <span className="material-symbols-outlined text-[12px] md:text-sm animate-spin">progress_activity</span>
+                                  : <span className="material-symbols-outlined text-[12px] md:text-sm">{enabled ? 'check_circle' : 'radio_button_unchecked'}</span>
                                 }
                               </button>
                               {page.key === 'orders' && enabled && (
                                 <button
                                   onClick={() => togglePermission('orders-create')}
                                   disabled={ordersSubSaving}
-                                  className={`w-full flex items-center gap-3 pl-8 pr-3 py-2 rounded-xl border transition text-sm mt-1 ${
+                                  className={`w-full flex items-center gap-2 md:gap-3 pl-6 md:pl-8 pr-2.5 md:pr-3 py-1.5 md:py-2 rounded-lg md:rounded-xl border transition text-[10px] md:text-sm mt-1 ${
                                     ordersSubEnabled
                                       ? 'bg-primary/10 border-primary text-primary'
                                       : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
                                   }`}
                                 >
-                                  <span className="material-symbols-outlined text-base">add_circle</span>
+                                  <span className="material-symbols-outlined text-[14px] md:text-base">add_circle</span>
                                   <span className="flex-1 text-left font-medium">Can create &amp; edit orders</span>
                                   {ordersSubSaving
-                                    ? <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
-                                    : <span className="material-symbols-outlined text-sm">{ordersSubEnabled ? 'check_circle' : 'radio_button_unchecked'}</span>
+                                    ? <span className="material-symbols-outlined text-[12px] md:text-sm animate-spin">progress_activity</span>
+                                    : <span className="material-symbols-outlined text-[12px] md:text-sm">{ordersSubEnabled ? 'check_circle' : 'radio_button_unchecked'}</span>
                                   }
                                 </button>
                               )}
@@ -637,17 +637,17 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
                                 <button
                                   onClick={() => togglePermission('purchasing:create')}
                                   disabled={purchasingSubSaving}
-                                  className={`w-full flex items-center gap-3 pl-8 pr-3 py-2 rounded-xl border transition text-sm mt-1 ${
+                                  className={`w-full flex items-center gap-2 md:gap-3 pl-6 md:pl-8 pr-2.5 md:pr-3 py-1.5 md:py-2 rounded-lg md:rounded-xl border transition text-[10px] md:text-sm mt-1 ${
                                     purchasingSubEnabled
                                       ? 'bg-primary/10 border-primary text-primary'
                                       : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
                                   }`}
                                 >
-                                  <span className="material-symbols-outlined text-base">add_circle</span>
+                                  <span className="material-symbols-outlined text-[14px] md:text-base">add_circle</span>
                                   <span className="flex-1 text-left font-medium">Can create &amp; edit purchase</span>
                                   {purchasingSubSaving
-                                    ? <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
-                                    : <span className="material-symbols-outlined text-sm">{purchasingSubEnabled ? 'check_circle' : 'radio_button_unchecked'}</span>
+                                    ? <span className="material-symbols-outlined text-[12px] md:text-sm animate-spin">progress_activity</span>
+                                    : <span className="material-symbols-outlined text-[12px] md:text-sm">{purchasingSubEnabled ? 'check_circle' : 'radio_button_unchecked'}</span>
                                   }
                                 </button>
                               )}
@@ -665,13 +665,13 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-theme-border shrink-0">
-          {saveError && <p className="text-xs text-error mb-3">{saveError}</p>}
-          <div className="flex gap-3">
-            <button onClick={onClose} className="flex-1 border border-theme-border rounded-xl py-2.5 text-sm text-text-muted hover:bg-hover-bg transition">
+        <div className="px-4 md:px-6 py-3 md:py-4 border-t border-theme-border shrink-0">
+          {saveError && <p className="text-[10px] md:text-xs text-error mb-2 md:mb-3">{saveError}</p>}
+          <div className="flex gap-2 md:gap-3">
+            <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg md:rounded-xl py-2 md:py-2.5 text-[11px] md:text-sm text-text-muted hover:bg-hover-bg transition">
               {t('common.cancel')}
             </button>
-            <button onClick={onSave} className="flex-1 bg-primary text-white rounded-xl py-2.5 text-sm font-semibold hover:opacity-90 transition">
+            <button onClick={onSave} className="flex-1 bg-primary text-white rounded-lg md:rounded-xl py-2 md:py-2.5 text-[11px] md:text-sm font-semibold hover:opacity-90 transition">
               {t('employees.saveEmployee')}
             </button>
           </div>
@@ -730,6 +730,11 @@ function formFromEmployee(emp) {
 export default function Employees() {
   const { t } = useTranslation()
   const { employees, addEmployee, updateEmployee, deleteEmployee, isAdmin, uploadEmployeePhoto } = useData()
+
+  const allEmployees = useMemo(() => {
+    return employees || []
+  }, [employees])
+
   const pendingPhotoFileRef = useRef(null)
   const [search, setSearch]   = useState('')
   const [page, setPage]       = useState(1)
@@ -793,36 +798,36 @@ export default function Employees() {
     await deleteEmployee(id)
   }
 
-  const filtered = employees.filter(emp =>
+  const filtered = allEmployees.filter(emp =>
     emp.name.toLowerCase().includes(search.toLowerCase()) ||
     (emp.department || '').toLowerCase().includes(search.toLowerCase()) ||
     (emp.position   || '').toLowerCase().includes(search.toLowerCase()) ||
-    emp.code.toLowerCase().includes(search.toLowerCase())
+    (emp.code || '').toLowerCase().includes(search.toLowerCase())
   )
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
   const paginated  = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="h-full flex flex-col xl:overflow-hidden overflow-y-auto px-2.5 sm:px-4 md:px-5 pt-2.5 sm:pt-4 pb-2 md:pb-3 max-w-7xl mx-auto w-full">
+      <div className="flex items-center justify-between mb-3 xl:mb-4 shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-on-surface">{t('employees.title')}</h1>
-          <p className="text-sm text-text-muted mt-0.5">{t('employees.totalEmployees', { count: employees.length })}</p>
+          <h1 className="text-xl xl:text-2xl font-bold text-on-surface">{t('employees.title')}</h1>
+          <p className="text-[11px] xl:text-sm text-text-muted mt-0.5">{t('employees.totalEmployees', { count: allEmployees.length })}</p>
         </div>
         {isAdmin && (
-          <button onClick={openAdd} className="flex items-center gap-2 primary-gradient text-white px-4 py-2.5 rounded-xl text-sm font-bold shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity">
-            <span className="material-symbols-outlined text-base">add</span>
-            {t('employees.addEmployee')}
+          <button onClick={openAdd} className="flex items-center gap-1.5 xl:gap-2 primary-gradient text-white px-2.5 sm:px-4 py-2 xl:py-2.5 rounded-xl text-xs xl:text-sm font-bold shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity">
+            <span className="material-symbols-outlined text-[16px] xl:text-base">add</span>
+            <span>{t('employees.addEmployee')}</span>
           </button>
         )}
       </div>
 
-      <div className="flex items-center gap-3 mb-4">
-        <div className="relative flex-1 max-w-sm">
-          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-lg">search</span>
+      <div className="flex items-center gap-3 mb-2 xl:mb-3 shrink-0">
+        <div className="relative flex-1 min-w-44 max-w-sm">
+          <span className="material-symbols-outlined absolute left-2.5 xl:left-3 top-1/2 -translate-y-1/2 text-text-muted text-[16px] xl:text-lg">search</span>
           <input
-            className="w-full bg-surface-container-lowest border border-theme-border rounded-xl pl-9 pr-3 py-2 text-sm text-on-surface outline-none focus:border-primary"
+            className="w-full bg-surface-container-lowest border border-theme-border rounded-lg xl:rounded-xl pl-8 xl:pl-9 pr-3 py-1.5 xl:py-2 text-[11px] xl:text-sm text-on-surface outline-none focus:border-primary"
             placeholder={t('employees.searchPlaceholder')}
             value={search}
             onChange={e => { setSearch(e.target.value); setPage(1) }}
@@ -830,19 +835,65 @@ export default function Employees() {
         </div>
       </div>
 
-      <div className="bg-surface-container-lowest rounded-2xl border border-theme-border overflow-hidden">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-theme-border text-text-muted text-xs uppercase tracking-wider">
-              <th className="text-left px-6 py-4 font-semibold">{t('employees.title')}</th>
-              <th className="text-left px-6 py-4 font-semibold">{t('employees.department')}</th>
-              <th className="text-left px-6 py-4 font-semibold">{t('employees.position')}</th>
-              <th className="text-left px-6 py-4 font-semibold">Contact</th>
-              <th className="text-left px-6 py-4 font-semibold">Supervisor</th>
-              <th className="text-left px-6 py-4 font-semibold">{t('common.status')}</th>
-              {isAdmin && <th className="text-right px-6 py-4 font-semibold">{t('common.actions')}</th>}
-            </tr>
-          </thead>
+      <div className="flex-1 xl:min-h-0 bg-surface-container-lowest xl:rounded-xl xl:border border-theme-border flex flex-col overflow-visible xl:overflow-hidden">
+        
+        {/* Mobile Cards */}
+        <div className="xl:hidden flex flex-col gap-2 flex-none py-1">
+          {paginated.length === 0 ? (
+            <div className="flex items-center justify-center gap-2 py-8 text-text-muted">
+              <span className="material-symbols-outlined text-xl opacity-40">badge</span>
+              <span className="text-sm font-medium">{t('employees.noEmployees')}</span>
+            </div>
+          ) : (
+            paginated.map(emp => (
+              <div key={emp.id} onClick={() => setViewEmployee(emp)} className="bg-surface-container-lowest border border-theme-border rounded-xl p-3 hover:bg-hover-bg transition-colors cursor-pointer flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <InitialsAvatar initials={emp.initials} size="sm" />
+                    <div>
+                      <div className="font-semibold text-on-surface text-xs">{emp.name}</div>
+                      <div className="text-[10px] text-text-muted font-mono">{emp.code}</div>
+                    </div>
+                  </div>
+                  <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusStyle[emp.status] || statusStyle.Inactive}`}>
+                    {emp.status}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-[11px]">
+                  <span className="text-text-muted truncate max-w-[50%]">{emp.department || '—'} · {emp.position || '—'}</span>
+                  {emp.isManager && <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-600"><span className="material-symbols-outlined text-[12px]">manage_accounts</span>Manager</span>}
+                </div>
+                {isAdmin && (
+                  <div className="flex justify-end pt-2 mt-1 border-t border-theme-border/50" onClick={e => e.stopPropagation()}>
+                    <div className="flex items-center justify-end gap-1">
+                      <button onClick={() => openEdit(emp)} className="p-1.5 rounded-lg hover:bg-hover-bg text-text-muted hover:text-primary transition">
+                        <span className="material-symbols-outlined text-sm">edit</span>
+                      </button>
+                      <button onClick={() => handleDelete(emp.id)} className="p-1.5 rounded-lg hover:bg-hover-bg text-text-muted hover:text-error transition">
+                        <span className="material-symbols-outlined text-sm">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Desktop Table */}
+        <div className="hidden xl:block overflow-auto flex-1 custom-scrollbar pb-2">
+          <table className="w-full text-sm">
+            <thead className="sticky top-0 bg-surface-container-lowest z-10 shadow-sm">
+              <tr className="border-b border-theme-border text-text-muted text-xs uppercase tracking-wider">
+                <th className="text-left px-6 py-4 font-semibold">{t('employees.title')}</th>
+                <th className="text-left px-6 py-4 font-semibold">{t('employees.department')}</th>
+                <th className="text-left px-6 py-4 font-semibold">{t('employees.position')}</th>
+                <th className="text-left px-6 py-4 font-semibold">Contact</th>
+                <th className="text-left px-6 py-4 font-semibold">Supervisor</th>
+                <th className="text-left px-6 py-4 font-semibold">{t('common.status')}</th>
+                {isAdmin && <th className="text-right px-6 py-4 font-semibold">{t('common.actions')}</th>}
+              </tr>
+            </thead>
           <tbody>
             {paginated.length === 0 ? (
               <tr>
@@ -853,7 +904,7 @@ export default function Employees() {
               </tr>
             ) : (
               paginated.map(emp => (
-                <tr key={emp.id} onClick={() => setViewEmployee(emp)} className="border-b border-theme-border last:border-0 hover:bg-hover-bg transition-colors cursor-pointer">
+                <tr key={emp.id} onClick={() => setViewEmployee(emp)} className="border-b border-theme-border last:border-0 hover:bg-hover-bg transition-colors cursor-pointer group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
                       <InitialsAvatar initials={emp.initials} size="sm" />
@@ -875,7 +926,7 @@ export default function Employees() {
                   <td className="px-6 py-4">
                     {emp.isManager
                       ? <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-600"><span className="material-symbols-outlined text-sm">manage_accounts</span>Manager</span>
-                      : <span className="text-text-muted">{employees.find(m => m.isManager && m.department === emp.department && m.id !== emp.id)?.name || '—'}</span>
+                      : <span className="text-text-muted">{allEmployees.find(m => m.isManager && m.department === emp.department && m.id !== emp.id)?.name || '—'}</span>
                     }
                   </td>
                   <td className="px-6 py-4">
@@ -900,15 +951,16 @@ export default function Employees() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-4 text-sm text-text-muted">
+        <div className="flex items-center justify-between mt-2 md:mt-3 text-[11px] md:text-sm text-text-muted shrink-0">
           <span>{filtered.length} employees</span>
-          <div className="flex gap-2">
-            <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="px-3 py-1.5 rounded-lg border border-theme-border disabled:opacity-40 hover:bg-hover-bg transition">{t('common.prev')}</button>
-            <span className="px-3 py-1.5">{page} / {totalPages}</span>
-            <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="px-3 py-1.5 rounded-lg border border-theme-border disabled:opacity-40 hover:bg-hover-bg transition">{t('common.next')}</button>
+          <div className="flex gap-1 md:gap-2">
+            <button disabled={page === 1} onClick={() => setPage(p => p - 1)} className="px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-theme-border disabled:opacity-40 hover:bg-hover-bg transition">{t('common.prev')}</button>
+            <span className="px-2 md:px-3 py-1 md:py-1.5">{page} / {totalPages}</span>
+            <button disabled={page === totalPages} onClick={() => setPage(p => p + 1)} className="px-2 md:px-3 py-1 md:py-1.5 rounded-lg border border-theme-border disabled:opacity-40 hover:bg-hover-bg transition">{t('common.next')}</button>
           </div>
         </div>
       )}
@@ -918,9 +970,9 @@ export default function Employees() {
         const e = viewEmployee
         function Section({ label }) {
           return (
-            <div className="col-span-2 flex items-center gap-3 pt-2">
+            <div className="col-span-2 flex items-center gap-2 md:gap-3 pt-1.5 md:pt-2">
               <div className="flex-1 h-px bg-surface-container-high" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">{label}</span>
+              <span className="text-[9px] md:text-[10px] font-black uppercase tracking-widest text-text-muted">{label}</span>
               <div className="flex-1 h-px bg-surface-container-high" />
             </div>
           )
@@ -929,62 +981,62 @@ export default function Employees() {
           if (!value && value !== 0) return null
           return (
             <div className={full ? 'col-span-2' : ''}>
-              <p className="text-[10px] font-bold uppercase tracking-widest text-text-muted mb-0.5">{label}</p>
-              <p className="text-sm text-on-surface">{value}</p>
+              <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-text-muted mb-0.5">{label}</p>
+              <p className="text-xs md:text-sm text-on-surface">{value}</p>
             </div>
           )
         }
         function DocBadge({ label, checked }) {
           return (
-            <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border ${checked ? 'bg-primary/10 border-primary text-primary' : 'bg-surface-container border-theme-border text-text-muted line-through'}`}>
-              <span className="material-symbols-outlined text-sm">{checked ? 'check_circle' : 'cancel'}</span>
+            <span className={`inline-flex items-center gap-1 px-1.5 md:px-2 py-0.5 md:py-1 rounded-md md:rounded-lg text-[10px] md:text-xs font-medium border ${checked ? 'bg-primary/10 border-primary text-primary' : 'bg-surface-container border-theme-border text-text-muted line-through'}`}>
+              <span className="material-symbols-outlined text-[14px] md:text-sm">{checked ? 'check_circle' : 'cancel'}</span>
               {label}
             </span>
           )
         }
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setViewEmployee(null)}>
-            <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] flex flex-col" onClick={e2 => e2.stopPropagation()}>
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 md:p-0" onClick={() => setViewEmployee(null)}>
+            <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col" onClick={e2 => e2.stopPropagation()}>
               {/* Banner */}
-              <div className="primary-gradient px-6 pt-6 pb-7 shrink-0">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-xs font-bold text-white/60 uppercase tracking-widest">Employee Profile</span>
-                  <div className="flex items-center gap-2">
+              <div className="primary-gradient px-4 md:px-6 pt-4 md:pt-6 pb-5 md:pb-7 shrink-0 rounded-t-2xl">
+                <div className="flex items-center justify-between mb-3 md:mb-4">
+                  <span className="text-[10px] md:text-xs font-bold text-white/60 uppercase tracking-widest">Employee Profile</span>
+                  <div className="flex items-center gap-1 md:gap-2">
                     {isAdmin && (
                       <button
                         onClick={() => { setViewEmployee(null); openEdit(viewEmployee) }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/20 hover:bg-white/30 text-white text-xs font-semibold transition"
+                        className="flex items-center gap-1 md:gap-1.5 px-2 md:px-3 py-1 md:py-1.5 rounded-md md:rounded-lg bg-white/20 hover:bg-white/30 text-white text-[10px] md:text-xs font-semibold transition"
                       >
-                        <span className="material-symbols-outlined text-sm">edit</span>{t('common.edit')}
+                        <span className="material-symbols-outlined text-[14px] md:text-sm">edit</span>{t('common.edit')}
                       </button>
                     )}
-                    <button onClick={() => setViewEmployee(null)} className="p-1.5 rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition">
-                      <span className="material-symbols-outlined text-lg">close</span>
+                    <button onClick={() => setViewEmployee(null)} className="p-1 md:p-1.5 rounded-lg md:rounded-xl text-white/70 hover:text-white hover:bg-white/10 transition flex items-center justify-center">
+                      <span className="material-symbols-outlined text-[18px] md:text-lg">close</span>
                     </button>
                   </div>
                 </div>
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl overflow-hidden shrink-0 bg-white/20 flex items-center justify-center">
+                <div className="flex items-center gap-3 md:gap-4">
+                  <div className="w-12 h-12 md:w-16 md:h-16 rounded-xl md:rounded-2xl overflow-hidden shrink-0 bg-white/20 flex items-center justify-center">
                     {e.photo
                       ? <img src={`${API_URL.replace('/api', '')}${e.photo}`} alt={e.name} className="w-full h-full object-cover" />
-                      : <span className="text-white text-xl font-black">{e.initials}</span>
+                      : <span className="text-white text-base md:text-xl font-black">{e.initials}</span>
                     }
                   </div>
                   <div>
-                    <h2 className="text-xl font-extrabold text-white leading-tight">{e.name}</h2>
-                    <p className="text-white/70 text-sm mt-0.5">{e.position || '—'}{e.title ? ` · ${e.title}` : ''}</p>
-                    <div className="flex items-center gap-2 mt-2 flex-wrap">
-                      <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusStyle[e.status] || statusStyle.Inactive}`}>{e.status}</span>
-                      {e.isManager && <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-200">Manager</span>}
-                      {e.department && <span className="inline-flex px-2.5 py-0.5 rounded-full text-xs font-bold bg-white/20 text-white">{e.department}</span>}
+                    <h2 className="text-base md:text-xl font-extrabold text-white leading-tight">{e.name}</h2>
+                    <p className="text-white/70 text-[10px] md:text-sm mt-0.5">{e.position || '—'}{e.title ? ` · ${e.title}` : ''}</p>
+                    <div className="flex items-center gap-1.5 md:gap-2 mt-1.5 md:mt-2 flex-wrap">
+                      <span className={`inline-flex px-2 md:px-2.5 py-0.5 rounded-md md:rounded-full text-[9px] md:text-xs font-semibold ${statusStyle[e.status] || statusStyle.Inactive}`}>{e.status}</span>
+                      {e.isManager && <span className="inline-flex px-2 md:px-2.5 py-0.5 rounded-md md:rounded-full text-[9px] md:text-xs font-bold bg-amber-500/20 text-amber-200">Manager</span>}
+                      {e.department && <span className="inline-flex px-2 md:px-2.5 py-0.5 rounded-md md:rounded-full text-[9px] md:text-xs font-bold bg-white/20 text-white">{e.department}</span>}
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Scrollable body */}
-              <div className="flex-1 overflow-y-auto px-6 py-5">
-                <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+              <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-5 custom-scrollbar">
+                <div className="grid grid-cols-2 gap-x-4 md:gap-x-6 gap-y-3 md:gap-y-4">
 
                   <Section label="Identity" />
                   <Row label="Personnel No." value={e.personnelNo} />
@@ -1055,8 +1107,8 @@ export default function Employees() {
               </div>
 
               {/* Footer */}
-              <div className="px-6 py-4 border-t border-theme-border shrink-0">
-                <button onClick={() => setViewEmployee(null)} className="w-full py-2.5 rounded-xl primary-gradient text-white text-sm font-bold hover:opacity-90 transition">
+              <div className="px-4 md:px-6 py-3 md:py-4 border-t border-theme-border shrink-0">
+                <button onClick={() => setViewEmployee(null)} className="w-full py-2 md:py-2.5 rounded-lg md:rounded-xl primary-gradient text-white text-[11px] md:text-sm font-bold hover:opacity-90 transition">
                   {t('common.close')}
                 </button>
               </div>

@@ -191,7 +191,9 @@ ipcMain.handle('auth:login', async () => {
     const loginWin = new BrowserWindow({
       width: 520,
       height: 700,
-      resizable: false,
+      minWidth: 320,
+      minHeight: 500,
+      resizable: true,
       title: 'AKS — Sign In',
       webPreferences: { nodeIntegration: false, contextIsolation: true },
     })
@@ -246,8 +248,8 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1440,
     height: 900,
-    minWidth: 1024,
-    minHeight: 700,
+    minWidth: 360,
+    minHeight: 600,
     show: false,
     title: 'AKS CRM Dashboard',
     icon: isDev

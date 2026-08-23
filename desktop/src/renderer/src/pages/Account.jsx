@@ -180,26 +180,26 @@ export default function Account() {
   const photoUrl = matchedEmployee?.photo ? `${API_URL.replace('/api', '')}${matchedEmployee.photo}` : null
 
   return (
-    <div className="p-6 max-w-lg">
+    <div className="p-4 md:p-6 max-w-lg">
       {showModal && <ChangePasswordModal token={token} onClose={() => setShowModal(false)} />}
 
-      <h1 className="text-xl font-bold text-on-surface mb-6" style={{ fontFamily: 'Manrope, sans-serif' }}>
+      <h1 className="text-lg md:text-xl font-bold text-on-surface mb-4 md:mb-6" style={{ fontFamily: 'Manrope, sans-serif' }}>
         {t('account.title')}
       </h1>
 
       {/* Profile info */}
-      <div className="bg-surface-container-lowest rounded-xl border border-theme-border p-6">
-        <div className="flex items-center gap-4 mb-5">
-          <div className="w-16 h-16 rounded-full overflow-hidden flex-shrink-0">
+      <div className="bg-surface-container-lowest rounded-xl border border-theme-border p-4 md:p-6">
+        <div className="flex items-center gap-3 md:gap-4 mb-4 md:mb-5">
+          <div className="w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden flex-shrink-0">
             {photoUrl
               ? <img src={photoUrl} alt={user?.name} className="w-full h-full object-cover" />
-              : <div className="w-full h-full primary-gradient flex items-center justify-center text-white text-xl font-bold">{initials}</div>
+              : <div className="w-full h-full primary-gradient flex items-center justify-center text-white text-lg md:text-xl font-bold">{initials}</div>
             }
           </div>
           <div>
-            <p className="text-lg font-bold text-on-surface leading-tight">{user?.name || '—'}</p>
-            <p className="text-xs text-text-muted mt-0.5">{user?.email}</p>
-            <span className={`inline-flex mt-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold ${
+            <p className="text-base md:text-lg font-bold text-on-surface leading-tight">{user?.name || '—'}</p>
+            <p className="text-[10px] md:text-xs text-text-muted mt-0.5 md:mt-1">{user?.email}</p>
+            <span className={`inline-flex mt-1 md:mt-1.5 px-2 md:px-2.5 py-0.5 rounded-full text-[9px] md:text-[10px] font-bold ${
               user?.role === 'admin' ? 'status-scheduled-badge' : 'bg-surface-container-high text-on-surface-variant'
             }`}>
               {user?.role === 'admin' ? t('topbar.admin') : t('topbar.user')}
@@ -207,27 +207,27 @@ export default function Account() {
           </div>
         </div>
 
-        <div className="flex items-center gap-3 pt-4 border-t border-theme-border">
+        <div className="flex items-center gap-2 md:gap-3 pt-3 md:pt-4 border-t border-theme-border">
           <button
             onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-lg border border-outline-variant text-on-surface-variant text-sm font-semibold hover:bg-surface-container-high hover:text-on-surface transition-colors"
+            className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-lg border border-outline-variant text-on-surface-variant text-xs md:text-sm font-semibold hover:bg-surface-container-high hover:text-on-surface transition-colors"
           >
-            <span className="material-symbols-outlined text-base">lock</span>
+            <span className="material-symbols-outlined text-sm md:text-base">lock</span>
             {t('account.changePassword')}
           </button>
 
           {confirmLogout ? (
-            <div className="flex items-center gap-2 ml-auto">
-              <span className="text-xs text-text-muted">{t('account.logOutConfirm')}</span>
+            <div className="flex flex-wrap md:flex-nowrap items-center gap-1.5 md:gap-2 ml-auto">
+              <span className="text-[10px] md:text-xs text-text-muted">{t('account.logOutConfirm')}</span>
               <button
                 onClick={handleLogout}
-                className="px-3 py-2 rounded-lg bg-error text-white text-xs font-bold hover:opacity-90 transition-opacity"
+                className="px-2.5 md:px-3 py-1.5 md:py-2 rounded-lg bg-error text-white text-[10px] md:text-xs font-bold hover:opacity-90 transition-opacity"
               >
                 {t('account.yesLogOut')}
               </button>
               <button
                 onClick={() => setConfirmLogout(false)}
-                className="px-3 py-2 rounded-lg border border-outline-variant text-on-surface-variant text-xs font-semibold hover:bg-surface-container-high transition-colors"
+                className="px-2.5 md:px-3 py-1.5 md:py-2 rounded-lg border border-outline-variant text-on-surface-variant text-[10px] md:text-xs font-semibold hover:bg-surface-container-high transition-colors"
               >
                 {t('common.cancel')}
               </button>
@@ -235,9 +235,9 @@ export default function Account() {
           ) : (
             <button
               onClick={() => setConfirmLogout(true)}
-              className="ml-auto flex items-center gap-2 px-4 py-2.5 rounded-lg border border-error/40 text-error text-sm font-semibold hover:bg-error/10 transition-colors"
+              className="ml-auto flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 md:py-2.5 rounded-lg border border-error/40 text-error text-xs md:text-sm font-semibold hover:bg-error/10 transition-colors"
             >
-              <span className="material-symbols-outlined text-base">logout</span>
+              <span className="material-symbols-outlined text-sm md:text-base">logout</span>
               {t('account.logOut')}
             </button>
           )}

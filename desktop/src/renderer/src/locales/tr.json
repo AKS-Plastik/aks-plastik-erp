@@ -107,7 +107,8 @@
     "country": "Ülke",
     "yes": "Evet",
     "no": "Hayır",
-    "noData": "Veri yok"
+    "noData": "Veri yok",
+    "departments": "Departmanlar"
   },
   "login": {
     "welcome": "Hoş Geldiniz",
@@ -319,7 +320,8 @@
     "stockNoPh": "örn. SKU-0012",
     "categoryPh": "örn. Elektronik",
     "unitPh": "adet / kg / m",
-    "invalidPrice": "Geçerli bir fiyat giriniz"
+    "invalidPrice": "Geçerli bir fiyat giriniz",
+    "showingOf": "{{total}} üründen {{from}}–{{to}} arası gösteriliyor"
   },
   "orders": {
     "title": "Siparişler",
@@ -614,6 +616,8 @@
     "deleteMachine": "Makineyi Sil",
     "noMachines": "Makine bulunamadı",
     "users": "Kullanıcılar",
+    "orderStatus": "Sipariş Durumları",
+    "purchasingStatus": "Satınalma Durumları",
     "currencySettings": "Para Birimi Ayarları",
     "manufacturer": "Üretici",
     "productionYear": "Üretim Yılı",
