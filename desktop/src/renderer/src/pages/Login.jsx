@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
@@ -10,6 +10,33 @@ export default function Login() {
   const { login, loading } = useAuth()
   const { dark, toggleTheme } = useTheme()
   const [error, setError] = useState('')
+  const [installPromptEvent, setInstallPromptEvent] = useState(null)
+  
+  const isElectron = !!window.electron
+
+  useEffect(() => {
+    if (isElectron) return
+
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault()
+      setInstallPromptEvent(e)
+    }
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    }
+  }, [isElectron])
+
+  const handleInstallClick = async () => {
+    if (!installPromptEvent) return
+    installPromptEvent.prompt()
+    const { outcome } = await installPromptEvent.userChoice
+    if (outcome === 'accepted') {
+      setInstallPromptEvent(null)
+    }
+  }
 
   async function handleLogin() {
     setError('')
@@ -66,6 +93,16 @@ export default function Login() {
               </>
             )}
           </button>
+
+          {installPromptEvent && (
+            <button
+              onClick={handleInstallClick}
+              className="w-full py-2 md:py-2.5 rounded-lg border border-theme-border text-on-surface text-xs md:text-sm font-bold hover:bg-surface-container-low transition-colors flex items-center justify-center gap-2 mt-3"
+            >
+              <span className="material-symbols-outlined text-sm md:text-base">download</span>
+              Uygulamayı İndir
+            </button>
+          )}
 
           <p className="text-[10px] md:text-xs text-text-muted text-center leading-relaxed px-2">
             {t('login.credentials')}
