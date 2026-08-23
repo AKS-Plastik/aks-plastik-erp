@@ -155,4 +155,72 @@ router.post('/users/:id/reset-password', authenticate, adminOnly, async (req, re
   }
 })
 
+// --- Web Login Endpoints ---
+const KEYCLOAK_URL = process.env.KEYCLOAK_URL || 'http://localhost:8080'
+const REALM = process.env.KEYCLOAK_REALM || 'AKS'
+const CLIENT_ID = 'aks-erp-app'
+
+router.post('/web-login', async (req, res) => {
+  const { email, password } = req.body
+  try {
+    const kcRes = await fetch(`${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'password',
+        client_id: CLIENT_ID,
+        username: email,
+        password,
+      }).toString()
+    })
+    if (!kcRes.ok) {
+      return res.status(401).json({ error: 'Giriş başarısız. Bilgilerinizi kontrol edin.' })
+    }
+    const data = await kcRes.json()
+    res.json({ ok: true, tokens: data })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+router.post('/web-refresh', async (req, res) => {
+  const { refresh_token } = req.body
+  try {
+    const kcRes = await fetch(`${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        client_id: CLIENT_ID,
+        refresh_token,
+      }).toString()
+    })
+    if (!kcRes.ok) {
+      return res.status(401).json({ error: 'Token refresh failed' })
+    }
+    const data = await kcRes.json()
+    res.json({ ok: true, tokens: data })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+router.post('/web-logout', async (req, res) => {
+  const { refresh_token } = req.body
+  try {
+    await fetch(`${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/revoke`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        client_id: CLIENT_ID,
+        token: refresh_token,
+        token_type_hint: 'refresh_token',
+      }).toString()
+    })
+    res.json({ ok: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 module.exports = router
