@@ -36,7 +36,9 @@ const app = express()
 const PORT = process.env.PORT || 3001
 
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    callback(null, true);
+  },
   credentials: true,
 }))
 app.use(express.json())
@@ -73,26 +75,26 @@ app.use('/api/sync', authenticate, syncRoutes)
 
 app.listen(PORT, () => {
   console.log(`AKS ERP API running on http://localhost:${PORT}`)
-  
+
   // 30 minute cron for Vio Sync using node-cron
   console.log('Starting 30-minute Vio sync cron job (*/30 * * * *)...')
-  
+
   const runSync = async (isCron = false) => {
     console.log(`[CRON/STARTUP] Vio Senkronizasyonları başlatılıyor... (isCron: ${isCron})`)
     try {
       // 1. Önce ürünleri senkronize et (siparişler vs için foreign key)
       await pullProductsFromVio()
-      
+
       // 2. Sonra müşterileri senkronize et
       await pullCustomersFromVio()
-      
+
       // 3. Siparişleri senkronize et
       if (isCron) {
         await pullOrdersFromVio(1)
       } else {
         await pullOrdersFromVio()
       }
-      
+
       console.log('[CRON/STARTUP] Vio Senkronizasyonları başarıyla tamamlandı.')
     } catch (err) {
       console.error('[CRON/STARTUP] Vio Sync Hatası:', err)
