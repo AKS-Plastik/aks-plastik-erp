@@ -7,6 +7,8 @@ export default function UpdateBanner() {
   const [progress, setProgress] = useState(0)
   const [version, setVersion] = useState('')
 
+  if (!window.electron) return null
+
   useEffect(() => {
     const offAvailable = window.api.onUpdateAvailable?.((info) => {
       setVersion(info.version)
