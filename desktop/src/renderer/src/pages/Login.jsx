@@ -13,7 +13,7 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [installPromptEvent, setInstallPromptEvent] = useState(null)
-  
+
   const isElectron = !!window.api
 
   useEffect(() => {
@@ -134,7 +134,7 @@ export default function Login() {
           </p>
         </div>
 
-        <p className="text-center text-xs text-text-muted mt-6">v1.0.0</p>
+        <p className="text-center text-xs text-text-muted mt-6">v1.0.1</p>
       </div>
     </div>
   )
