@@ -1,6 +1,6 @@
 import crypto from 'crypto'
 
-const KEYCLOAK_URL = 'http://172.18.0.1:8080'
+const KEYCLOAK_URL = 'http://localhost:8080'
 const REALM = 'AKS'
 const CLIENT_ID = 'aks-erp-app'
 export const REDIRECT_URI = 'aks-erp-app://auth/callback'

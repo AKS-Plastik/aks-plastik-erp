@@ -1,4 +1,4 @@
-const isElectron = !!window.electron
+const isElectron = !!window.api
 const isDev = !isElectron || import.meta.env.DEV
 
 let baseUrl = import.meta.env.VITE_API_URL || 'http://172.18.0.1:3001/api'

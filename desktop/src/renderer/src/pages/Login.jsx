@@ -14,7 +14,7 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [installPromptEvent, setInstallPromptEvent] = useState(null)
   
-  const isElectron = !!window.electron
+  const isElectron = !!window.api
 
   useEffect(() => {
     if (isElectron) return
