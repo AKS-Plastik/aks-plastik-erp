@@ -22,11 +22,11 @@ export function AuthProvider({ children }) {
   const [user, setUser]   = useState(null)
   const [token, setToken] = useState(null)
   const [loading, setLoading] = useState(false)
-  const refreshTokenRef = useRef(!window.electron ? localStorage.getItem('aks_refresh_token') : null)
+  const refreshTokenRef = useRef(!window.api ? localStorage.getItem('aks_refresh_token') : null)
 
   // Web-only: Restore session on mount if we have a refresh token saved
   useEffect(() => {
-    if (window.electron || !refreshTokenRef.current) return
+    if (window.api || !refreshTokenRef.current) return
 
     async function restoreWebSession() {
       setLoading(true)
@@ -75,7 +75,7 @@ export function AuthProvider({ children }) {
       if (!refreshTokenRef.current) return
       
       let result;
-      if (window.electron) {
+      if (window.api) {
         result = await window.api.authRefresh(refreshTokenRef.current)
       } else {
         const res = await fetch(`${API_URL}/auth/web-refresh`, {
@@ -101,7 +101,7 @@ export function AuthProvider({ children }) {
     setLoading(true)
     try {
       let result;
-      if (window.electron) {
+      if (window.api) {
         result = await window.api.authLogin()
       } else {
         if (!email || !password) throw new Error('Kullanıcı adı ve şifre zorunludur')
@@ -117,7 +117,7 @@ export function AuthProvider({ children }) {
 
       const { access_token, refresh_token } = result.tokens
       refreshTokenRef.current = refresh_token
-      if (!window.electron) {
+      if (!window.api) {
         localStorage.setItem('aks_refresh_token', refresh_token)
       }
 
@@ -142,11 +142,11 @@ export function AuthProvider({ children }) {
     refreshTokenRef.current = null
     setToken(null)
     setUser(null)
-    if (!window.electron) {
+    if (!window.api) {
       localStorage.removeItem('aks_refresh_token')
     }
     if (rt) {
-      if (window.electron) {
+      if (window.api) {
         window.api.authLogout(rt).catch(() => {})
       } else {
         fetch(`${API_URL}/auth/web-logout`, {
@@ -166,7 +166,7 @@ export function AuthProvider({ children }) {
     if (!refreshTokenRef.current) { logout(); return null }
     
     let result;
-    if (window.electron) {
+    if (window.api) {
       result = await window.api.authRefresh(refreshTokenRef.current)
     } else {
       const res = await fetch(`${API_URL}/auth/web-refresh`, {
@@ -183,7 +183,7 @@ export function AuthProvider({ children }) {
     const newAt = result.tokens.access_token
 
     refreshTokenRef.current = newRt
-    if (!window.electron) {
+    if (!window.api) {
       localStorage.setItem('aks_refresh_token', newRt)
     }
     

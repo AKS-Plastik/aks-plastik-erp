@@ -134,7 +134,7 @@ export default function TopBar({ setSidebarOpen }) {
         <div className="flex items-center gap-1 md:gap-2">
 
           {/* Web Download Help */}
-          {!window.electron && (
+          {!window.api && (
             <button
               onClick={() => alert("Tablet veya telefonunuza uygulamayı kurmak için:\n\nTarayıcınızın (Chrome/Safari) menüsüne tıklayın ve 'Ana Ekrana Ekle' (Add to Home Screen) seçeneğini seçin.\n\n(Not: Güvenlik gereği otomatik indirme penceresi yalnızca HTTPS bağlantılarında açılmaktadır.)")}
               className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg transition-colors mr-1 md:mr-2"
