@@ -13,10 +13,18 @@ export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [installPromptEvent, setInstallPromptEvent] = useState(null)
+  const [isStandalone, setIsStandalone] = useState(false)
 
   const isElectron = !!window.api
 
   useEffect(() => {
+    const checkStandalone = () => {
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone
+      setIsStandalone(!!standalone)
+    }
+    checkStandalone()
+    window.matchMedia('(display-mode: standalone)').addEventListener('change', checkStandalone)
+
     if (isElectron) return
 
     const handleBeforeInstallPrompt = (e) => {
@@ -27,6 +35,7 @@ export default function Login() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
 
     return () => {
+      window.matchMedia('(display-mode: standalone)').removeEventListener('change', checkStandalone)
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
     }
   }, [isElectron])
@@ -119,7 +128,7 @@ export default function Login() {
             )}
           </button>
 
-          {!isElectron && (
+          {!isElectron && !isStandalone && (
             <button
               onClick={handleInstallClick}
               className="w-full py-2 md:py-2.5 rounded-lg border border-theme-border text-on-surface text-xs md:text-sm font-bold hover:bg-surface-container-low transition-colors flex items-center justify-center gap-2 mt-3"

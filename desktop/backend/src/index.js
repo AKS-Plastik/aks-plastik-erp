@@ -37,7 +37,9 @@ const PORT = process.env.PORT || 3001
 
 app.use(cors({
   origin: function (origin, callback) {
-    callback(null, true);
+    // İstek atan adresi doğrudan geri yansıtarak CORS'u tamamen aç
+    if (!origin) return callback(null, true);
+    return callback(null, origin);
   },
   credentials: true,
 }))
