@@ -22,7 +22,8 @@ export function AuthProvider({ children }) {
   const [user, setUser]   = useState(null)
   const [token, setToken] = useState(null)
   const [loading, setLoading] = useState(false)
-  const refreshTokenRef = useRef(!window.api ? localStorage.getItem('aks_refresh_token') : null)
+  const savedRt = !window.api ? (localStorage.getItem('aks_refresh_token') || sessionStorage.getItem('aks_refresh_token')) : null
+  const refreshTokenRef = useRef(savedRt)
 
   // Web-only: Restore session on mount if we have a refresh token saved
   useEffect(() => {
@@ -44,7 +45,11 @@ export function AuthProvider({ children }) {
         const newAt = result.tokens.access_token
 
         refreshTokenRef.current = newRt
-        localStorage.setItem('aks_refresh_token', newRt)
+        if (localStorage.getItem('aks_refresh_token')) {
+          localStorage.setItem('aks_refresh_token', newRt)
+        } else if (sessionStorage.getItem('aks_refresh_token')) {
+          sessionStorage.setItem('aks_refresh_token', newRt)
+        }
 
         const profileRes = await fetch(`${API_URL}/auth/me`, {
           headers: { Authorization: `Bearer ${newAt}` },
@@ -97,7 +102,7 @@ export function AuthProvider({ children }) {
     return () => clearTimeout(timer)
   }, [token])
 
-  async function login(email, password) {
+  async function login(email, password, rememberMe = true) {
     setLoading(true)
     try {
       let result;
@@ -118,7 +123,13 @@ export function AuthProvider({ children }) {
       const { access_token, refresh_token } = result.tokens
       refreshTokenRef.current = refresh_token
       if (!window.api) {
-        localStorage.setItem('aks_refresh_token', refresh_token)
+        if (rememberMe) {
+          localStorage.setItem('aks_refresh_token', refresh_token)
+          sessionStorage.removeItem('aks_refresh_token')
+        } else {
+          sessionStorage.setItem('aks_refresh_token', refresh_token)
+          localStorage.removeItem('aks_refresh_token')
+        }
       }
 
       // Fetch full user profile from our backend (includes role, department, etc.)
@@ -144,6 +155,7 @@ export function AuthProvider({ children }) {
     setUser(null)
     if (!window.api) {
       localStorage.removeItem('aks_refresh_token')
+      sessionStorage.removeItem('aks_refresh_token')
     }
     if (rt) {
       if (window.api) {

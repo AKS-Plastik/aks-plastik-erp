@@ -12,6 +12,7 @@ export default function Login() {
   const [error, setError] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(true)
   const [installPromptEvent, setInstallPromptEvent] = useState(null)
   const [isStandalone, setIsStandalone] = useState(false)
 
@@ -55,7 +56,7 @@ export default function Login() {
   async function handleLogin() {
     setError('')
     try {
-      await login(email, password)
+      await login(email, password, rememberMe)
     } catch (err) {
       setError(err.message || t('login.loginFailed'))
     }
@@ -107,6 +108,22 @@ export default function Login() {
                 onKeyDown={e => e.key === 'Enter' && handleLogin()}
                 className="w-full bg-surface-container border border-theme-border rounded-lg px-4 py-2.5 text-sm text-on-surface focus:outline-none focus:border-primary transition-colors"
               />
+              <label className="flex items-center gap-2 cursor-pointer pt-1 w-max group">
+                <div className="relative flex items-center justify-center">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="peer appearance-none w-4 h-4 md:w-[18px] md:h-[18px] border-2 border-theme-border rounded bg-surface-container checked:bg-primary checked:border-primary transition-all cursor-pointer"
+                  />
+                  <span className="material-symbols-outlined text-[12px] md:text-[14px] font-bold text-white absolute opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none">
+                    check
+                  </span>
+                </div>
+                <span className="text-xs md:text-sm text-text-muted group-hover:text-on-surface transition-colors select-none">
+                  Beni Hatırla
+                </span>
+              </label>
             </div>
           )}
 
