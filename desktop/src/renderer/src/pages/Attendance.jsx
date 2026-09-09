@@ -497,7 +497,7 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-surface-container-lowest rounded-xl md:rounded-2xl shadow-xl w-full max-w-[320px] md:max-w-md p-4 md:p-6">
             <div className="flex items-center justify-between mb-3 md:mb-4">
-              <h3 className="text-sm md:text-base font-bold text-on-surface">{editItem ? 'Edit' : 'New'} Leave Request</h3>
+              <h3 className="text-sm md:text-base font-bold text-on-surface">{editItem ? t('common.edit') : t('common.add')} {t('attendance.leaveTab')}</h3>
               <button onClick={() => { setShowForm(false); setEditItem(null) }} className="text-text-muted hover:text-error">
                 <span className="material-symbols-outlined text-[20px] md:text-[24px]">close</span>
               </button>

@@ -502,9 +502,9 @@ function EmployeeAssignModal({ employee, allEmployees, onClose, onSave }) {
           </div>
         </div>
         <div className="flex gap-2 md:gap-3 mt-4 md:mt-5">
-          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg md:rounded-xl py-1.5 md:py-2 text-[11px] md:text-sm text-text-muted hover:bg-hover-bg transition">Cancel</button>
+          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg md:rounded-xl py-1.5 md:py-2 text-[11px] md:text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
           <button onClick={handleSave} disabled={saving} className="flex-1 bg-primary text-white rounded-lg md:rounded-xl py-1.5 md:py-2 text-[11px] md:text-sm font-semibold hover:opacity-90 transition disabled:opacity-40">
-            {saving ? 'Saving…' : 'Save'}
+            {saving ? t('common.loading') : t('common.save')}
           </button>
         </div>
       </div>
@@ -637,15 +637,15 @@ function UserRolesTab() {
                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition" onClick={(e) => e.stopPropagation()}>
                   <button
                     onClick={() => { setRenamingRole({ id: role.id, name: role.name }); setRenameText(role.name); setRenameError('') }}
-                    className="p-1 rounded-lg text-text-muted hover:text-primary hover:bg-primary/10 transition"
-                    title="Rename"
+                    className="p-1 rounded text-text-muted hover:text-primary hover:bg-hover-bg transition"
+                    title={t('common.edit')}
                   >
                     <span className="material-symbols-outlined text-sm">edit</span>
                   </button>
                   <button
                     onClick={() => { setDeletingRole({ id: role.id, name: role.name }); setDeleteConfirmText('') }}
-                    className="p-1 rounded-lg text-text-muted hover:text-error hover:bg-error/10 transition"
-                    title="Delete"
+                    className="p-1 rounded text-text-muted hover:text-error hover:bg-hover-bg transition"
+                    title={t('common.delete')}
                   >
                     <span className="material-symbols-outlined text-sm">delete</span>
                   </button>
