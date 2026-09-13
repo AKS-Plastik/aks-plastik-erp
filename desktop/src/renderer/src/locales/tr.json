@@ -319,6 +319,7 @@
     "outOfStock": "Stokta Yok",
     "noProducts": "Ürün bulunamadı",
     "minStock": "Min Stok",
+    "criticalStock": "Kritik Stok",
     "importing": "İçe aktarılıyor…",
     "stockNoPh": "örn. SKU-0012",
     "categoryPh": "örn. Elektronik",
@@ -540,7 +541,8 @@
     "advQCToInvoice": "Kabul Et & Fatura Eşleştir",
     "advInvoiceToPayment": "Ödemeye Taşı",
     "advComplete": "Tamamla",
-    "advance": "İlerlet"
+    "advance": "İlerlet",
+    "selectQuote": "Seç"
   },
   "finance": {
     "title": "Finans",
@@ -629,6 +631,7 @@
     "machineStatus": "Durum",
     "active": "Aktif",
     "underMaintenance": "Bakımda",
-    "outOfService": "Hizmet Dışı"
+    "outOfService": "Hizmet Dışı",
+    "departments": "Departmanlar"
   }
 }
