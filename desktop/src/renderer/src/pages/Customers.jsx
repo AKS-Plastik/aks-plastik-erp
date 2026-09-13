@@ -1508,8 +1508,23 @@ export default function Customers() {
       c.name.toLowerCase().includes(q) ||
       (c.contactName || c.contact || '').toLowerCase().includes(q) ||
       (c.city || '').toLowerCase().includes(q) ||
-      (c.country || '').toLowerCase().includes(q)
+      (c.country || '').toLowerCase().includes(q) ||
+      (c.accountCode || '').toLowerCase().includes(q)
     )
+  }).sort((a, b) => {
+    const codeA = a.accountCode || ''
+    const codeB = b.accountCode || ''
+    const isMusteriA = codeA.startsWith('120')
+    const isMusteriB = codeB.startsWith('120')
+    const isTedarikciA = codeA.startsWith('320')
+    const isTedarikciB = codeB.startsWith('320')
+
+    if (isMusteriA && !isMusteriB) return -1
+    if (!isMusteriA && isMusteriB) return 1
+    if (isTedarikciA && !isTedarikciB) return -1
+    if (!isTedarikciA && isTedarikciB) return 1
+
+    return codeA.localeCompare(codeB)
   })
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE))
   const paginated = filtered.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE)
@@ -1603,9 +1618,9 @@ export default function Customers() {
         <table className="w-full text-left block xl:table border-collapse xl:min-w-[700px]">
           <thead className="hidden xl:table-header-group">
             <tr className="bg-surface-container-low">
-              {[t('customers.colCustomer'), t('customers.colContact'), t('customers.colCity'), t('customers.colTasks'), t('customers.colDetails')].map(
+              {[t('customers.colCustomer'), t('common.customerCode'), t('customers.colContact'), t('customers.colCity'), t('customers.colTasks'), t('customers.colDetails')].map(
                 (h, i) => (
-                  <th key={h} className={`px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest ${i === 4 ? 'text-right' : ''}`}>
+                  <th key={h} className={`px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-widest ${i === 5 ? 'text-right' : ''}`}>
                     {h}
                   </th>
                 )
@@ -1629,6 +1644,31 @@ export default function Customers() {
                       )}
                     </div>
                   </div>
+                </td>
+                <td className="flex xl:table-cell justify-between items-center p-0 xl:px-6 xl:py-5 mb-1.5 xl:mb-0 mt-3 xl:mt-0">
+                  <span className="xl:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('common.customerCode')}</span>
+                  {(() => {
+                    const code = customer.accountCode || '';
+                    const isMusteri = code.startsWith('120');
+                    const isTedarikci = code.startsWith('320');
+                    let badgeClass = 'bg-surface-container-high text-on-surface-variant';
+                    let hoverTitle = '';
+                    if (isMusteri) {
+                      badgeClass = 'bg-primary-container text-on-primary-container';
+                      hoverTitle = t('common.customer');
+                    } else if (isTedarikci) {
+                      badgeClass = 'bg-tertiary-container text-on-tertiary-container';
+                      hoverTitle = t('common.supplier');
+                    }
+                    return (
+                      <span
+                        className={`px-2.5 py-1 rounded-md text-xs font-bold inline-block ${badgeClass}`}
+                        title={hoverTitle}
+                      >
+                        {code || '—'}
+                      </span>
+                    );
+                  })()}
                 </td>
                 <td className="flex xl:table-cell justify-between items-center p-0 xl:px-6 xl:py-5 mb-1.5 xl:mb-0 mt-3 xl:mt-0">
                   <span className="xl:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('customers.colContact')}</span>

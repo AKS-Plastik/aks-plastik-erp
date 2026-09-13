@@ -446,8 +446,8 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
             <div className="flex items-center gap-3">
 
               <div className="flex items-center gap-1">
-                {canEditDelete && <button onClick={onEdit} className="text-text-muted hover:text-primary transition p-1 rounded-lg hover:bg-hover-bg" title="Edit"><span className="material-symbols-outlined text-sm">edit</span></button>}
-                {canEditDelete && <button onClick={onDelete} className="text-text-muted hover:text-error transition p-1 rounded-lg hover:bg-hover-bg" title="Delete"><span className="material-symbols-outlined text-sm">delete</span></button>}
+                {canEditDelete && <button onClick={onEdit} className="text-text-muted hover:text-primary transition p-1 rounded-lg hover:bg-hover-bg" title={t('common.edit')}><span className="material-symbols-outlined text-sm">edit</span></button>}
+                {canEditDelete && <button onClick={onDelete} className="text-text-muted hover:text-error transition p-1 rounded-lg hover:bg-hover-bg" title={t('common.delete')}><span className="material-symbols-outlined text-sm">delete</span></button>}
                 <button onClick={onClose} className="text-text-muted hover:text-error p-1 rounded-lg hover:bg-hover-bg"><span className="material-symbols-outlined text-lg md:text-xl">close</span></button>
               </div>
             </div>

@@ -121,7 +121,7 @@ export default function Login() {
                   </span>
                 </div>
                 <span className="text-xs md:text-sm text-text-muted group-hover:text-on-surface transition-colors select-none">
-                  Beni Hatırla
+                  {t('common.rememberMe')}
                 </span>
               </label>
             </div>
