@@ -7,7 +7,17 @@ const router = Router()
 
 router.get('/', async (req, res) => {
   try {
-    const products = await prisma.product.findMany({ orderBy: { createdAt: 'desc' } })
+    const rawProducts = await prisma.product.findMany()
+    
+    const regex = /^[A-Za-z0-9]{2}-[A-Za-z0-9]{2}-[A-Za-z0-9]{4}$/
+    let products = rawProducts.filter(p => p.stockNo && regex.test(p.stockNo.trim()))
+    
+    products.sort((a, b) => {
+      const aVal = a.stockNo.replace(/-/g, '').trim()
+      const bVal = b.stockNo.replace(/-/g, '').trim()
+      return aVal.localeCompare(bVal, undefined, { numeric: true, sensitivity: 'base' })
+    })
+
     res.json(products)
   } catch (err) {
     res.status(500).json({ error: err.message })
