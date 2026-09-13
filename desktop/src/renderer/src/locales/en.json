@@ -319,6 +319,7 @@
     "outOfStock": "Out of Stock",
     "noProducts": "No products found",
     "minStock": "Min Stock",
+    "criticalStock": "Critical Stock",
     "importing": "Importing…",
     "stockNoPh": "e.g. SKU-0012",
     "categoryPh": "e.g. Electronics",
@@ -540,7 +541,8 @@
     "advQCToInvoice": "Accept & Match Invoice",
     "advInvoiceToPayment": "Move to Payment",
     "advComplete": "Complete",
-    "advance": "Advance"
+    "advance": "Advance",
+    "selectQuote": "Select"
   },
   "finance": {
     "title": "Finance",
@@ -629,6 +631,7 @@
     "machineStatus": "Status",
     "active": "Active",
     "underMaintenance": "Under Maintenance",
-    "outOfService": "Out of Service"
+    "outOfService": "Out of Service",
+    "departments": "Departments"
   }
 }
