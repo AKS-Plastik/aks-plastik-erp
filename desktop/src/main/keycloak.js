@@ -1,6 +1,8 @@
 import crypto from 'crypto'
+import { app } from 'electron'
 
-const KEYCLOAK_URL = 'http://172.18.0.1:8080'//'https://crm.aksplastikambalaj.com:8080'
+const isDev = !app.isPackaged
+const KEYCLOAK_URL = isDev ? 'https://crm.aksplastikambalaj.com' : 'http://172.18.0.1:8080'
 const REALM = 'AKS'
 const CLIENT_ID = 'aks-erp-app'
 export const REDIRECT_URI = 'aks-erp-app://auth/callback'

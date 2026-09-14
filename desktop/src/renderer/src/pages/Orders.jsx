@@ -86,7 +86,7 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 md:p-6" onClick={onClose}>
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-3xl p-4 md:p-8 max-h-[90dvh] overflow-y-auto flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-4xl p-4 md:p-8 max-h-[90dvh] overflow-y-auto flex flex-col" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start justify-between mb-4 md:mb-6 gap-3 md:gap-4">
           <div>
@@ -296,7 +296,7 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 md:p-6">
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-2xl p-4 md:p-8 max-h-[90dvh] overflow-y-auto">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-4xl p-4 md:p-8 max-h-[90dvh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4 md:mb-6">
           <h2 className="text-lg font-bold text-on-surface">{title}</h2>
           <button onClick={onClose} className="text-text-muted hover:text-error">
