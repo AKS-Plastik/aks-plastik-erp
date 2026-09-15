@@ -78,10 +78,11 @@ router.post('/', async (req, res) => {
   try {
     const { name, department, position, phone, email, salary, status, hireDate, supervisorId } = req.body
     const code = `EMP-${String(Date.now()).slice(-5)}`
-    const initials = name
+    const initials = (name || '')
       .split(' ')
+      .filter(Boolean)
       .slice(0, 2)
-      .map((w) => w[0].toUpperCase())
+      .map((w) => w[0]?.toUpperCase() || '')
       .join('')
     const employee = await prisma.employee.create({
       data: {
@@ -109,10 +110,11 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { name, department, position, phone, email, salary, status, hireDate, supervisorId } = req.body
-    const initials = name
+    const initials = (name || '')
       .split(' ')
+      .filter(Boolean)
       .slice(0, 2)
-      .map((w) => w[0].toUpperCase())
+      .map((w) => w[0]?.toUpperCase() || '')
       .join('')
     const employee = await prisma.employee.update({
       where: { id: req.params.id },
