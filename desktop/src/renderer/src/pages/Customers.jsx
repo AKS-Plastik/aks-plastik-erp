@@ -439,7 +439,7 @@ function AddCustomerModal({ onClose, onSave }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={onClose} />
 
-      <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl shadow-inverse-surface/20 w-full max-w-2xl mx-4 overflow-hidden flex flex-col max-h-[92dvh]">
+      <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl shadow-inverse-surface/20 w-[95%] md:w-[90%] lg:w-[85%] max-w-none mx-4 overflow-hidden flex flex-col max-h-[92dvh]">
         {/* Header */}
         <div className="flex items-center justify-between px-4 md:px-6 pt-5 pb-4 border-b border-surface-container-low flex-shrink-0">
           <div className="flex items-center gap-3">

@@ -52,7 +52,7 @@ function MonthDetailPopup({ machine, year, month, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-theme-border shrink-0">
           <div>

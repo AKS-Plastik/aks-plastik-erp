@@ -49,7 +49,7 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 md:p-4" onClick={onClose}>
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-2xl p-5 md:p-8 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none p-5 md:p-8 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-start justify-between mb-4 md:mb-6">
           <div>
             <p className="text-[10px] md:text-xs font-mono text-text-muted mb-0.5 md:mb-1">{order.code}</p>

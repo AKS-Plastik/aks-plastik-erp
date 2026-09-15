@@ -68,7 +68,7 @@ function AddCardModal({ defaultColumn, customers, employees, onClose, onSave }) 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl shadow-inverse-surface/20 w-full max-w-md mx-4 overflow-hidden">
+      <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl shadow-inverse-surface/20 w-[95%] md:w-[90%] lg:w-[85%] max-w-none mx-4 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-4 pt-4 pb-3 md:px-5 md:pt-5 md:pb-4 border-b border-surface-container-low">
           <div className="flex items-center gap-2.5 md:gap-3">
@@ -193,7 +193,7 @@ function CardDetailModal({ report, customers, employees, onClose, onSave, onDele
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl shadow-inverse-surface/20 w-full max-w-lg mx-4 flex flex-col max-h-[90vh]">
+      <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl shadow-inverse-surface/20 w-[95%] md:w-[90%] lg:w-[85%] max-w-none mx-4 flex flex-col max-h-[90vh]">
 
         {/* Header banner */}
         <div className="primary-gradient px-4 pt-4 pb-3 md:px-5 md:pt-5 md:pb-3 flex-shrink-0 rounded-t-3xl">

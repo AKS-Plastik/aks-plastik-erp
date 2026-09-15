@@ -105,7 +105,7 @@ function RequestModal({ initial, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 md:p-0">
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none max-h-[90vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-4 md:p-6 pb-2 shrink-0">
           <h2 className="text-sm md:text-base font-bold text-on-surface">{initial?.id ? t('purchasing.editRequest') : t('purchasing.newPurchaseRequest')}</h2>
           <button onClick={onClose} className="text-text-muted hover:text-error"><span className="material-symbols-outlined text-lg md:text-xl">close</span></button>
@@ -210,7 +210,7 @@ function QuotationModal({ suppliers, initial, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4 md:p-0">
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none max-h-[90vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-4 md:p-6 pb-2 shrink-0">
           <h2 className="text-sm md:text-base font-bold text-on-surface">{initial ? t('purchasing.editQuotation') : t('purchasing.addQuotation')}</h2>
           <button onClick={onClose} className="text-text-muted hover:text-error"><span className="material-symbols-outlined text-lg md:text-xl">close</span></button>
@@ -303,7 +303,7 @@ function SupplierModal({ initial, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 md:p-0">
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none max-h-[90vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-4 md:p-6 pb-2 shrink-0">
           <h2 className="text-sm md:text-base font-bold text-on-surface">{initial ? t('purchasing.editSupplier') : t('purchasing.newSupplier')}</h2>
           <button onClick={onClose} className="text-text-muted hover:text-error"><span className="material-symbols-outlined text-lg md:text-xl">close</span></button>
@@ -430,7 +430,7 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 md:p-0">
-      <div className="bg-surface-container-lowest w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden shadow-xl rounded-2xl">
+      <div className="bg-surface-container-lowest w-[95%] md:w-[90%] lg:w-[85%] max-w-none max-h-[90vh] flex flex-col overflow-hidden shadow-xl rounded-2xl">
         {/* Header */}
         <div className="p-3 md:p-4 pb-2 shrink-0">
           <div className="flex items-center justify-between mb-3">

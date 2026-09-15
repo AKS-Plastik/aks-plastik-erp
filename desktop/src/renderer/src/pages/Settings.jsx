@@ -43,7 +43,7 @@ function MachineViewModal({ machine, onClose, onEdit }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-xl max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-theme-border shrink-0 primary-gradient">
           <div className="flex items-center gap-2.5 md:gap-3">
@@ -260,7 +260,7 @@ function MachineModal({ machine, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 md:px-6 md:py-4 border-b border-theme-border shrink-0">
           <div className="flex items-center gap-2 md:gap-3">
@@ -465,7 +465,7 @@ function EmployeeAssignModal({ employee, allEmployees, onClose, onSave }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-sm p-4 md:p-6">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none p-4 md:p-6">
         <div className="flex items-center justify-between mb-3 md:mb-4">
           <div>
             <h3 className="text-sm md:text-base font-bold text-on-surface leading-tight">{employee.name}</h3>
@@ -659,7 +659,7 @@ function UserRolesTab() {
       {/* Department detail popup */}
       {viewDept && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-sm overflow-hidden">
+          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none overflow-hidden">
             <div className="flex items-center gap-2.5 px-4 py-3 md:py-4 primary-gradient">
               <span className="material-symbols-outlined text-white text-[13px] md:text-base">corporate_fare</span>
               <h3 className="text-sm md:text-base font-bold text-white flex-1">{viewDept}</h3>
@@ -703,7 +703,7 @@ function UserRolesTab() {
       {/* Rename modal */}
       {renamingRole && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-sm p-4 md:p-6">
+          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none p-4 md:p-6">
             <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-primary text-[18px] md:text-2xl">edit</span>
@@ -739,7 +739,7 @@ function UserRolesTab() {
       {/* Delete modal */}
       {deletingRole && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-sm p-4 md:p-6">
+          <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none p-4 md:p-6">
             <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
               <div className="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-error/10 flex items-center justify-center shrink-0">
                 <span className="material-symbols-outlined text-error text-[18px] md:text-2xl">delete</span>

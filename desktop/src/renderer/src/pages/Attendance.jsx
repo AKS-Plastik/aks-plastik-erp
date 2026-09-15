@@ -242,7 +242,7 @@ function MyAttendanceTab({ employeeId, token }) {
       {/* Edit modal */}
       {editDate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-surface-container-lowest rounded-xl md:rounded-2xl shadow-xl w-full max-w-[320px] md:max-w-sm p-4 md:p-6">
+          <div className="bg-surface-container-lowest rounded-xl md:rounded-2xl shadow-xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none p-4 md:p-6">
             <div className="flex items-center justify-between mb-3 md:mb-4">
               <h3 className="text-sm md:text-base font-bold text-on-surface">Edit — {editDate}</h3>
               <button onClick={() => setEditDate(null)} className="text-text-muted hover:text-error">
@@ -495,7 +495,7 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
       {/* Add / Edit modal */}
       {(showForm || editItem) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-surface-container-lowest rounded-xl md:rounded-2xl shadow-xl w-full max-w-[320px] md:max-w-md p-4 md:p-6">
+          <div className="bg-surface-container-lowest rounded-xl md:rounded-2xl shadow-xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none p-4 md:p-6">
             <div className="flex items-center justify-between mb-3 md:mb-4">
               <h3 className="text-sm md:text-base font-bold text-on-surface">{editItem ? t('common.edit') : t('common.add')} {t('attendance.leaveTab')}</h3>
               <button onClick={() => { setShowForm(false); setEditItem(null) }} className="text-text-muted hover:text-error">
