@@ -8,7 +8,7 @@ import { useAuth } from '../context/AuthContext'
 import aksLogoUrl from '../assets/aks_logo.png'
 import robotoFontUrl from '../assets/Roboto-Regular.ttf'
 import { API_URL } from '../config'
-import { toast } from 'react-hot-toast'
+
 import SearchableSelect from './components/SearchableSelect'
 
 const ITEMS_PER_PAGE = 10
