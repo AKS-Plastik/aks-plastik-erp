@@ -9,7 +9,7 @@ import aksLogoUrl from '../assets/aks_logo.png'
 import robotoFontUrl from '../assets/Roboto-Regular.ttf'
 import { API_URL } from '../config'
 
-import SearchableSelect from './components/SearchableSelect'
+import SearchableSelect from "../components/SearchableSelect"
 
 const ITEMS_PER_PAGE = 10
 const ORDER_STATUSES = ['Processing', 'Confirmed', 'In-Production', 'Production Completed', 'E-WayBill', 'In Delivery', 'E-Invoice', 'Delivered']
