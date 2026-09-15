@@ -49,7 +49,7 @@ function Modal({ title, form, setForm, onClose, onSave, errors, isEdit }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-lg p-4 sm:p-8 max-h-[90vh] overflow-y-auto flex flex-col">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none p-4 sm:p-8 max-h-[90vh] overflow-y-auto flex flex-col">
         <div className="flex items-center justify-between mb-4 md:mb-6">
           <h2 className="text-base md:text-lg font-bold text-on-surface">{title}</h2>
           <button onClick={onClose} className="p-1.5 md:p-2 rounded-xl text-text-muted hover:text-error hover:bg-surface-container-low transition-colors">

@@ -66,7 +66,7 @@ function Modal({ title, form, setForm, onClose, onSave, errors, orders, rates, r
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 md:p-0" onClick={onClose}>
-      <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-lg max-h-[90dvh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
+      <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none max-h-[90dvh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between p-4 md:p-5 pb-3 shrink-0">
           <h2 className="text-sm md:text-base font-bold text-on-surface">{title}</h2>
           <button onClick={onClose} className="text-text-muted hover:text-error transition">
@@ -312,7 +312,7 @@ function RecordDetailModal({ record, onClose, orders, customers }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 md:p-0" onClick={onClose}>
-      <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-2xl max-h-[88dvh] flex flex-col" onClick={e => e.stopPropagation()}>
+      <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none max-h-[88dvh] flex flex-col" onClick={e => e.stopPropagation()}>
 
         {/* Header */}
         <div className="flex items-center justify-between px-4 md:px-5 pt-4 pb-3 border-b border-theme-border shrink-0">

@@ -208,7 +208,7 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 md:p-0" onClick={onClose}>
       <div
-        className="bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col"
+        className="bg-surface-container-lowest rounded-2xl shadow-2xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none max-h-[90vh] flex flex-col"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}

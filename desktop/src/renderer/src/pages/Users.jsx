@@ -164,7 +164,7 @@ export default function Users() {
       {showForm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={() => { setShowForm(false); setError('') }} />
-          <div className="relative bg-surface-container-lowest rounded-2xl shadow-2xl shadow-inverse-surface/20 w-full max-w-md mx-4 overflow-hidden">
+          <div className="relative bg-surface-container-lowest rounded-2xl shadow-2xl shadow-inverse-surface/20 w-[95%] md:w-[90%] lg:w-[85%] max-w-none mx-4 overflow-hidden">
             {/* Header */}
             <div className="primary-gradient px-4 py-2.5">
               <div className="flex items-center justify-between">
@@ -295,7 +295,7 @@ export default function Users() {
       {editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={closeEdit} />
-          <div className="relative bg-surface-container-lowest rounded-2xl shadow-2xl shadow-inverse-surface/20 w-full max-w-md mx-4 overflow-hidden">
+          <div className="relative bg-surface-container-lowest rounded-2xl shadow-2xl shadow-inverse-surface/20 w-[95%] md:w-[90%] lg:w-[85%] max-w-none mx-4 overflow-hidden">
             {/* Header */}
             <div className="primary-gradient px-4 py-2.5">
               <div className="flex items-center justify-between">
@@ -409,7 +409,7 @@ export default function Users() {
       {viewUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={() => { setViewUser(null); setResetEmailStatus(null) }} />
-          <div className="relative bg-surface-container-lowest rounded-2xl shadow-2xl shadow-inverse-surface/20 w-full max-w-sm mx-4 overflow-hidden">
+          <div className="relative bg-surface-container-lowest rounded-2xl shadow-2xl shadow-inverse-surface/20 w-[95%] md:w-[90%] lg:w-[85%] max-w-none mx-4 overflow-hidden">
             {/* Banner */}
             <div className="primary-gradient px-4 py-3 md:py-4">
               <div className="flex items-center justify-between mb-3">
