@@ -8,6 +8,8 @@ import { useAuth } from '../context/AuthContext'
 import aksLogoUrl from '../assets/aks_logo.png'
 import robotoFontUrl from '../assets/Roboto-Regular.ttf'
 import { API_URL } from '../config'
+import { toast } from 'react-hot-toast'
+import SearchableSelect from './components/SearchableSelect'
 
 const ITEMS_PER_PAGE = 10
 const ORDER_STATUSES = ['Processing', 'Confirmed', 'In-Production', 'Production Completed', 'E-WayBill', 'In Delivery', 'E-Invoice', 'Delivered']
@@ -86,7 +88,7 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 md:p-6" onClick={onClose}>
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-4xl p-4 md:p-8 max-h-[90dvh] overflow-y-auto flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[90%] max-w-none p-4 md:p-8 max-h-[90dvh] overflow-y-auto flex flex-col" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start justify-between mb-4 md:mb-6 gap-3 md:gap-4">
           <div>
@@ -296,7 +298,7 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 md:p-6">
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-full max-w-4xl p-4 md:p-8 max-h-[90dvh] overflow-y-auto">
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[90%] max-w-none p-4 md:p-8 max-h-[90dvh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4 md:mb-6">
           <h2 className="text-lg font-bold text-on-surface">{title}</h2>
           <button onClick={onClose} className="text-text-muted hover:text-error">
@@ -306,13 +308,15 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
 
         <div className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-            <div>
-              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.customer')} *</label>
-              <select className={inputCls(errors.customerId)} value={form.customerId} onChange={set('customerId')}>
-                <option value="">{t('orders.selectCustomer')}</option>
-                {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
-              {errors.customerId && <p className="text-xs text-error mt-1">{errors.customerId}</p>}
+            <div className="flex-1 min-w-[200px]">
+              <label className="block text-xs font-bold text-text-muted mb-1.5">{t('orders.customer')} *</label>
+              <SearchableSelect
+                options={customers.map(c => ({ value: c.id, label: c.name }))}
+                value={form.customerId}
+                onChange={set('customerId')}
+                placeholder={t('orders.selectCustomer')}
+                error={errors.customerId}
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold text-text-muted mb-1">{t('orders.salesRep')} *</label>
@@ -368,20 +372,17 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
                 const itemTotal = (parseFloat(item.unitPrice) || 0) * (parseInt(item.quantity) || 0) * (1 + (parseFloat(item.vat) || 0) / 100)
                 return (
                 <div key={idx} className="flex flex-col md:flex-row md:items-center gap-3 md:gap-2 border border-theme-border md:border-0 rounded-xl md:rounded-none p-3 md:p-0 bg-surface-container-high/30 md:bg-transparent">
-                  <div className="flex-1 w-full md:w-auto">
-                    <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.product')}</span>
-                    <select
-                      className={`w-full border rounded px-2 py-1.5 md:py-1.5 text-xs md:text-sm bg-surface-container-lowest text-on-surface outline-none focus:border-primary ${errors.items && !item.productName ? 'border-error' : 'border-theme-border'}`}
+                  <div className="flex-1 md:w-auto mt-2 md:mt-0">
+                    <SearchableSelect
+                      options={products.map(p => ({
+                        value: p.id,
+                        label: p.stockNo ? `${p.stockNo} — ${p.name}` : p.name
+                      }))}
                       value={item.productId || ''}
-                      onChange={(e) => fillFromProduct(idx, e.target.value)}
-                    >
-                      <option value="">{t('orders.selectProduct')}</option>
-                      {products.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.stockNo ? `${p.stockNo} — ${p.name}` : p.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={(val) => fillFromProduct(idx, val)}
+                      placeholder={t('orders.selectProduct')}
+                      error={errors.items && !item.productName}
+                    />
                   </div>
                   
                   <div className="flex flex-wrap md:flex-nowrap items-end gap-2 w-full md:w-auto">
