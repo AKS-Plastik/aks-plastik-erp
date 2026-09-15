@@ -5,7 +5,9 @@ desktop/backend/node_modules/
 
 # Çıktılar ve build
 dist/
+dist-web/
 desktop/dist/
+desktop/dist-web/
 desktop/out/
 desktop/backend/dist/
 build/
