@@ -976,7 +976,7 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
                 <h2 className="text-base md:text-lg font-extrabold text-white leading-tight">
                   {editing ? t('customers.editCustomer') : customer.name}
                 </h2>
-                <p className="text-blue-200 text-[9px] md:text-[10px] font-medium mt-0.5">ID: #{customer.id}</p>
+                <p className="text-blue-200 text-[9px] md:text-[10px] font-medium mt-0.5">Code: {customer.accountCode || customer.code}</p>
               </div>
             </div>
             <button
@@ -1110,7 +1110,7 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
                   </span>
                   <div className="flex-1 h-px bg-surface-container-high" />
                 </div>
-                <DetailRow icon="tag"              label="Account Code"    value={customer.accountCode} />
+                <DetailRow icon="tag"              label="Account Code"    value={customer.accountCode || customer.code} />
                 <DetailRow icon="manage_accounts"  label="Account Type"    value={customer.accountType} />
                 <DetailRow icon="currency_exchange" label="Currency"       value={customer.currency} />
                 <DetailRow icon="schedule"         label="Payment Term"    value={customer.paymentTerm} />
@@ -1509,11 +1509,11 @@ export default function Customers() {
       (c.contactName || c.contact || '').toLowerCase().includes(q) ||
       (c.city || '').toLowerCase().includes(q) ||
       (c.country || '').toLowerCase().includes(q) ||
-      (c.accountCode || '').toLowerCase().includes(q)
+      (c.accountCode || c.code || '').toLowerCase().includes(q)
     )
   }).sort((a, b) => {
-    const codeA = a.accountCode || ''
-    const codeB = b.accountCode || ''
+    const codeA = a.accountCode || a.code || ''
+    const codeB = b.accountCode || b.code || ''
     const isMusteriA = codeA.startsWith('120')
     const isMusteriB = codeB.startsWith('120')
     const isTedarikciA = codeA.startsWith('320')
@@ -1634,13 +1634,20 @@ export default function Customers() {
                 className="group xl:hover:bg-surface-container-low transition-colors cursor-pointer xl:border-b xl:border-surface-container-low block xl:table-row bg-surface-container-lowest rounded-xl xl:rounded-none p-3 xl:p-0 shadow-sm xl:shadow-none"
                 onClick={() => setSelectedCustomer(customer)}
               >
-                <td className="block xl:table-cell p-0 xl:px-6 xl:py-5 mb-2 xl:mb-0 border-b border-surface-container-low pb-3 xl:border-0 xl:pb-0">
+                <td className="block xl:table-cell p-0 xl:px-6 xl:py-5 mb-2 xl:mb-0 border-b border-surface-container-low pb-3 xl:border-0">
                   <div className="flex items-center gap-3">
                     <InitialsAvatar initials={customer.initials} size="lg" />
-                    <div>
-                      <div className="font-bold text-on-surface text-sm xl:text-base">{customer.name}</div>
+                    <div className="flex flex-col gap-1">
+                      <div className="font-bold text-on-surface text-sm xl:text-base flex flex-col items-start gap-0.5">
+                        <span className="line-clamp-2 leading-snug">{customer.name}</span>
+                        {(customer.accountCode || customer.code) && (
+                          <span className="text-[11px] font-extrabold text-amber-500 uppercase tracking-widest">
+                            {customer.accountCode || customer.code}
+                          </span>
+                        )}
+                      </div>
                       {customer.customerType && (
-                        <div className="text-[10px] text-on-surface-variant font-medium uppercase">{customer.customerType}</div>
+                        <div className="text-[9.5px] text-on-surface-variant/80 font-semibold uppercase tracking-wider">{customer.customerType}</div>
                       )}
                     </div>
                   </div>
@@ -1648,7 +1655,7 @@ export default function Customers() {
                 <td className="flex xl:table-cell justify-between items-center p-0 xl:px-6 xl:py-5 mb-1.5 xl:mb-0 mt-3 xl:mt-0">
                   <span className="xl:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('common.customerCode')}</span>
                   {(() => {
-                    const code = customer.accountCode || '';
+                    const code = customer.accountCode || customer.code || '';
                     const isMusteri = code.startsWith('120');
                     const isTedarikci = code.startsWith('320');
                     let badgeClass = 'bg-surface-container-high text-on-surface-variant';

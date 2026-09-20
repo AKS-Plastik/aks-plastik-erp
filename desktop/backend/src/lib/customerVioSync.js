@@ -1,3 +1,4 @@
+const { getDecodedText } = require('./vioFetchHelper');
 const crypto = require('crypto');
 
 function md5(string) {
@@ -151,12 +152,12 @@ async function syncCustomer(customer) {
 
     if (!response.ok) {
       console.error(`[VIO SYNC ERROR] Failed to sync customer ${customer.code}: HTTP ${response.status}`);
-      const text = await response.text();
+      const text = await getDecodedText(response);
       console.error(`[VIO SYNC RESPONSE] ${text}`);
       return false;
     }
 
-    const responseText = await response.text();
+    const responseText = await getDecodedText(response);
     let data;
     try {
       data = (responseText && responseText.trim()) ? JSON.parse(responseText.trim()) : {};
@@ -206,12 +207,12 @@ async function deleteCustomerFromVio(customerCode) {
 
     if (!response.ok) {
       console.error(`[VIO SYNC ERROR] Failed to delete customer ${customerCode}: HTTP ${response.status}`);
-      const text = await response.text();
+      const text = await getDecodedText(response);
       console.error(`[VIO SYNC RESPONSE] ${text}`);
       return false;
     }
 
-    const responseText = await response.text();
+    const responseText = await getDecodedText(response);
     let data;
     try {
       data = (responseText && responseText.trim()) ? JSON.parse(responseText.trim()) : {};
@@ -256,11 +257,11 @@ async function pullCustomersFromVio() {
 
     if (!response.ok) {
       console.error(`[VIO SYNC ERROR] Failed to pull customers: HTTP ${response.status}`);
-      const text = await response.text();
+      const text = await getDecodedText(response);
       return { success: false, error: text };
     }
 
-    const responseText = await response.text();
+    const responseText = await getDecodedText(response);
     let data;
     try {
       data = (responseText && responseText.trim()) ? JSON.parse(responseText.trim()) : {};
@@ -456,7 +457,7 @@ async function fetchSingleVioCustomer(code) {
 
     if (!response.ok) return null;
 
-    const responseText = await response.text();
+    const responseText = await getDecodedText(response);
     let data;
     try { data = JSON.parse(responseText.trim()); } catch(e) { return null; }
 
@@ -480,3 +481,4 @@ async function fetchSingleVioCustomer(code) {
     return null;
   }
 }
+

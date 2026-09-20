@@ -5,7 +5,7 @@ const prisma = new PrismaClient()
 const router = Router()
 
 const employeeSelect = { select: { id: true, name: true, code: true } }
-const customerSelect = { select: { id: true, name: true, code: true } }
+const customerSelect = { select: { id: true, name: true, code: true, accountCode: true } }
 
 router.get('/', async (req, res) => {
   try {

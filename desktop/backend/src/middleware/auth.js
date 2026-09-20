@@ -47,9 +47,13 @@ async function authenticate(req, res, next) {
       )
     })
 
+    // Use email, fallback to preferred_username (which is 'admin' for the admin user)
+    const userEmail = decoded.email || decoded.preferred_username;
+    console.log('KEYCLOAK DECODED USER:', userEmail);
+    
     // Look up Prisma user by email to get ERP-specific fields (role, department, etc.)
     const dbUser = await prisma.user.findUnique({
-      where: { email: decoded.email },
+      where: { email: userEmail },
       select: { id: true, email: true, name: true, role: true, department: true, employeeId: true },
     })
 

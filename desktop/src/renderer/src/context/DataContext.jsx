@@ -13,6 +13,7 @@ export function DataProvider({ children }) {
   const [employees, setEmployees] = useState([])
   const [orders, setOrders] = useState([])
   const [financeRecords, setFinanceRecords] = useState([])
+  const [productionTasks, setProductionTasks] = useState([])
   const [roles, setRoles] = useState([])
   const [permissions, setPermissions] = useState({})
   const [statusPermissions, setStatusPermissions] = useState({})
@@ -140,6 +141,14 @@ export function DataProvider({ children }) {
   }, [token])
   useEffect(() => { refreshRoles() }, [token])
 
+  const refreshProductionTasks = useCallback(() => {
+    fetch(`${API_URL}/production-tasks`, { headers: authHeaders })
+      .then((r) => r.json())
+      .then((data) => setProductionTasks(Array.isArray(data) ? data : []))
+      .catch(() => { })
+  }, [token])
+  useEffect(() => { refreshProductionTasks() }, [token])
+
   const refreshPermissions = useCallback(() => {
     fetch(`${API_URL}/permissions`, { headers: authHeaders })
       .then((r) => r.json())
@@ -194,9 +203,10 @@ export function DataProvider({ children }) {
       refreshPermissions()
       refreshStatusPermissions()
       refreshMachines()
+      refreshProductionTasks()
     }, 30 * 60 * 1000)
     return () => clearInterval(interval)
-  }, [refreshCustomers, refreshReports, refreshSiteVisits, refreshProducts, refreshEmployees, refreshOrders, refreshFinanceRecords, refreshRoles, refreshPermissions, refreshStatusPermissions, refreshMachines])
+  }, [refreshCustomers, refreshReports, refreshSiteVisits, refreshProducts, refreshEmployees, refreshOrders, refreshFinanceRecords, refreshRoles, refreshPermissions, refreshStatusPermissions, refreshMachines, refreshProductionTasks])
 
   // ── Customers ──
   async function addCustomer(form) {
@@ -530,6 +540,38 @@ export function DataProvider({ children }) {
       : m))
   }
 
+  // ── Production Tasks ──
+  async function addProductionTask(form) {
+    const res = await fetch(`${API_URL}/production-tasks`, { method: 'POST', headers, body: JSON.stringify(form) })
+    if (!res.ok) throw new Error((await res.json()).error || 'Failed')
+    const task = await res.json()
+    setProductionTasks((prev) => [task, ...prev])
+    refreshOrders()
+    return task
+  }
+
+  async function updateProductionTask(id, form) {
+    const res = await fetch(`${API_URL}/production-tasks/${id}`, { method: 'PUT', headers, body: JSON.stringify(form) })
+    if (!res.ok) throw new Error((await res.json()).error || 'Failed')
+    const updated = await res.json()
+    setProductionTasks((prev) => prev.map((t) => (t.id === id ? updated : t)))
+    refreshOrders()
+  }
+
+  async function moveProductionTask(id, status) {
+    const res = await fetch(`${API_URL}/production-tasks/${id}/move`, { method: 'PATCH', headers, body: JSON.stringify({ status }) })
+    if (!res.ok) throw new Error((await res.json()).error || 'Failed')
+    const updated = await res.json()
+    setProductionTasks((prev) => prev.map((t) => (t.id === id ? updated : t)))
+    refreshOrders()
+  }
+
+  async function deleteProductionTask(id) {
+    await fetch(`${API_URL}/production-tasks/${id}`, { method: 'DELETE', headers: authHeaders })
+    setProductionTasks((prev) => prev.filter((t) => t.id !== id))
+    refreshOrders()
+  }
+
   // ── Finance Records ──
   async function addFinanceRecord(form) {
     const res = await fetch(`${API_URL}/finance`, { method: 'POST', headers, body: JSON.stringify(form) })
@@ -566,6 +608,7 @@ export function DataProvider({ children }) {
       uploadMachineManual, downloadMachineManual, deleteMachineManual,
       addMaintenanceRecord, deleteMaintenanceRecord,
       addMonthlyTask, updateMonthlyTask, deleteMonthlyTask,
+      productionTasks, addProductionTask, updateProductionTask, moveProductionTask, deleteProductionTask, refreshProductionTasks,
       isAdmin,
     }}>
       {children}

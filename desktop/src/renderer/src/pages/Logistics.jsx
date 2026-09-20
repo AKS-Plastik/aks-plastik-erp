@@ -53,7 +53,14 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo }) {
         <div className="flex items-start justify-between mb-4 md:mb-6">
           <div>
             <p className="text-[10px] md:text-xs font-mono text-text-muted mb-0.5 md:mb-1">{order.code}</p>
-            <h2 className="text-base md:text-xl font-bold text-on-surface leading-tight">{order.customer?.name || '—'}</h2>
+            <h2 className="text-base md:text-xl font-bold text-on-surface leading-tight flex flex-col items-start gap-1">
+              <span>{order.customer?.name || '—'}</span>
+              {(order.customer?.accountCode || order.customer?.code) && (
+                <span className="text-[11px] font-bold text-amber-500 uppercase tracking-widest">
+                  {order.customer.accountCode || order.customer.code}
+                </span>
+              )}
+            </h2>
             <p className="text-[11px] md:text-sm text-text-muted mt-1 md:mt-0.5">{t('orders.salesRep')}: {order.salesRep?.name || order.employee?.name || '—'}</p>
           </div>
           <div className="flex items-center gap-2 md:gap-3">
@@ -332,7 +339,14 @@ export default function Logistics() {
                     <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 px-1 xl:px-4 py-1 xl:py-4">
                       <div className="flex items-center justify-between xl:justify-start">
                         <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.customer')}</span>
-                        <span className="font-medium text-xs lg:text-sm text-on-surface">{o.customer?.name || '—'}</span>
+                        <span className="font-medium text-xs lg:text-sm text-on-surface flex flex-col items-start gap-0.5">
+                          <span className="line-clamp-2">{o.customer?.name || '—'}</span>
+                          {(o.customer?.accountCode || o.customer?.code) && (
+                            <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">
+                              {o.customer.accountCode || o.customer.code}
+                            </span>
+                          )}
+                        </span>
                       </div>
                     </td>
                     <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 px-1 xl:px-4 py-1 xl:py-4">

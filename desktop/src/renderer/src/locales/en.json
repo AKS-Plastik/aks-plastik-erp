@@ -13,7 +13,8 @@
     "finance": "Finance",
     "employees": "Employees",
     "settings": "Settings",
-    "logout": "Log Out"
+    "logout": "Log Out",
+    "productionTasks": "Production Tasks"
   },
   "topbar": {
     "alerts": "Alerts",
@@ -365,7 +366,10 @@
     "errPayment": "Payment method is required",
     "errNoProduct": "At least one product is required",
     "errUnitPrice": "All line items must have a unit price",
-    "errQty": "All line items must have a valid quantity"
+    "errQty": "All line items must have a valid quantity",
+    "remaining": "Remaining",
+    "sendToProduction": "Send to Production",
+    "send": "Send to Prod"
   },
   "workOrders": {
     "title": "Site Visits",
@@ -633,5 +637,20 @@
     "underMaintenance": "Under Maintenance",
     "outOfService": "Out of Service",
     "departments": "Departments"
+  },
+  "productionTasks": {
+    "title": "Production Tasks",
+    "subtitle": "Manage production tasks here.",
+    "totalTasks": "Total Tasks",
+    "searchPlaceholder": "Search task, machine or operator...",
+    "colOpen": "Open",
+    "colInProgress": "In-Progress",
+    "colCompleted": "Completed",
+    "machine": "Machine",
+    "operator": "Operator",
+    "status": "Status",
+    "deleteTask": "Delete Task",
+    "editTask": "Edit Task",
+    "noTasks": "No tasks found"
   }
 }

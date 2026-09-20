@@ -10,7 +10,15 @@ const router = Router()
 router.get('/', async (req, res) => {
   try {
     const customers = await prisma.customer.findMany({
-      orderBy: { createdAt: 'desc' },
+      where: {
+        OR: [
+          { code: { startsWith: '120' } },
+          { code: { startsWith: '320' } },
+          { accountCode: { startsWith: '120' } },
+          { accountCode: { startsWith: '320' } }
+        ]
+      },
+      orderBy: { code: 'asc' },
     })
     res.json(customers)
   } catch (err) {

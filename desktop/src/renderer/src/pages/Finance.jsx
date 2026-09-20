@@ -244,7 +244,7 @@ function Modal({ title, form, setForm, onClose, onSave, errors, orders, rates, r
               <select className={inp('orderId')} value={form.orderId} onChange={set('orderId')}>
                 <option value="">— None —</option>
                 {orders.map(o => (
-                  <option key={o.id} value={o.id}>{o.code}{o.customer?.name ? ` — ${o.customer.name}` : ''}</option>
+                  <option key={o.id} value={o.id}>{o.code}{o.customer?.name ? ` — ${o.customer.name}` + ((o.customer.accountCode || o.customer.code) ? ` [${o.customer.accountCode || o.customer.code}]` : '') : ''}</option>
                 ))}
               </select>
             </div>
@@ -374,7 +374,7 @@ function RecordDetailModal({ record, onClose, orders, customers }) {
                   icon="shopping_cart"
                   label="Linked Order"
                   value={linkedOrder
-                    ? `${linkedOrder.code}${linkedOrder.customer?.name ? ` — ${linkedOrder.customer.name}` : ''}`
+                    ? `${linkedOrder.code}${linkedOrder.customer?.name ? ` — ${linkedOrder.customer.name}` + ((linkedOrder.customer.accountCode || linkedOrder.customer.code) ? ` [${linkedOrder.customer.accountCode || linkedOrder.customer.code}]` : '') : ''}`
                     : 'No linked order'}
                 />
                 <DetailRow icon="edit_note" label="Description" value={record.description} />
@@ -400,7 +400,16 @@ function RecordDetailModal({ record, onClose, orders, customers }) {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="bg-surface-container-high rounded-lg p-3 md:p-4 space-y-2.5">
                   <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">Order Details</p>
-                  <DetailRow icon="business" label="Customer" value={linkedOrder.customer?.name} />
+                  <DetailRow icon="business" label="Customer" value={
+                    <span className="flex flex-col items-start gap-0.5">
+                      <span>{linkedOrder.customer?.name}</span>
+                      {(linkedOrder.customer?.accountCode || linkedOrder.customer?.code) && (
+                        <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">
+                          {linkedOrder.customer.accountCode || linkedOrder.customer.code}
+                        </span>
+                      )}
+                    </span>
+                  } />
                   <DetailRow icon="attach_money" label="Total Amount" value={linkedOrder.totalAmount != null ? fmt(linkedOrder.totalAmount) : null} />
                   <DetailRow icon="percent" label="VAT" value={linkedOrder.vat != null ? `${linkedOrder.vat}%` : null} />
                   <DetailRow icon="schedule" label="Created" value={linkedOrder.createdAt ? new Date(linkedOrder.createdAt).toLocaleDateString() : null} />

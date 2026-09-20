@@ -13,7 +13,8 @@
     "finance": "Finans",
     "employees": "Çalışanlar",
     "settings": "Ayarlar",
-    "logout": "Çıkış Yap"
+    "logout": "Çıkış Yap",
+    "productionTasks": "Üretim Görevleri"
   },
   "topbar": {
     "alerts": "Uyarılar",
@@ -365,7 +366,10 @@
     "errPayment": "Ödeme yöntemi seçimi zorunludur",
     "errNoProduct": "En az bir ürün eklenmesi zorunludur",
     "errUnitPrice": "Tüm kalemlerin birim fiyatı olmalıdır",
-    "errQty": "Tüm kalemlerin geçerli bir miktarı olmalıdır"
+    "errQty": "Tüm kalemlerin geçerli bir miktarı olmalıdır",
+    "remaining": "Kalan",
+    "sendToProduction": "Üretime Gönder",
+    "send": "Üretime Gönder"
   },
   "workOrders": {
     "title": "Saha Ziyaretleri",
@@ -633,5 +637,20 @@
     "underMaintenance": "Bakımda",
     "outOfService": "Hizmet Dışı",
     "departments": "Departmanlar"
+  },
+  "productionTasks": {
+    "title": "Üretim Görevleri",
+    "subtitle": "Üretimdeki kalemleri buradan takip edebilirsiniz.",
+    "totalTasks": "Toplam Görev",
+    "searchPlaceholder": "Görev, makine veya operatör ara...",
+    "colOpen": "Açık",
+    "colInProgress": "Üretimde",
+    "colCompleted": "Tamamlandı",
+    "machine": "Makine",
+    "operator": "Operatör",
+    "status": "Durum",
+    "deleteTask": "Görevi Sil",
+    "editTask": "Görevi Düzenle",
+    "noTasks": "Görev Bulunamadı"
   }
 }

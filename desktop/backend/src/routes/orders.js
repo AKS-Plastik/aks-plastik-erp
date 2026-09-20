@@ -12,10 +12,15 @@ router.get('/', async (req, res) => {
     const orders = await prisma.order.findMany({
       orderBy: { createdAt: 'desc' },
       include: {
-        customer: { select: { id: true, name: true } },
+        customer: { select: { id: true, name: true, code: true, accountCode: true } },
         employee: { select: { id: true, name: true } },
         salesRep: { select: { id: true, name: true } },
-        items: { include: { product: { select: { stockNo: true, currency: true, unit: true } } } },
+        items: { 
+          include: { 
+            product: { select: { stockNo: true, currency: true, unit: true } },
+            productionTasks: { include: { machine: true, operator: true } }
+          } 
+        },
       },
     })
     // Patch in raw fields the stale client doesn't select automatically
@@ -42,7 +47,12 @@ router.get('/:id', async (req, res) => {
         customer: true, 
         employee: true, 
         salesRep: { select: { id: true, name: true } },
-        items: { include: { product: true } } 
+        items: { 
+          include: { 
+            product: true,
+            productionTasks: { include: { machine: true, operator: true } }
+          } 
+        } 
       },
     })
     if (!order) return res.status(404).json({ error: 'Order not found' })
@@ -86,10 +96,15 @@ router.post('/', async (req, res) => {
         },
       },
       include: {
-        customer: { select: { id: true, name: true } },
+        customer: { select: { id: true, name: true, code: true, accountCode: true } },
         employee: { select: { id: true, name: true } },
         salesRep: { select: { id: true, name: true } },
-        items: { include: { product: { select: { stockNo: true, currency: true, unit: true } } } },
+        items: { 
+          include: { 
+            product: { select: { stockNo: true, currency: true, unit: true } },
+            productionTasks: { include: { machine: true, operator: true } }
+          } 
+        },
       },
     })
     // Set new fields via raw SQL until Prisma client is regenerated
@@ -134,8 +149,8 @@ router.put('/:id', async (req, res) => {
       return sum + qty * price * (1 + vatRate / 100)
     }, 0)
 
-    // Delete existing items and recreate
-    await prisma.orderItem.deleteMany({ where: { orderId: req.params.id } })
+    const itemsWithId = (items || []).filter(i => i.id)
+    const itemsWithoutId = (items || []).filter(i => !i.id)
 
     const order = await prisma.order.update({
       where: { id: req.params.id },
@@ -148,7 +163,21 @@ router.put('/:id', async (req, res) => {
         totalAmount,
         notes: notes || '',
         items: {
-          create: (items || []).map((item) => ({
+          deleteMany: {
+            id: { notIn: itemsWithId.map(i => i.id) }
+          },
+          update: itemsWithId.map((item) => ({
+            where: { id: item.id },
+            data: {
+              productName: item.productName,
+              quantity: parseInt(item.quantity) || 1,
+              unitPrice: parseFloat(item.unitPrice) || 0,
+              currency: item.currency || 'USD',
+              vat: parseFloat(item.vat) || 0,
+              productId: item.productId || null,
+            }
+          })),
+          create: itemsWithoutId.map((item) => ({
             productName: item.productName,
             quantity: parseInt(item.quantity) || 1,
             unitPrice: parseFloat(item.unitPrice) || 0,
@@ -159,10 +188,15 @@ router.put('/:id', async (req, res) => {
         },
       },
       include: {
-        customer: { select: { id: true, name: true } },
+        customer: { select: { id: true, name: true, code: true, accountCode: true } },
         employee: { select: { id: true, name: true } },
         salesRep: { select: { id: true, name: true } },
-        items: { include: { product: { select: { stockNo: true, currency: true, unit: true } } } },
+        items: { 
+          include: { 
+            product: { select: { stockNo: true, currency: true, unit: true } },
+            productionTasks: { include: { machine: true, operator: true } }
+          } 
+        },
       },
     })
     // Set new fields via raw SQL until Prisma client is regenerated

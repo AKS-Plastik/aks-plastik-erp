@@ -2,14 +2,48 @@ import crypto from 'crypto'
 import { app } from 'electron'
 
 const isDev = !app.isPackaged
-const KEYCLOAK_URL = isDev ? 'https://crm.aksplastikambalaj.com' : 'http://172.18.0.1:8080'
+const KEYCLOAK_URL = isDev ? 'http://keycloak.aksplastikambalaj.com' : 'http://172.18.0.1:8080'
+const KEYCLOAK_URL_SECURE = isDev ? 'https://keycloak.aksplastikambalaj.com' : 'http://172.18.0.1:8080'
 const REALM = 'AKS'
 const CLIENT_ID = 'aks-erp-app'
 export const REDIRECT_URI = 'aks-erp-app://auth/callback'
 
-const BASE = `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect`
+import http from 'http'
+import https from 'https'
 
-export const JWKS_URI = `${BASE}/certs`
+const BASE = `${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect`
+const BASE_SECURE = `${KEYCLOAK_URL_SECURE}/realms/${REALM}/protocol/openid-connect`
+
+export const JWKS_URI = `${BASE_SECURE}/certs`
+
+// Custom fetch to bypass Electron/Chromium TLS renegotiation strictness
+function nativeFetch(url, bodyString) {
+  return new Promise((resolve, reject) => {
+    const parsedUrl = new URL(url)
+    const client = parsedUrl.protocol === 'https:' ? https : http
+    const options = {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Length': Buffer.byteLength(bodyString)
+      }
+    }
+    const req = client.request(parsedUrl, options, (res) => {
+      let data = ''
+      res.on('data', (chunk) => { data += chunk })
+      res.on('end', () => {
+        resolve({
+          ok: res.statusCode >= 200 && res.statusCode < 300,
+          text: () => Promise.resolve(data),
+          json: () => Promise.resolve(JSON.parse(data))
+        })
+      })
+    })
+    req.on('error', reject)
+    req.write(bodyString)
+    req.end()
+  })
+}
 
 export function buildAuthRequest() {
   const verifier = crypto.randomBytes(32).toString('base64url')
@@ -38,11 +72,7 @@ export async function exchangeCode(code, verifier) {
     code_verifier: verifier,
   })
 
-  const res = await fetch(`${BASE}/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: body.toString(),
-  })
+  const res = await nativeFetch(`${BASE_SECURE}/token`, body.toString())
 
   if (!res.ok) {
     const text = await res.text()
@@ -59,11 +89,7 @@ export async function revokeToken(refreshToken) {
     token_type_hint: 'refresh_token',
   })
 
-  await fetch(`${BASE}/revoke`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: body.toString(),
-  }).catch(() => { })
+  await nativeFetch(`${BASE_SECURE}/revoke`, body.toString()).catch(() => { })
 }
 
 export async function refreshAccessToken(refreshToken) {
@@ -73,11 +99,7 @@ export async function refreshAccessToken(refreshToken) {
     refresh_token: refreshToken,
   })
 
-  const res = await fetch(`${BASE}/token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: body.toString(),
-  })
+  const res = await nativeFetch(`${BASE_SECURE}/token`, body.toString())
 
   if (!res.ok) throw new Error('Token refresh failed')
   return res.json()

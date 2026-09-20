@@ -60,7 +60,7 @@ function emptyForm() {
 const detailStatusStyle = {
   Processing:    'bg-amber-100 text-amber-700',
   Confirmed:     'bg-primary-fixed text-on-primary-fixed-variant',
-  'In-Production': 'bg-tertiary-fixed text-on-tertiary-fixed-variant',
+  'In-Production': 'bg-orange-500 text-white shadow-sm',
   'Production Completed': 'bg-green-100 text-green-700',
   'E-WayBill':   'bg-orange-100 text-orange-700',
   'In Delivery': 'bg-blue-100 text-blue-700',
@@ -68,7 +68,85 @@ const detailStatusStyle = {
   Delivered:     'bg-green-400 text-green-900',
 }
 
-function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
+function SendToProductionModal({ item, onClose, onSave, machines, employees }) {
+  const { t } = useTranslation()
+  const remaining = item.quantity - (item.producedQuantity || 0) - (item.inProductionQuantity || 0)
+  const [form, setForm] = useState({
+    machineId: '',
+    operatorId: '',
+    quantity: remaining,
+  })
+  const [errors, setErrors] = useState({})
+
+  const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
+  
+  function handleSave() {
+    const e = {}
+    if (!form.machineId) e.machineId = 'Required'
+    if (!form.operatorId) e.operatorId = 'Required'
+    if (!form.quantity || form.quantity < 1 || form.quantity > remaining) e.quantity = 'Invalid'
+    
+    if (Object.keys(e).length > 0) {
+      setErrors(e)
+      return
+    }
+    
+    onSave({ ...form, orderItemId: item.id })
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-3 md:p-6" onClick={onClose}>
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[400px] max-w-none p-4 md:p-6 flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-on-surface">{t('orders.sendToProduction')}</h2>
+          <button onClick={onClose} className="text-text-muted hover:text-error">
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        
+        <div className="mb-4 bg-surface-container-high rounded-xl p-3">
+          <p className="text-xs font-bold text-on-surface mb-1">{item.productName}</p>
+          <div className="flex justify-between text-[11px] text-text-muted">
+            <span>{t('orders.total')}: {item.quantity}</span>
+            <span>{t('orders.remaining')}: {remaining}</span>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-text-muted mb-1">{t('productionTasks.machine')} *</label>
+            <select className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.machineId ? 'border-error' : 'border-theme-border'}`} value={form.machineId} onChange={set('machineId')}>
+              <option value="">{t('common.select')}</option>
+              {machines.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-text-muted mb-1">{t('productionTasks.operator')} *</label>
+            <select className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.operatorId ? 'border-error' : 'border-theme-border'}`} value={form.operatorId} onChange={set('operatorId')}>
+              <option value="">{t('common.select')}</option>
+              {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-text-muted mb-1">{t('orders.qty')} *</label>
+            <input type="number" min="1" max={remaining} className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.quantity ? 'border-error' : 'border-theme-border'}`} value={form.quantity} onChange={set('quantity')} />
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition">
+            {t('common.cancel')}
+          </button>
+          <button onClick={handleSave} className="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition">
+            {t('common.save')}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function OrderDetailModal({ order, onClose, currentUser, onStatusChange, machines, employees, addProductionTask }) {
   const { t } = useTranslation()
   const { userStatusPermissions } = useData()
   const [localStatus, setLocalStatus] = useState(order.status)
@@ -79,6 +157,7 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
   const canChangeStatus = isAdmin || canAdvanceFromCurrent
 
   const currency = order.items?.[0]?.currency || 'TRY'
+  const [productionItem, setProductionItem] = useState(null)
 
   function confirmStatusChange() {
     setLocalStatus(pendingStatus)
@@ -93,7 +172,14 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
         <div className="flex flex-col sm:flex-row items-start justify-between mb-4 md:mb-6 gap-3 md:gap-4">
           <div>
             <p className="text-[10px] md:text-xs font-mono text-text-muted mb-0.5 md:mb-1">{order.code}</p>
-            <h2 className="text-base md:text-xl font-bold text-on-surface leading-tight">{order.customer?.name || '—'}</h2>
+            <h2 className="text-base md:text-xl font-bold text-on-surface leading-tight flex flex-col items-start gap-1">
+              <span>{order.customer?.name || '—'}</span>
+              {(order.customer?.accountCode || order.customer?.code) && (
+                <span className="text-[11px] font-bold text-amber-500 uppercase tracking-widest">
+                  {order.customer.accountCode || order.customer.code}
+                </span>
+              )}
+            </h2>
             <p className="text-xs md:text-sm text-text-muted mt-1 md:mt-0.5">Sales Rep: {order.salesRep?.name || order.employee?.name || '—'}</p>
           </div>
           <div className="flex items-center gap-3">
@@ -117,16 +203,30 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
                 <th className="text-right px-4 py-2.5 font-semibold">{t('orders.unitPrice')}</th>
                 <th className="text-right px-4 py-2.5 font-semibold">{t('orders.vat')}</th>
                 <th className="text-right px-4 py-2.5 font-semibold">{t('orders.lineTotal')}</th>
+                <th className="text-center px-4 py-2.5 font-semibold">{t('productionTasks.title')}</th>
               </tr>
             </thead>
             <tbody className="block md:table-row-group">
               {(order.items || []).map((it, i) => {
                 const lineTotal = (parseFloat(it.unitPrice) || 0) * (parseInt(it.quantity) || 0) * (1 + (it.vat || 0) / 100)
+                const produced = it.producedQuantity || 0
+                const inProd = it.inProductionQuantity || 0
+                const remaining = it.quantity - produced - inProd
+                const itemStatus = it.status || 'Processing'
+                const canProduce = remaining > 0
+
                 return (
                   <tr key={i} className="block md:table-row border-b border-theme-border last:border-0 p-2 md:p-0">
                     <td className="block md:table-cell px-2 md:px-4 py-1 md:py-3 text-on-surface font-semibold md:font-medium text-[11px] md:text-sm">
                       <span className="md:hidden text-[9px] font-bold uppercase text-text-muted block mb-0.5">{t('orders.product')}</span>
-                      {it.productName}
+                      <div className="flex flex-col">
+                        <span>{it.productName}</span>
+                        {itemStatus !== 'Processing' && (
+                          <span className={`inline-block mt-0.5 w-max px-1.5 py-0.5 rounded text-[9px] font-bold ${detailStatusStyle[itemStatus] || 'bg-surface-container-high'}`}>
+                            {itemStatus}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="flex md:table-cell justify-between items-center px-2 md:px-4 py-1 md:py-3 text-right text-text-muted text-[11px] md:text-sm">
                       <span className="md:hidden text-[9px] font-bold uppercase text-text-muted">{t('orders.qty')}</span>
@@ -154,12 +254,45 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
                         {lineTotal.toFixed(2)}
                       </div>
                     </td>
+                    <td className="block md:table-cell px-2 md:px-4 py-2 md:py-3 text-center border-t border-surface-container md:border-0 mt-2 md:mt-0">
+                      <div className="flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2">
+                        <div className="flex gap-1.5 text-[9px] md:text-[10px] font-bold items-center">
+                           <span className="text-green-700 bg-green-100 px-1 py-0.5 rounded" title="Produced">{produced}</span>
+                           <span className="text-white bg-orange-500 px-1 py-0.5 rounded shadow-sm" title="In Production">{inProd}</span>
+                           <span className="text-text-muted bg-surface-container-high px-1 py-0.5 rounded" title="Remaining">{remaining}</span>
+                        </div>
+                        {canProduce && isAdmin && (
+                          <button onClick={() => setProductionItem(it)} className="bg-primary/10 text-primary hover:bg-primary hover:text-white rounded px-2 py-1 text-[10px] font-bold transition-colors whitespace-nowrap">
+                            {t('orders.send')}
+                          </button>
+                        )}
+                      </div>
+                    </td>
                   </tr>
                 )
               })}
             </tbody>
           </table>
         </div>
+
+        {productionItem && (
+          <SendToProductionModal
+            item={productionItem}
+            machines={machines}
+            employees={employees}
+            onClose={() => setProductionItem(null)}
+            onSave={async (form) => {
+              try {
+                await addProductionTask(form)
+                setProductionItem(null)
+                // Refresh order item state by closing modal, wait it doesn't auto refresh modal. 
+                // That's fine, we will let it close and the user can see it when reopened.
+              } catch (err) {
+                alert(err.message)
+              }
+            }}
+          />
+        )}
 
         {/* Totals */}
         <div className="flex flex-col items-end gap-1 mb-4">
@@ -543,7 +676,7 @@ function loadImageAsBase64(url) {
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function Orders() {
   const { t } = useTranslation()
-  const { orders, addOrder, updateOrder, deleteOrder, syncAndRefreshOrders, customers, employees, products, isAdmin, permissions } = useData()
+  const { orders, addOrder, updateOrder, deleteOrder, syncAndRefreshOrders, customers, employees, products, machines, addProductionTask, isAdmin, permissions } = useData()
   const { user: currentUser, token } = useAuth()
   const [salesTeam, setSalesTeam] = useState([])
   const canDelete = isAdmin || currentUser?.department === 'Sales Manager'
@@ -577,6 +710,15 @@ export default function Orders() {
   const [exportOpen, setExportOpen] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
   const exportRef = useRef(null)
+
+  useEffect(() => {
+    if (detailOrder) {
+      const updated = orders.find(o => o.id === detailOrder.id)
+      if (updated) {
+        setDetailOrder(updated)
+      }
+    }
+  }, [orders])
 
   useEffect(() => {
     function handleClick(e) {
@@ -783,6 +925,7 @@ export default function Orders() {
       paymentMethod: item.paymentMethod || '',
       items: item.items?.length
         ? item.items.map((it) => ({
+            id: it.id,
             productName: it.productName,
             quantity: it.quantity,
             unitPrice: it.unitPrice,
@@ -1045,7 +1188,14 @@ export default function Orders() {
                     <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
                       <div className="flex items-center justify-between xl:justify-start">
                         <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.customer')}</span>
-                        <span className="font-medium text-xs lg:text-sm text-on-surface">{o.customer?.name || '—'}</span>
+                        <span className="font-medium text-xs lg:text-sm text-on-surface flex flex-col items-start gap-0.5">
+                          <span className="line-clamp-2">{o.customer?.name || '—'}</span>
+                          {(o.customer?.accountCode || o.customer?.code) && (
+                            <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">
+                              {o.customer.accountCode || o.customer.code}
+                            </span>
+                          )}
+                        </span>
                       </div>
                     </td>
                     <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
@@ -1116,7 +1266,17 @@ export default function Orders() {
         </div>
       </div>
 
-      {detailOrder && <OrderDetailModal order={detailOrder} onClose={() => setDetailOrder(null)} currentUser={currentUser} onStatusChange={handleStatusChange} />}
+      {detailOrder && (
+        <OrderDetailModal
+          order={detailOrder}
+          onClose={() => setDetailOrder(null)}
+          currentUser={currentUser}
+          onStatusChange={handleStatusChange}
+          machines={machines}
+          employees={employees}
+          addProductionTask={addProductionTask}
+        />
+      )}
 
       {confirmDeleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">

@@ -1,3 +1,4 @@
+const { getDecodedText } = require('./vioFetchHelper');
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
@@ -46,7 +47,7 @@ async function fetchProductsFromVio() {
       throw new Error(`Vio API Error: ${response.statusText}`);
     }
 
-    const responseText = await response.text();
+    const responseText = await getDecodedText(response);
     let data;
     try {
       data = (responseText && responseText.trim()) ? JSON.parse(responseText.trim()) : {};
@@ -102,7 +103,7 @@ async function fetchStockFromVio() {
       throw new Error(`Vio API Error: ${response.statusText}`);
     }
 
-    const responseText = await response.text();
+    const responseText = await getDecodedText(response);
     let data;
     try {
       data = (responseText && responseText.trim()) ? JSON.parse(responseText.trim()) : {};
@@ -156,7 +157,7 @@ async function fetchSingleVioProduct(stockNo) {
 
     if (!response.ok) return null;
 
-    const responseText = await response.text();
+    const responseText = await getDecodedText(response);
     let data;
     try {
       data = (responseText && responseText.trim()) ? JSON.parse(responseText.trim()) : {};
@@ -384,12 +385,12 @@ async function syncProductToVio(product, changedFields = null) {
 
     if (!response.ok) {
       console.error(`[VIO SYNC ERROR] Failed to sync product ${product.code}: HTTP ${response.status}`);
-      const text = await response.text();
+      const text = await getDecodedText(response);
       console.error(`[VIO SYNC RESPONSE] ${text}`);
       return false;
     }
 
-    const responseText = await response.text();
+    const responseText = await getDecodedText(response);
     let data;
     try {
       data = (responseText && responseText.trim()) ? JSON.parse(responseText.trim()) : {};
@@ -438,12 +439,12 @@ async function deleteProductFromVio(productCode) {
 
     if (!response.ok) {
       console.error(`[VIO SYNC ERROR] Failed to delete product ${productCode}: HTTP ${response.status}`);
-      const text = await response.text();
+      const text = await getDecodedText(response);
       console.error(`[VIO SYNC RESPONSE] ${text}`);
       throw new Error(text);
     }
 
-    const responseText = await response.text();
+    const responseText = await getDecodedText(response);
     let data;
     try {
       data = (responseText && responseText.trim()) ? JSON.parse(responseText.trim()) : {};
@@ -468,3 +469,4 @@ module.exports = {
   syncProductToVio,
   deleteProductFromVio
 };
+

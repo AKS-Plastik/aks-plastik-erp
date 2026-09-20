@@ -206,6 +206,7 @@ model Employee {
   siteVisits    SiteVisit[]
   attendances   Attendance[]
   leaveRequests LeaveRequest[]
+  productionTasks ProductionTask[]
   user          User?
 }
 
@@ -242,11 +243,17 @@ model OrderItem {
   currency    String  @default("USD")
   vat         Float   @default(0)
 
+  status               String @default("Pending")
+  producedQuantity     Int    @default(0)
+  inProductionQuantity Int    @default(0)
+
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId   String
   product   Product? @relation(fields: [productId], references: [id])
   productId String?
   productCode String?
+
+  productionTasks ProductionTask[]
 }
 
 model UserRole {
@@ -289,6 +296,27 @@ model Machine {
   createdAt           DateTime                   @default(now())
   maintenanceRecords  MachineMaintenanceRecord[]
   monthlyMaintenance  MachineMonthlyMaintenance[]
+  productionTasks     ProductionTask[]
+}
+
+model ProductionTask {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  quantity    Int      @default(0)
+  status      String   @default("open") // open, in-progress, completed, etc.
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  orderItemId String
+
+  machine     Machine  @relation(fields: [machineId], references: [id])
+  machineId   Int
+
+  operator    Employee @relation(fields: [operatorId], references: [id])
+  operatorId  String
 }
 
 model MachineMaintenanceRecord {

@@ -6,6 +6,13 @@ import * as XLSX from 'xlsx'
 
 const STATUSES = ['Scheduled', 'In Progress', 'Completed', 'Cancelled']
 
+const STATUS_KEYS = {
+  'Scheduled': 'scheduled',
+  'In Progress': 'inProgress',
+  'Completed': 'completed',
+  'Cancelled': 'cancelled'
+}
+
 const STATUS_STYLES = {
   'Scheduled':   { badge: 'status-scheduled-badge',   dot: 'status-scheduled-dot',              accent: 'status-scheduled-accent',  cardBg: 'bg-surface-container-lowest' },
   'In Progress': { badge: 'status-progress-badge',    dot: 'status-progress-dot animate-pulse', accent: 'status-progress-accent',   cardBg: 'status-progress-card' },
@@ -321,7 +328,7 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
             </Field>
             <Field label={t('common.status')} icon="flag">
               <select value={form.status} onChange={set('status')} className={inputCls}>
-                {STATUSES.map((s) => <option key={s}>{s}</option>)}
+                {STATUSES.map((s) => <option key={s} value={s}>{t('workOrders.' + STATUS_KEYS[s])}</option>)}
               </select>
             </Field>
             <FieldErr label={t('common.date')} icon="calendar_today" error={errors.date}>
@@ -353,7 +360,7 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
                     pendingStatus === s ? STATUS_CHANGE_ACTIVE[s] : STATUS_CHANGE_STYLES[s]
                   }`}
                 >
-                  {s}
+                  {t('workOrders.' + STATUS_KEYS[s])}
                 </button>
               ))}
             </div>
@@ -502,7 +509,7 @@ function VisitCard({ visit, onClick }) {
         </div>
         <span className={`px-2.5 py-1 rounded-full text-[10px] font-black inline-flex items-center gap-1.5 ${st.badge}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
-          {visit.status}
+          {t('workOrders.' + STATUS_KEYS[visit.status])}
         </span>
       </div>
 
@@ -695,7 +702,7 @@ export default function SiteVisits() {
                   : 'border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary'
               }`}
             >
-              {s || t('common.all')}
+              {s ? t('workOrders.' + STATUS_KEYS[s]) : t('common.all')}
             </button>
           ))}
         </div>
