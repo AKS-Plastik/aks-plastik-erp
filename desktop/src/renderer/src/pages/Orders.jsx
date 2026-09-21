@@ -71,9 +71,14 @@ const detailStatusStyle = {
 function SendToProductionModal({ item, onClose, onSave, machines, employees }) {
   const { t } = useTranslation()
   const remaining = item.quantity - (item.producedQuantity || 0) - (item.inProductionQuantity || 0)
+  const extrusionMachines = machines.filter(m => m.type === 'Extrusion' || !m.type || m.type === 'General')
+  const cuttingMachines = machines.filter(m => m.type === 'Cutting' || !m.type || m.type === 'General')
+
   const [form, setForm] = useState({
-    machineId: '',
-    operatorId: '',
+    extrusionMachineId: '',
+    extrusionOperatorId: '',
+    cuttingMachineId: '',
+    cuttingOperatorId: '',
     quantity: remaining,
   })
   const [errors, setErrors] = useState({})
@@ -82,8 +87,6 @@ function SendToProductionModal({ item, onClose, onSave, machines, employees }) {
   
   function handleSave() {
     const e = {}
-    if (!form.machineId) e.machineId = 'Required'
-    if (!form.operatorId) e.operatorId = 'Required'
     if (!form.quantity || form.quantity < 1 || form.quantity > remaining) e.quantity = 'Invalid'
     
     if (Object.keys(e).length > 0) {
@@ -113,19 +116,44 @@ function SendToProductionModal({ item, onClose, onSave, machines, employees }) {
         </div>
 
         <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">{t('productionTasks.machine')} *</label>
-            <select className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.machineId ? 'border-error' : 'border-theme-border'}`} value={form.machineId} onChange={set('machineId')}>
-              <option value="">{t('common.select')}</option>
-              {machines.map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">{t('productionTasks.operator')} *</label>
-            <select className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.operatorId ? 'border-error' : 'border-theme-border'}`} value={form.operatorId} onChange={set('operatorId')}>
-              <option value="">{t('common.select')}</option>
-              {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-            </select>
+          <div className="grid grid-cols-2 gap-4">
+            {/* Extrusion Section */}
+            <div className="space-y-3 bg-surface-container-high/50 p-3 rounded-xl border border-theme-border">
+              <h3 className="text-xs font-bold text-on-surface flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">precision_manufacturing</span> Ekstrüzyon (Plan)</h3>
+              <div>
+                <label className="block text-[10px] font-semibold text-text-muted mb-1">{t('productionTasks.machine')}</label>
+                <select className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-[11px] text-on-surface outline-none focus:border-primary border-theme-border`} value={form.extrusionMachineId} onChange={set('extrusionMachineId')}>
+                  <option value="">{t('common.select')}</option>
+                  {extrusionMachines.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.type || 'General'})</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold text-text-muted mb-1">{t('productionTasks.operator')}</label>
+                <select className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-[11px] text-on-surface outline-none focus:border-primary border-theme-border`} value={form.extrusionOperatorId} onChange={set('extrusionOperatorId')}>
+                  <option value="">{t('common.select')}</option>
+                  {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+                </select>
+              </div>
+            </div>
+
+            {/* Cutting Section */}
+            <div className="space-y-3 bg-surface-container-high/50 p-3 rounded-xl border border-theme-border">
+              <h3 className="text-xs font-bold text-on-surface flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">content_cut</span> Kesim (Plan)</h3>
+              <div>
+                <label className="block text-[10px] font-semibold text-text-muted mb-1">{t('productionTasks.machine')}</label>
+                <select className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-[11px] text-on-surface outline-none focus:border-primary border-theme-border`} value={form.cuttingMachineId} onChange={set('cuttingMachineId')}>
+                  <option value="">{t('common.select')}</option>
+                  {cuttingMachines.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.type || 'General'})</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-semibold text-text-muted mb-1">{t('productionTasks.operator')}</label>
+                <select className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-[11px] text-on-surface outline-none focus:border-primary border-theme-border`} value={form.cuttingOperatorId} onChange={set('cuttingOperatorId')}>
+                  <option value="">{t('common.select')}</option>
+                  {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+                </select>
+              </div>
+            </div>
           </div>
           <div>
             <label className="block text-xs font-semibold text-text-muted mb-1">{t('orders.qty')} *</label>
@@ -214,6 +242,7 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange, machine
                 const remaining = it.quantity - produced - inProd
                 const itemStatus = it.status || 'Processing'
                 const canProduce = remaining > 0
+                const activeTasks = (it.productionTasks || []).filter(task => task.status !== 'completed')
 
                 return (
                   <tr key={i} className="block md:table-row border-b border-theme-border last:border-0 p-2 md:p-0">
@@ -257,9 +286,11 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange, machine
                     <td className="block md:table-cell px-2 md:px-4 py-2 md:py-3 text-center border-t border-surface-container md:border-0 mt-2 md:mt-0">
                       <div className="flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2">
                         <div className="flex gap-1.5 text-[9px] md:text-[10px] font-bold items-center">
-                           <span className="text-green-700 bg-green-100 px-1 py-0.5 rounded" title="Produced">{produced}</span>
-                           <span className="text-white bg-orange-500 px-1 py-0.5 rounded shadow-sm" title="In Production">{inProd}</span>
                            <span className="text-text-muted bg-surface-container-high px-1 py-0.5 rounded" title="Remaining">{remaining}</span>
+                           <span className="text-white bg-orange-500 px-1 py-0.5 rounded shadow-sm" title="In Production">{inProd}</span>
+                           <span className="text-green-700 bg-green-100 px-1 py-0.5 rounded" title="Produced">{produced}</span>
+                           <span className="text-text-muted mx-0.5">=</span>
+                           <span className="text-primary bg-primary/10 px-1.5 py-0.5 rounded font-extrabold" title="Total">{it.quantity}</span>
                         </div>
                         {canProduce && isAdmin && (
                           <button onClick={() => setProductionItem(it)} className="bg-primary/10 text-primary hover:bg-primary hover:text-white rounded px-2 py-1 text-[10px] font-bold transition-colors whitespace-nowrap">
@@ -267,6 +298,19 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange, machine
                           </button>
                         )}
                       </div>
+                      {activeTasks.length > 0 && (
+                        <div className="mt-2 flex flex-col gap-1 items-center">
+                          {activeTasks.map(task => {
+                            const statusKey = `productionTasks.col${task.status.charAt(0).toUpperCase() + task.status.slice(1)}`
+                            return (
+                              <span key={task.id} className="text-[9px] font-semibold text-text-muted bg-surface-container-high px-2 py-0.5 rounded-md flex items-center gap-1 w-max shadow-sm border border-theme-border/50">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                {task.quantity} {it.product?.unit || ''} - {t(statusKey)}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 )

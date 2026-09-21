@@ -207,22 +207,26 @@ export default function Production() {
   async function handleAdvance(id, nextStatus) {
     const order = orders.find((o) => o.id === id)
     if (!order) return
-    await updateOrder(id, {
-      customerId: order.customerId,
-      employeeId: order.employeeId,
-      salesRepId: order.salesRepId,
-      status: nextStatus,
-      vat: order.vat,
-      notes: order.notes,
-      items: (order.items || []).map((it) => ({
-        productName: it.productName,
-        quantity: it.quantity,
-        unitPrice: it.unitPrice,
-        currency: it.currency || 'USD',
-        productId: it.productId || null,
-      })),
-    })
-    setDetailOrder((prev) => prev?.id === id ? { ...prev, status: nextStatus } : prev)
+    try {
+      await updateOrder(id, {
+        customerId: order.customerId,
+        employeeId: order.employeeId,
+        salesRepId: order.salesRepId,
+        status: nextStatus,
+        vat: order.vat,
+        notes: order.notes,
+        items: (order.items || []).map((it) => ({
+          productName: it.productName,
+          quantity: it.quantity,
+          unitPrice: it.unitPrice,
+          currency: it.currency || 'USD',
+          productId: it.productId || null,
+        })),
+      })
+      setDetailOrder((prev) => prev?.id === id ? { ...prev, status: nextStatus } : prev)
+    } catch (err) {
+      alert(t('common.error') + ': ' + (err.message || 'Bir hata oluştu. Önce tüm kalemleri üretin.'))
+    }
   }
 
   return (

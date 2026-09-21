@@ -253,7 +253,13 @@ model OrderItem {
   productId String?
   productCode String?
 
+  extrusionMachineId  Int?
+  extrusionOperatorId String?
+  cuttingMachineId    Int?
+  cuttingOperatorId   String?
+
   productionTasks ProductionTask[]
+  productionLogs  ProductionLog[]
 }
 
 model UserRole {
@@ -270,7 +276,19 @@ model RolePermission {
   @@unique([role, page])
 }
 
-model RoleStatusPermission {
+model ProductionLog {
+  id               String          @id @default(cuid())
+  orderItemId      String
+  productionTaskId String?
+  action           String
+  details          String          @db.Text
+  createdAt        DateTime        @default(now())
+
+  orderItem        OrderItem       @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  productionTask   ProductionTask? @relation(fields: [productionTaskId], references: [id], onDelete: SetNull)
+}
+
+model StatusPermission {
   id     Int    @id @default(autoincrement())
   role   String
   status String
@@ -282,6 +300,7 @@ model Machine {
   id                  Int                        @id @default(autoincrement())
   code                String                     @unique
   name                String
+  type                String                     @default("General") // Extrusion, Cutting, General
   manufacturer        String                     @default("")
   manufacturerCountry String                     @default("")
   manufacturerContact String                     @default("")
@@ -300,23 +319,26 @@ model Machine {
 }
 
 model ProductionTask {
-  id          String   @id @default(cuid())
-  code        String   @unique
-  quantity    Int      @default(0)
-  status      String   @default("open") // open, in-progress, completed, etc.
+  id          String    @id @default(cuid())
+  code        String    @unique
+  quantity    Int       @default(0)
+  status      String    @default("open") // open, extrusion, cutting, completed
+  date        String    @default("")
   startDate   DateTime?
   endDate     DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
-  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  orderItem   OrderItem  @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
   orderItemId String
 
-  machine     Machine  @relation(fields: [machineId], references: [id])
-  machineId   Int
+  machine     Machine?   @relation(fields: [machineId], references: [id])
+  machineId   Int?
 
-  operator    Employee @relation(fields: [operatorId], references: [id])
-  operatorId  String
+  operator    Employee?  @relation(fields: [operatorId], references: [id])
+  operatorId  String?
+
+  logs        ProductionLog[]
 }
 
 model MachineMaintenanceRecord {

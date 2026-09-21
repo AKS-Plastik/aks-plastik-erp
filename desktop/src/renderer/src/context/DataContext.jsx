@@ -558,8 +558,8 @@ export function DataProvider({ children }) {
     refreshOrders()
   }
 
-  async function moveProductionTask(id, status) {
-    const res = await fetch(`${API_URL}/production-tasks/${id}/move`, { method: 'PATCH', headers, body: JSON.stringify({ status }) })
+  async function moveProductionTask(id, status, extraData = {}) {
+    const res = await fetch(`${API_URL}/production-tasks/${id}/move`, { method: 'PATCH', headers, body: JSON.stringify({ status, ...extraData }) })
     if (!res.ok) throw new Error((await res.json()).error || 'Failed')
     const updated = await res.json()
     setProductionTasks((prev) => prev.map((t) => (t.id === id ? updated : t)))
@@ -569,6 +569,15 @@ export function DataProvider({ children }) {
   async function deleteProductionTask(id) {
     await fetch(`${API_URL}/production-tasks/${id}`, { method: 'DELETE', headers: authHeaders })
     setProductionTasks((prev) => prev.filter((t) => t.id !== id))
+    refreshOrders()
+  }
+
+  async function rolloverProductionTask(data) {
+    const res = await fetch(`${API_URL}/production-tasks/rollover`, { method: 'POST', headers, body: JSON.stringify(data) })
+    if (!res.ok) throw new Error((await res.json()).error || 'Failed')
+    
+    // Refresh entirely since a rollover might split tasks and change orders
+    refreshProductionTasks()
     refreshOrders()
   }
 
@@ -608,7 +617,7 @@ export function DataProvider({ children }) {
       uploadMachineManual, downloadMachineManual, deleteMachineManual,
       addMaintenanceRecord, deleteMaintenanceRecord,
       addMonthlyTask, updateMonthlyTask, deleteMonthlyTask,
-      productionTasks, addProductionTask, updateProductionTask, moveProductionTask, deleteProductionTask, refreshProductionTasks,
+      productionTasks, addProductionTask, updateProductionTask, moveProductionTask, deleteProductionTask, rolloverProductionTask, refreshProductionTasks,
       isAdmin,
     }}>
       {children}

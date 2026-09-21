@@ -1,17 +1,23 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useData } from '../context/DataContext'
 import * as XLSX from 'xlsx'
 
 const COLUMNS = [
   { id: 'open',        labelKey: 'productionTasks.colOpen',       icon: 'radio_button_unchecked', headerClass: 'bg-surface-container-high text-on-surface-variant', dotClass: 'bg-on-surface-variant/40' },
-  { id: 'in-progress', labelKey: 'productionTasks.colInProgress', icon: 'pending',                headerClass: 'status-progress-badge',  dotClass: 'status-progress-dot'  },
+  { id: 'extrusion',   labelKey: 'productionTasks.colExtrusion',  icon: 'precision_manufacturing', headerClass: 'status-progress-badge',  dotClass: 'status-progress-dot'  },
+  { id: 'cutting',     labelKey: 'productionTasks.colCutting',    icon: 'content_cut',            headerClass: 'bg-purple-100 text-purple-700',  dotClass: 'bg-purple-500'  },
   { id: 'completed',   labelKey: 'productionTasks.colCompleted',  icon: 'check_circle',           headerClass: 'status-completed-badge', dotClass: 'status-completed-dot' },
 ]
 
 function fmtDate(iso) {
   if (!iso) return '—'
   return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+}
+
+function getLocalTodayIso() {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
 function Field({ label, icon, error, align = 'center', children }) {
@@ -231,14 +237,14 @@ function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete,
   )
 }
 
-function KanbanCard({ task, onClick }) {
+function KanbanCard({ task, onClick, locked }) {
   const { t } = useTranslation()
   return (
     <div
-      draggable
-      onDragStart={(e) => e.dataTransfer.setData('taskId', task.id)}
+      draggable={!locked}
+      onDragStart={(e) => !locked && e.dataTransfer.setData('taskId', task.id)}
       onClick={onClick}
-      className="bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-slate-100 cursor-pointer hover:shadow-md hover:border-primary/20 active:scale-[0.98] transition-all select-none"
+      className={`bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-slate-100 cursor-pointer hover:shadow-md hover:border-primary/20 transition-all select-none ${locked ? 'opacity-80 grayscale-[20%]' : 'active:scale-[0.98]'}`}
     >
       <div className="flex justify-between items-start mb-2">
         <p className="text-sm font-bold text-on-surface leading-snug">{task.orderItem?.productName}</p>
@@ -278,14 +284,249 @@ function KanbanCard({ task, onClick }) {
   )
 }
 
+function EodWizardModal({ tasks, onProcess }) {
+  const { t } = useTranslation()
+  const todayIso = getLocalTodayIso()
+  
+  const [initialTasks] = useState(tasks)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const task = initialTasks[currentIndex]
+  
+  const [action, setAction] = useState('rollover')
+  const [targetStatus, setTargetStatus] = useState(task?.status || 'open')
+  const [completedQty, setCompletedQty] = useState(0)
+  
+  const [distributions, setDistributions] = useState({ completed: 0, open: 0, extrusion: 0, cutting: 0 })
+
+  if (!task) return null
+
+  const isProd = task.status === 'extrusion' || task.status === 'cutting'
+
+  const distTotal = (parseInt(distributions.completed) || 0) + 
+                    (parseInt(distributions.open) || 0) + 
+                    (parseInt(distributions.extrusion) || 0) + 
+                    (parseInt(distributions.cutting) || 0)
+  const isDistValid = distTotal === task.quantity
+
+  async function handleNext() {
+    if (action === 'split' && isProd) {
+      await onProcess({
+        taskId: task.id,
+        action: 'distribute',
+        targetDate: todayIso,
+        distributions
+      })
+    } else {
+      await onProcess({
+         taskId: task.id,
+         action,
+         targetDate: todayIso,
+         targetStatus,
+         completedQuantity: completedQty
+      })
+    }
+    
+    if (currentIndex < initialTasks.length - 1) {
+      setCurrentIndex(currentIndex + 1)
+      setAction('rollover')
+      setTargetStatus(initialTasks[currentIndex + 1].status || 'open')
+      setCompletedQty(0)
+      setDistributions({ completed: 0, open: 0, extrusion: 0, cutting: 0 })
+    }
+  }
+
+  const isNextDisabled = action === 'split' && (
+    isProd ? !isDistValid : (completedQty < 1 || completedQty >= task.quantity)
+  )
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+       <div className="bg-surface-container-lowest rounded-2xl w-[95%] md:w-[500px] p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center gap-3 text-error mb-4">
+            <span className="material-symbols-outlined text-3xl">warning</span>
+            <h2 className="text-lg font-bold">Geçmişten Kalan Görevler ({currentIndex + 1}/{tasks.length})</h2>
+          </div>
+          <p className="text-sm text-on-surface-variant mb-6">
+            Dünden veya daha eski tarihlerden kalan tamamlanmamış görevler var. Bugünün panosuna geçmeden önce bu görevlere ne olacağına karar vermelisiniz.
+          </p>
+
+          <div className="bg-surface-container-low p-4 rounded-xl mb-6">
+             <p className="font-bold text-sm mb-1">{task.orderItem?.productName}</p>
+             <p className="text-xs text-on-surface-variant">Toplam Miktar: {task.quantity} {task.orderItem?.product?.unit || 'pcs'}</p>
+             <p className="text-xs text-on-surface-variant mt-1">Eski Tarih: {task.date} | Eski Statü: {t(`productionTasks.col${task.status.charAt(0).toUpperCase() + task.status.slice(1)}`)}</p>
+          </div>
+
+          <div className="space-y-4">
+             <label className="flex items-center gap-2 text-sm font-bold cursor-pointer">
+                <input type="radio" checked={action === 'rollover'} onChange={() => setAction('rollover')} className="w-4 h-4 text-primary" />
+                Tamamını Bugüne Devret
+             </label>
+             <label className="flex items-center gap-2 text-sm font-bold cursor-pointer">
+                <input type="radio" checked={action === 'split'} onChange={() => setAction('split')} className="w-4 h-4 text-primary" />
+                Bölerek Devret (Kısmi Tamamlama)
+             </label>
+
+             {action === 'split' && !isProd && (
+               <div className="pl-6 flex flex-col gap-2">
+                 <label className="text-xs font-bold text-on-surface-variant">Eski Tarihte Tamamlanan Miktar</label>
+                 <input type="number" min="1" max={task.quantity - 1} value={completedQty} onChange={e => setCompletedQty(e.target.value)} className="bg-surface-container-high border-none outline-none p-2 rounded-md text-sm w-32 focus:ring-2 ring-primary" />
+               </div>
+             )}
+
+             {action === 'split' && isProd && (
+               <div className="pl-6 flex flex-col gap-3 mt-2">
+                 <p className="text-xs font-medium text-on-surface-variant mb-1 border-b border-theme-border pb-2">
+                   Lütfen bu <span className="font-bold text-on-surface">{task.quantity}</span> adetlik görevin nasıl sonuçlandığını dağıtın:
+                 </p>
+                 <div className="grid grid-cols-2 gap-3">
+                   <div className="flex flex-col gap-1">
+                     <label className="text-[10px] font-bold text-on-surface-variant">Dün Biten (Completed)</label>
+                     <input type="number" min="0" max={task.quantity} value={distributions.completed} onChange={e => setDistributions(d => ({ ...d, completed: e.target.value }))} className="bg-surface-container-high border-none outline-none p-2 rounded-md text-sm focus:ring-2 ring-primary" />
+                   </div>
+                   <div className="flex flex-col gap-1">
+                     <label className="text-[10px] font-bold text-on-surface-variant">Bugün Açık (Open)</label>
+                     <input type="number" min="0" max={task.quantity} value={distributions.open} onChange={e => setDistributions(d => ({ ...d, open: e.target.value }))} className="bg-surface-container-high border-none outline-none p-2 rounded-md text-sm focus:ring-2 ring-primary" />
+                   </div>
+                   <div className="flex flex-col gap-1">
+                     <label className="text-[10px] font-bold text-on-surface-variant">Bugün Ekstrüzyonda</label>
+                     <input type="number" min="0" max={task.quantity} value={distributions.extrusion} onChange={e => setDistributions(d => ({ ...d, extrusion: e.target.value }))} className="bg-surface-container-high border-none outline-none p-2 rounded-md text-sm focus:ring-2 ring-primary" />
+                   </div>
+                   <div className="flex flex-col gap-1">
+                     <label className="text-[10px] font-bold text-on-surface-variant">Bugün Kesimde</label>
+                     <input type="number" min="0" max={task.quantity} value={distributions.cutting} onChange={e => setDistributions(d => ({ ...d, cutting: e.target.value }))} className="bg-surface-container-high border-none outline-none p-2 rounded-md text-sm focus:ring-2 ring-primary" />
+                   </div>
+                 </div>
+                 <div className={`text-xs font-bold mt-2 ${isDistValid ? 'text-success' : 'text-error'}`}>
+                   Dağıtılan Toplam: {distTotal} / {task.quantity} {isDistValid ? '✓' : '✗'}
+                 </div>
+               </div>
+             )}
+
+             {(action === 'rollover' || (action === 'split' && !isProd)) && (
+               <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-theme-border">
+                  <label className="text-xs font-bold text-on-surface-variant">Bugün Hangi Aşamadan Devam Edecek?</label>
+                  <select value={targetStatus} onChange={e => setTargetStatus(e.target.value)} className="bg-surface-container-high border-none outline-none p-2.5 rounded-md text-sm w-full focus:ring-2 ring-primary font-semibold">
+                     <option value="open">{t('productionTasks.colOpen')}</option>
+                     <option value="extrusion">{t('productionTasks.colExtrusion')}</option>
+                     <option value="cutting">{t('productionTasks.colCutting')}</option>
+                  </select>
+               </div>
+             )}
+          </div>
+
+          <div className="flex justify-end mt-8">
+             <button onClick={handleNext} disabled={isNextDisabled} className="bg-primary text-white px-6 py-2 rounded-xl font-bold hover:opacity-90 disabled:opacity-50 transition-all">
+               Onayla ve Geç
+             </button>
+          </div>
+       </div>
+     </div>
+  )
+}
+
+function PendingMoveModal({ moveData, machines, employees, onClose, onConfirm }) {
+  const { t } = useTranslation()
+  const { task, columnId } = moveData
+  
+  // Default values from orderItem (if planned)
+  const isExtrusion = columnId === 'extrusion'
+  const isCutting = columnId === 'cutting'
+
+  const targetMachines = machines.filter(m => m.type === (isExtrusion ? 'Extrusion' : 'Cutting') || !m.type || m.type === 'General')
+  
+  const plannedMachineId = isExtrusion ? task.orderItem?.extrusionMachineId : (isCutting ? task.orderItem?.cuttingMachineId : '')
+  const plannedOperatorId = isExtrusion ? task.orderItem?.extrusionOperatorId : (isCutting ? task.orderItem?.cuttingOperatorId : '')
+
+  const [form, setForm] = useState({
+    machineId: task.machineId || plannedMachineId || '',
+    operatorId: task.operatorId || plannedOperatorId || ''
+  })
+  const [errors, setErrors] = useState({})
+
+  const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
+
+  function handleConfirm() {
+    const e = {}
+    if (!form.machineId) e.machineId = 'Required'
+    if (!form.operatorId) e.operatorId = 'Required'
+    if (Object.keys(e).length > 0) {
+      setErrors(e)
+      return
+    }
+    onConfirm(form)
+  }
+
+  const columnLabel = isExtrusion ? t('productionTasks.colExtrusion') : t('productionTasks.colCutting')
+  const icon = isExtrusion ? 'precision_manufacturing' : 'content_cut'
+
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-3 md:p-6" onClick={onClose}>
+      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[400px] max-w-none p-4 md:p-6 flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-on-surface flex items-center gap-2">
+            <span className="material-symbols-outlined">{icon}</span> 
+            Aşama Geçişi: {columnLabel}
+          </h2>
+          <button onClick={onClose} className="text-text-muted hover:text-error">
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+
+        <div className="mb-4 bg-surface-container-high rounded-xl p-3">
+          <p className="text-xs font-bold text-on-surface mb-1">{task.orderItem?.productName}</p>
+          <p className="text-[11px] text-text-muted">Bu görev {columnLabel} aşamasına geçiyor. Lütfen makine ve operatörü doğrulayın.</p>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-text-muted mb-1">{t('productionTasks.machine')} *</label>
+            <select className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.machineId ? 'border-error' : 'border-theme-border'}`} value={form.machineId} onChange={set('machineId')}>
+              <option value="">{t('common.select')}</option>
+              {targetMachines.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.type || 'General'})</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-text-muted mb-1">{t('productionTasks.operator')} *</label>
+            <select className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.operatorId ? 'border-error' : 'border-theme-border'}`} value={form.operatorId} onChange={set('operatorId')}>
+              <option value="">{t('common.select')}</option>
+              {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="flex gap-3 mt-6">
+          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition">
+            {t('common.cancel')}
+          </button>
+          <button onClick={handleConfirm} className="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition">
+            Onayla ve Taşı
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ProductionTasks() {
   const { t } = useTranslation()
-  const { machines, employees, productionTasks, updateProductionTask, moveProductionTask, deleteProductionTask, isAdmin } = useData()
+  const { machines, employees, productionTasks, updateProductionTask, moveProductionTask, deleteProductionTask, rolloverProductionTask, isAdmin } = useData()
   const [detailTask, setDetailTask] = useState(null)
+  const [pendingMove, setPendingMove] = useState(null)
   const [dragOverColumn, setDragOverColumn] = useState(null)
   const [search, setSearch] = useState('')
+  const dateInputRef = useRef(null)
 
-  const activeTasks = productionTasks || []
+  const todayIso = getLocalTodayIso()
+  const [currentDate, setCurrentDate] = useState(todayIso)
+
+  // Rollover/EOD Wizard Logic
+  // Find tasks that belong to past days and are not completed
+  const pendingPastTasks = (productionTasks || []).filter(t => t.date && t.date < todayIso && t.status !== 'completed')
+  const showEodWizard = pendingPastTasks.length > 0
+
+  // The active board tasks are filtered by the selected currentDate
+  const activeTasks = (productionTasks || []).filter(t => (t.date || todayIso) === currentDate)
+  const isPastBoard = currentDate < todayIso
 
   function handleExport() {
     const rows = activeTasks.map((t) => ({
@@ -317,13 +558,24 @@ export default function ProductionTasks() {
   })
 
   function handleDragOver(e) {
+    if (isPastBoard || showEodWizard) return;
     e.preventDefault()
   }
 
   function handleDrop(e, columnId) {
+    if (isPastBoard || showEodWizard) return;
     e.preventDefault()
     const id = e.dataTransfer.getData('taskId')
-    if (id) moveProductionTask(id, columnId)
+    if (id) {
+      if (columnId === 'extrusion' || columnId === 'cutting') {
+        const task = productionTasks.find(t => t.id === id)
+        if (task && task.status !== columnId) {
+          setPendingMove({ task, columnId })
+        }
+      } else {
+        moveProductionTask(id, columnId)
+      }
+    }
     setDragOverColumn(null)
   }
 
@@ -345,15 +597,64 @@ export default function ProductionTasks() {
         />
       )}
 
+      {pendingMove && (
+        <PendingMoveModal
+          moveData={pendingMove}
+          machines={machines}
+          employees={employees}
+          onClose={() => setPendingMove(null)}
+          onConfirm={(extraData) => {
+            moveProductionTask(pendingMove.task.id, pendingMove.columnId, extraData)
+            setPendingMove(null)
+          }}
+        />
+      )}
+      
+      {showEodWizard && isAdmin && (
+        <EodWizardModal 
+          tasks={pendingPastTasks} 
+          onProcess={async (data) => {
+            try {
+              await rolloverProductionTask(data)
+            } catch (err) {
+              alert(err.message)
+            }
+          }} 
+        />
+      )}
+
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6 mb-6 md:mb-8">
         <div>
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-on-surface mb-1 md:mb-2">{t('productionTasks.title')}</h1>
+          <div className="flex items-center gap-3 mb-1 md:mb-2">
+            <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-on-surface">{t('productionTasks.title')}</h1>
+            {isPastBoard && (
+              <span className="bg-error/10 text-error px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 uppercase tracking-wider">
+                <span className="material-symbols-outlined text-[14px]">lock</span>
+                Geçmiş Gün (Kilitli)
+              </span>
+            )}
+          </div>
           <p className="text-on-surface-variant text-xs md:text-sm lg:text-base">
             {t('productionTasks.subtitle')}
           </p>
         </div>
         <div className="flex items-stretch gap-3 md:gap-4 self-start md:self-auto">
+          {/* Date Picker */}
+          <div 
+            onClick={() => dateInputRef.current?.showPicker()}
+            className="bg-surface-container-lowest border border-theme-border rounded-xl lg:rounded-2xl px-3 py-2 lg:px-4 lg:py-3 flex items-center gap-2 cursor-pointer hover:bg-surface-container-low transition-colors select-none"
+          >
+            <span className="material-symbols-outlined text-on-surface-variant text-[18px]">calendar_month</span>
+            <input 
+              ref={dateInputRef}
+              type="date" 
+              max={todayIso}
+              value={currentDate} 
+              onChange={e => setCurrentDate(e.target.value)}
+              className="bg-transparent border-none outline-none text-xs md:text-sm font-bold text-on-surface uppercase tracking-wider cursor-pointer w-full pointer-events-none [&::-webkit-calendar-picker-indicator]:hidden"
+            />
+          </div>
           <div className="bg-surface-container-lowest rounded-xl lg:rounded-2xl px-4 py-2 lg:px-5 lg:py-3 flex items-center gap-3 lg:gap-4 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-surface-tint" />
             <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-lg lg:rounded-xl bg-surface-container-high flex items-center justify-center flex-shrink-0">
@@ -420,6 +721,7 @@ export default function ProductionTasks() {
                   <KanbanCard
                     key={task.id}
                     task={task}
+                    locked={isPastBoard || showEodWizard}
                     onClick={() => setDetailTask(task)}
                   />
                 ))}

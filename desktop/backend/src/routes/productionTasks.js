@@ -29,7 +29,7 @@ router.get('/', async (req, res) => {
 // Create a new production task
 router.post('/', async (req, res) => {
   try {
-    const { orderItemId, machineId, operatorId, quantity } = req.body
+    const { orderItemId, extrusionMachineId, extrusionOperatorId, cuttingMachineId, cuttingOperatorId, quantity, date } = req.body
     
     // Check orderItem limits
     const orderItem = await prisma.orderItem.findUnique({ where: { id: orderItemId } })
@@ -48,10 +48,11 @@ router.post('/', async (req, res) => {
         data: {
           code,
           orderItemId,
-          machineId: parseInt(machineId),
-          operatorId,
           quantity: parseInt(quantity),
           status: 'open',
+          date: date || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`,
+          machineId: extrusionMachineId ? parseInt(extrusionMachineId) : null,
+          operatorId: extrusionOperatorId || null,
         },
         include: {
           orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true } },
@@ -61,9 +62,13 @@ router.post('/', async (req, res) => {
       }),
       prisma.orderItem.update({
         where: { id: orderItemId },
-        data: {
+        data: { 
           inProductionQuantity: { increment: parseInt(quantity) },
-          status: 'In-Production'
+          status: 'In-Production',
+          ...(extrusionMachineId && { extrusionMachineId: parseInt(extrusionMachineId) }),
+          ...(extrusionOperatorId && { extrusionOperatorId }),
+          ...(cuttingMachineId && { cuttingMachineId: parseInt(cuttingMachineId) }),
+          ...(cuttingOperatorId && { cuttingOperatorId })
         }
       })
     ])
@@ -87,7 +92,7 @@ router.post('/', async (req, res) => {
 // Update production task status (e.g. from Kanban)
 router.patch('/:id/move', async (req, res) => {
   try {
-    const { status } = req.body
+    const { status, machineId, operatorId } = req.body
     const task = await prisma.productionTask.findUnique({ 
       where: { id: req.params.id },
       include: { orderItem: { include: { order: true } } }
@@ -97,10 +102,19 @@ router.patch('/:id/move', async (req, res) => {
 
     const updates = []
     
+    const shouldClearAssignment = status !== task.status && status !== 'completed'
+
+    const updatedData = { status }
+    if (machineId !== undefined) updatedData.machineId = machineId ? parseInt(machineId) : null
+    else if (shouldClearAssignment) updatedData.machineId = null
+
+    if (operatorId !== undefined) updatedData.operatorId = operatorId || null
+    else if (shouldClearAssignment) updatedData.operatorId = null
+
     // Update the task status
     updates.push(prisma.productionTask.update({
       where: { id: task.id },
-      data: { status },
+      data: updatedData,
       include: {
         orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true } },
         machine: true,
@@ -199,6 +213,204 @@ router.delete('/:id', async (req, res) => {
       await prisma.productionTask.delete({ where: { id: req.params.id } })
     }
     res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// Rollover or Split task
+router.post('/rollover', async (req, res) => {
+  try {
+    const { taskId, action, targetDate, targetStatus, completedQuantity } = req.body
+    const task = await prisma.productionTask.findUnique({ where: { id: taskId }, include: { orderItem: true } })
+    if (!task) return res.status(404).json({ error: 'Task not found' })
+
+    if (action === 'rollover') {
+      const newStatus = targetStatus || task.status
+      const shouldClear = newStatus !== task.status && newStatus !== 'completed'
+      
+      const updated = await prisma.productionTask.update({
+        where: { id: taskId },
+        data: { 
+          date: targetDate, 
+          status: newStatus,
+          ...(shouldClear ? { machineId: null, operatorId: null } : {})
+        },
+        include: {
+          orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true } },
+          machine: true,
+          operator: true,
+        }
+      })
+      await prisma.productionLog.create({
+        data: {
+          orderItemId: task.orderItemId,
+          productionTaskId: taskId,
+          action: 'Rollover',
+          details: `Rolled over from ${task.date} to ${targetDate}. Status changed from ${task.status} to ${targetStatus || task.status}. Quantity: ${task.quantity}.`
+        }
+      })
+      res.json({ action: 'rollover', task: updated })
+    } else if (action === 'split') {
+      const compQty = parseInt(completedQuantity)
+      if (compQty <= 0 || compQty >= task.quantity) return res.status(400).json({ error: 'Invalid split quantity' })
+      
+      const remainQty = task.quantity - compQty
+      
+      const updates = [
+        prisma.productionLog.create({
+          data: {
+            orderItemId: task.orderItemId,
+            productionTaskId: taskId,
+            action: 'Split Rollover',
+            details: `Split from ${task.date} to ${targetDate}. ${compQty} completed, ${remainQty} moved to ${targetStatus || task.status}.`
+          }
+        }),
+        prisma.productionTask.update({
+          where: { id: taskId },
+          data: { quantity: compQty, status: 'completed' }
+        }),
+        prisma.orderItem.update({
+          where: { id: task.orderItemId },
+          data: {
+            inProductionQuantity: { decrement: compQty },
+            producedQuantity: { increment: compQty }
+          }
+        }),
+        prisma.productionTask.create({
+          data: {
+            code: `PT-${String(Date.now()).slice(-5)}`,
+            orderItemId: task.orderItemId,
+            machineId: task.status === (targetStatus || task.status) ? task.machineId : null,
+            operatorId: task.status === (targetStatus || task.status) ? task.operatorId : null,
+            quantity: remainQty,
+            status: targetStatus || task.status,
+            date: targetDate
+          },
+          include: {
+            orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true } },
+            machine: true,
+            operator: true,
+          }
+        })
+      ]
+      
+      const results = await prisma.$transaction(updates)
+      const newTask = results[3]
+      
+      const updatedItem = await prisma.orderItem.findUnique({ where: { id: task.orderItemId } })
+      if (updatedItem.producedQuantity >= updatedItem.quantity) {
+        await prisma.orderItem.update({ where: { id: updatedItem.id }, data: { status: 'Production Completed' } })
+      }
+      
+      const allItems = await prisma.orderItem.findMany({ where: { orderId: task.orderItem.orderId } })
+      const allCompleted = allItems.every(i => i.producedQuantity >= i.quantity)
+      const order = await prisma.order.findUnique({ where: { id: task.orderItem.orderId } })
+      
+      if (allCompleted && order.status !== 'Production Completed') {
+        await prisma.order.update({ where: { id: task.orderItem.orderId }, data: { status: 'Production Completed' } })
+      }
+      
+      res.json({ action: 'split', originalTask: results[1], newTask })
+    } else if (action === 'distribute') {
+      const { completed, open, extrusion, cutting } = req.body.distributions
+      const comp = parseInt(completed) || 0
+      const opn = parseInt(open) || 0
+      const ext = parseInt(extrusion) || 0
+      const cut = parseInt(cutting) || 0
+      
+      const total = comp + opn + ext + cut
+      if (total !== task.quantity) return res.status(400).json({ error: 'Distributions total must equal task quantity' })
+      
+      const updates = []
+      
+      updates.push(prisma.productionLog.create({
+        data: {
+          orderItemId: task.orderItemId,
+          productionTaskId: comp > 0 ? task.id : null,
+          action: 'Distributed Rollover',
+          details: `Distributed from ${task.date} to ${targetDate}. Original qty: ${task.quantity}. Completed: ${comp}, Open: ${opn}, Extrusion: ${ext}, Cutting: ${cut}`
+        }
+      }))
+      
+      if (comp > 0) {
+        updates.push(prisma.productionTask.update({
+          where: { id: taskId },
+          data: { quantity: comp, status: 'completed' }
+        }))
+        updates.push(prisma.orderItem.update({
+          where: { id: task.orderItemId },
+          data: {
+            inProductionQuantity: { decrement: comp },
+            producedQuantity: { increment: comp }
+          }
+        }))
+      } else {
+        updates.push(prisma.productionTask.delete({
+          where: { id: taskId }
+        }))
+      }
+      
+      if (opn > 0) {
+        updates.push(prisma.productionTask.create({
+          data: {
+            code: `PT-${String(Date.now() + 1).slice(-5)}`,
+            orderItemId: task.orderItemId,
+            machineId: null,
+            operatorId: null,
+            quantity: opn,
+            status: 'open',
+            date: targetDate
+          }
+        }))
+      }
+      if (ext > 0) {
+        updates.push(prisma.productionTask.create({
+          data: {
+            code: `PT-${String(Date.now() + 2).slice(-5)}`,
+            orderItemId: task.orderItemId,
+            machineId: task.status === 'extrusion' ? task.machineId : null,
+            operatorId: task.status === 'extrusion' ? task.operatorId : null,
+            quantity: ext,
+            status: 'extrusion',
+            date: targetDate
+          }
+        }))
+      }
+      if (cut > 0) {
+        updates.push(prisma.productionTask.create({
+          data: {
+            code: `PT-${String(Date.now() + 3).slice(-5)}`,
+            orderItemId: task.orderItemId,
+            machineId: task.status === 'cutting' ? task.machineId : null,
+            operatorId: task.status === 'cutting' ? task.operatorId : null,
+            quantity: cut,
+            status: 'cutting',
+            date: targetDate
+          }
+        }))
+      }
+      
+      await prisma.$transaction(updates)
+      
+      if (comp > 0) {
+        const updatedItem = await prisma.orderItem.findUnique({ where: { id: task.orderItemId } })
+        if (updatedItem.producedQuantity >= updatedItem.quantity) {
+          await prisma.orderItem.update({ where: { id: updatedItem.id }, data: { status: 'Production Completed' } })
+        }
+        const allItems = await prisma.orderItem.findMany({ where: { orderId: task.orderItem.orderId } })
+        const allCompleted = allItems.every(i => i.producedQuantity >= i.quantity)
+        const order = await prisma.order.findUnique({ where: { id: task.orderItem.orderId } })
+        
+        if (allCompleted && order.status !== 'Production Completed') {
+          await prisma.order.update({ where: { id: task.orderItem.orderId }, data: { status: 'Production Completed' } })
+        }
+      }
+      
+      res.json({ action: 'distribute', success: true })
+    } else {
+      res.status(400).json({ error: 'Invalid action' })
+    }
   } catch (err) {
     res.status(500).json({ error: err.message })
   }

@@ -41,6 +41,7 @@
     "later": "Sonra"
   },
   "common": {
+    "select": "Seçiniz",
     "cancel": "İptal",
     "save": "Kaydet",
     "delete": "Sil",
@@ -644,7 +645,8 @@
     "totalTasks": "Toplam Görev",
     "searchPlaceholder": "Görev, makine veya operatör ara...",
     "colOpen": "Açık",
-    "colInProgress": "Üretimde",
+    "colExtrusion": "Üretimde - Ekstrüzyon",
+    "colCutting": "Üretimde - Kesim",
     "colCompleted": "Tamamlandı",
     "machine": "Makine",
     "operator": "Operatör",

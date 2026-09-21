@@ -77,6 +77,7 @@ function MachineViewModal({ machine, onClose, onEdit }) {
             <div className="grid grid-cols-2 gap-3 md:gap-4">
               {field('Machine Code', machine.code, 'tag')}
               {field('Machine Name', machine.name, 'precision_manufacturing')}
+              {field('Type', machine.type || 'General', 'category')}
               {field('Status', machine.status, 'toggle_on')}
               {field('Location / Department', machine.location, 'location_on')}
               {field('Production Year', machine.productionYear, 'calendar_today')}
@@ -199,6 +200,7 @@ function MachineModal({ machine, onClose, onSave }) {
   const [form, setForm] = useState(machine ? {
     code: machine.code || '',
     name: machine.name || '',
+    type: machine.type || 'General',
     manufacturer: machine.manufacturer || '',
     manufacturerCountry: machine.manufacturerCountry || '',
     manufacturerContact: machine.manufacturerContact || '',
@@ -311,6 +313,14 @@ function MachineModal({ machine, onClose, onSave }) {
                 <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">{t('common.status')}</label>
                 <select className={inp()} value={form.status} onChange={set('status')}>
                   {MACHINE_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">Makine Türü</label>
+                <select className={inp()} value={form.type} onChange={set('type')}>
+                  <option value="General">Genel (General)</option>
+                  <option value="Extrusion">Ekstrüzyon (Extrusion)</option>
+                  <option value="Cutting">Kesim (Cutting)</option>
                 </select>
               </div>
               <div>

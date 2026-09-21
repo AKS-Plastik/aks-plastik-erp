@@ -41,6 +41,7 @@
     "later": "Later"
   },
   "common": {
+    "select": "Select",
     "cancel": "Cancel",
     "save": "Save",
     "delete": "Delete",
@@ -644,7 +645,8 @@
     "totalTasks": "Total Tasks",
     "searchPlaceholder": "Search task, machine or operator...",
     "colOpen": "Open",
-    "colInProgress": "In-Progress",
+    "colExtrusion": "In Production - Extrusion",
+    "colCutting": "In Production - Cutting",
     "colCompleted": "Completed",
     "machine": "Machine",
     "operator": "Operator",

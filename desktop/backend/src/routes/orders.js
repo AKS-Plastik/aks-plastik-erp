@@ -142,6 +142,14 @@ router.put('/:id', async (req, res) => {
       }
     }
 
+    if (status === 'Production Completed' && current?.status !== 'Production Completed') {
+      const orderItems = await prisma.orderItem.findMany({ where: { orderId: req.params.id } })
+      const incomplete = orderItems.some(item => item.producedQuantity < item.quantity)
+      if (incomplete) {
+        return res.status(400).json({ error: 'Cannot mark order as Production Completed. Not all items are fully produced.' })
+      }
+    }
+
     const totalAmount = (items || []).reduce((sum, item) => {
       const qty = parseInt(item.quantity) || 1
       const price = parseFloat(item.unitPrice) || 0
