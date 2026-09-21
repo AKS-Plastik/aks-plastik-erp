@@ -70,9 +70,8 @@ router.post('/', async (req, res) => {
 
     // Update global order status if this is the first item in production
     const order = await prisma.order.findUnique({ where: { id: orderItem.orderId } })
-    if (order.status !== 'In-Production' && order.status !== 'Production Completed' && order.status !== 'Processing' && order.status !== 'Draft') {
-        // Just keeping it safe if already further along like E-WayBill etc
-    } else if (order.status !== 'In-Production' && order.status !== 'Production Completed') {
+    const updatableStatuses = ['Draft', 'Processing', 'Confirmed'];
+    if (updatableStatuses.includes(order.status)) {
       await prisma.order.update({
         where: { id: orderItem.orderId },
         data: { status: 'In-Production' }
@@ -143,8 +142,12 @@ router.patch('/:id/move', async (req, res) => {
     // Check if the entire order is completed
     const allItems = await prisma.orderItem.findMany({ where: { orderId: task.orderItem.orderId } })
     const allCompleted = allItems.every(i => i.producedQuantity >= i.quantity)
-    if (allCompleted) {
+    const order = await prisma.order.findUnique({ where: { id: task.orderItem.orderId } })
+    
+    if (allCompleted && order.status !== 'Production Completed') {
       await prisma.order.update({ where: { id: task.orderItem.orderId }, data: { status: 'Production Completed' } })
+    } else if (!allCompleted && order.status === 'Production Completed') {
+      await prisma.order.update({ where: { id: task.orderItem.orderId }, data: { status: 'In-Production' } })
     }
 
     res.json(updatedTask)

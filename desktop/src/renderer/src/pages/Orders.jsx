@@ -444,7 +444,7 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
             <div className="flex-1 min-w-[200px]">
               <label className="block text-xs font-bold text-text-muted mb-1.5">{t('orders.customer')} *</label>
               <SearchableSelect
-                options={customers.map(c => ({ value: c.id, label: c.name }))}
+                options={customers.map(c => ({ value: c.id, label: `${c.code} - ${c.name}` }))}
                 value={form.customerId}
                 onChange={set('customerId')}
                 placeholder={t('orders.selectCustomer')}
@@ -994,7 +994,7 @@ export default function Orders() {
     if (search) {
       const q = search.toLowerCase()
       const inCode = o.code.toLowerCase().includes(q)
-      const inCustomer = (o.customer?.name || '').toLowerCase().includes(q)
+      const inCustomer = (o.customer?.name || '').toLowerCase().includes(q) || (o.customer?.accountCode || o.customer?.code || '').toLowerCase().includes(q)
       const inRep = (o.salesRep?.name || o.employee?.name || '').toLowerCase().includes(q)
       const inProduct = (o.items || []).some((it) => it.productName.toLowerCase().includes(q))
       if (!inCode && !inCustomer && !inRep && !inProduct) return false

@@ -750,7 +750,9 @@ export default function Finance() {
           r.code.toLowerCase().includes(q) ||
           r.category.toLowerCase().includes(q) ||
           (r.reference || '').toLowerCase().includes(q) ||
-          (r.description || '').toLowerCase().includes(q)
+          (r.description || '').toLowerCase().includes(q) ||
+          (r.order?.customer?.name || '').toLowerCase().includes(q) ||
+          (r.order?.customer?.accountCode || r.order?.customer?.code || '').toLowerCase().includes(q)
         )
       }
       return true

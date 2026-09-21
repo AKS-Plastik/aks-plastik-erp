@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useData } from '../context/DataContext'
 import * as XLSX from 'xlsx'
+import SearchableSelect from '../components/SearchableSelect'
 
 const COLUMNS = [
   { id: 'open',        labelKey: 'reports.colOpen',       icon: 'radio_button_unchecked', headerClass: 'bg-surface-container-high text-on-surface-variant', dotClass: 'bg-on-surface-variant/40' },
@@ -105,10 +106,13 @@ function AddCardModal({ defaultColumn, customers, employees, onClose, onSave }) 
             </Field>
           </div>
           <Field label={t('common.customer')} icon="business">
-            <select value={form.customerId} onChange={set('customerId')} className={inputCls}>
-              <option value="">{t('common.noCustomer')}</option>
-              {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <SearchableSelect
+              options={customers.map(c => ({ value: c.id, label: c.code ? `${c.code} - ${c.name}` : c.name }))}
+              value={form.customerId}
+              onChange={(val) => set('customerId')({ target: { value: val } })}
+              placeholder={t('common.noCustomer')}
+              className="w-full bg-transparent"
+            />
           </Field>
           <Field label={t('common.employee')} icon="badge">
             <select value={form.employeeId} onChange={set('employeeId')} className={inputCls}>
@@ -273,10 +277,13 @@ function CardDetailModal({ report, customers, employees, onClose, onSave, onDele
               </select>
             </Field>
             <Field label={t('common.customer')} icon="business">
-              <select value={form.customerId} onChange={set('customerId')} className={inputCls}>
-                <option value="">{t('common.noCustomer')}</option>
-                {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <SearchableSelect
+                options={customers.map(c => ({ value: c.id, label: c.code ? `${c.code} - ${c.name}` : c.name }))}
+                value={form.customerId}
+                onChange={(val) => set('customerId')({ target: { value: val } })}
+                placeholder={t('common.noCustomer')}
+                className="w-full bg-transparent"
+              />
             </Field>
             <Field label={t('common.employee')} icon="badge">
               <select value={form.employeeId} onChange={set('employeeId')} className={inputCls}>
@@ -438,6 +445,7 @@ export default function Reports() {
     return (
       r.title.toLowerCase().includes(q) ||
       (r.customer?.name || '').toLowerCase().includes(q) ||
+      (r.customer?.accountCode || r.customer?.code || '').toLowerCase().includes(q) ||
       (r.employee?.name || '').toLowerCase().includes(q) ||
       (r.priority || '').toLowerCase().includes(q)
     )

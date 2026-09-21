@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
 import * as XLSX from 'xlsx'
+import SearchableSelect from '../components/SearchableSelect'
 
 const STATUSES = ['Scheduled', 'In Progress', 'Completed', 'Cancelled']
 
@@ -107,10 +108,13 @@ function AddVisitModal({ customers, employees, onClose, onSave }) {
             <input type="text" placeholder="e.g. HVAC Inspection" value={form.title} onChange={set('title')} className={inputCls} />
           </FieldErr>
           <Field label={t('common.customer')} icon="business" span2>
-            <select value={form.customerId} onChange={set('customerId')} className={inputCls}>
-              <option value="">{t('common.noCustomer')}</option>
-              {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <SearchableSelect
+              options={customers.map(c => ({ value: c.id, label: c.code ? `${c.code} - ${c.name}` : c.name }))}
+              value={form.customerId}
+              onChange={(val) => set('customerId')({ target: { value: val } })}
+              placeholder={t('common.noCustomer')}
+              className="w-full bg-transparent"
+            />
           </Field>
           <Field label={t('common.location')} icon="location_on" span2>
             <input type="text" placeholder="e.g. Building A" value={form.location} onChange={set('location')} className={inputCls} />
@@ -312,10 +316,13 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
               <input type="text" value={form.title} onChange={set('title')} className={inputCls} />
             </FieldErr>
             <Field label={t('common.customer')} icon="business" span2>
-              <select value={form.customerId} onChange={set('customerId')} className={inputCls}>
-                <option value="">{t('common.noCustomer')}</option>
-                {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <SearchableSelect
+                options={customers.map(c => ({ value: c.id, label: c.code ? `${c.code} - ${c.name}` : c.name }))}
+                value={form.customerId}
+                onChange={(val) => set('customerId')({ target: { value: val } })}
+                placeholder={t('common.noCustomer')}
+                className="w-full bg-transparent"
+              />
             </Field>
             <Field label={t('common.location')} icon="location_on" span2>
               <input type="text" value={form.location} onChange={set('location')} className={inputCls} />
@@ -592,9 +599,12 @@ export default function SiteVisits() {
 
   const q = search.toLowerCase()
   const filtered = siteVisits.filter((v) => {
+    const cust = customers?.find((c) => c.id === v.customerId)
+    const custCode = cust?.accountCode || cust?.code || ''
     const matchSearch = !q ||
       v.title?.toLowerCase().includes(q) ||
       v.customerName?.toLowerCase().includes(q) ||
+      custCode.toLowerCase().includes(q) ||
       v.location?.toLowerCase().includes(q) ||
       v.employeeName?.toLowerCase().includes(q)
     const matchStatus = !statusFilter || v.status === statusFilter
