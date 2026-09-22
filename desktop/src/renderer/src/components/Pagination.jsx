@@ -14,7 +14,7 @@ export default function Pagination({ page, setPage, totalPages, totalItems, item
           total: totalItems 
         })}
       </p>
-      <div className="flex items-center justify-center gap-1 sm:gap-1.5 overflow-x-auto scrollbar-none max-w-full pb-1 md:pb-0">
+      <div className="flex items-center justify-center gap-1 sm:gap-1.5 overflow-x-auto overflow-y-hidden scrollbar-none max-w-full pb-1 md:pb-0">
         <button
           onClick={() => setPage((p) => Math.max(1, p - 1))}
           disabled={page === 1}

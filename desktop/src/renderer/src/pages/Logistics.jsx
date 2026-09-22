@@ -44,7 +44,7 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo }) {
     (s, it) => s + (parseFloat(it.unitPrice) || 0) * (parseInt(it.quantity) || 0), 0
   )
   const vatAmount = subtotal * ((order.vat || 0) / 100)
-  const currency = order.items?.[0]?.currency || 'USD'
+  const currency = order.items?.[0]?.currency || 'TRY'
   const next = statusNext[order.status]
 
   return (
@@ -110,7 +110,7 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo }) {
                     <div className="flex justify-between md:justify-end items-center">
                       <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.unitPrice')}</span>
                       <span className="text-xs md:text-sm text-on-surface">
-                        <span className="text-[10px] md:text-xs text-text-muted mr-1">{it.currency || 'USD'}</span>
+                        <span className="text-[10px] md:text-xs text-text-muted mr-1">{it.currency || 'TRY'}</span>
                         {parseFloat(it.unitPrice).toFixed(2)}
                       </span>
                     </div>
@@ -119,7 +119,7 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo }) {
                     <div className="flex justify-between md:justify-end items-center">
                       <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.lineTotal')}</span>
                       <span className="font-semibold text-xs md:text-sm text-on-surface">
-                        <span className="text-[10px] md:text-xs text-text-muted mr-1">{it.currency || 'USD'}</span>
+                        <span className="text-[10px] md:text-xs text-text-muted mr-1">{it.currency || 'TRY'}</span>
                         {(parseFloat(it.unitPrice) * parseInt(it.quantity)).toFixed(2)}
                       </span>
                     </div>
@@ -227,7 +227,7 @@ export default function Logistics() {
         productName: it.productName,
         quantity: it.quantity,
         unitPrice: it.unitPrice,
-        currency: it.currency || 'USD',
+        currency: it.currency || 'TRY',
         productId: it.productId || null,
       })),
     })
@@ -318,7 +318,7 @@ export default function Logistics() {
               </tr>
             ) : (
               filtered.map((o) => {
-                const currency = o.items?.[0]?.currency || 'USD'
+                const currency = o.items?.[0]?.currency || 'TRY'
                 const productSummary = (o.items || []).map((it) => `${it.quantity}× ${it.productName}`).join(', ')
                 const totalQty = (o.items || []).reduce((s, it) => s + (parseInt(it.quantity) || 0), 0)
                 const createdAt = o.createdAt ? new Date(o.createdAt) : null

@@ -13,8 +13,10 @@ router.get('/', async (req, res) => {
       where: {
         OR: [
           { code: { startsWith: '120' } },
+          { code: { startsWith: '130' } },
           { code: { startsWith: '320' } },
           { accountCode: { startsWith: '120' } },
+          { accountCode: { startsWith: '130' } },
           { accountCode: { startsWith: '320' } }
         ]
       },

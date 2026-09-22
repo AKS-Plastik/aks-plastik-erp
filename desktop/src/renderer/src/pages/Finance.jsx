@@ -9,7 +9,7 @@ import { addLogoToPDF } from '../utils/pdfLogo'
 
 const ITEMS_PER_PAGE = 15
 
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'JPY', 'CNY', 'INR', 'CAD', 'AUD']
+const CURRENCIES = ['TRY', 'USD', 'GBP', 'EUR']
 
 const INCOME_CATEGORIES = [
   'Sales Revenue', 'Other',
@@ -24,7 +24,7 @@ const emptyForm = {
   type: 'income',
   category: 'Sales Revenue',
   amount: '',
-  currency: 'USD',
+  currency: 'TRY',
   date: new Date().toISOString().split('T')[0],
   reference: '',
   description: '',
@@ -332,7 +332,7 @@ function RecordDetailModal({ record, onClose, orders, customers }) {
               </div>
               <p className={`text-lg md:text-xl font-bold tabular-nums leading-none ${record.type === 'income' ? 'text-primary' : 'text-error'}`}>
                 {record.type === 'income' ? '+' : '-'}{fmt(record.amount)}
-                <span className="text-[11px] font-normal text-text-muted ml-1">{record.currency || 'USD'}</span>
+                <span className="text-[11px] font-normal text-text-muted ml-1">{record.currency || 'TRY'}</span>
               </p>
             </div>
           </div>
@@ -365,7 +365,7 @@ function RecordDetailModal({ record, onClose, orders, customers }) {
                 <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">Transaction Info</p>
                 <DetailRow icon="calendar_today" label="Date" value={record.date} />
                 <DetailRow icon="category" label="Category" value={record.category} />
-                <DetailRow icon="currency_exchange" label="Currency" value={record.currency || 'USD'} />
+                <DetailRow icon="currency_exchange" label="Currency" value={record.currency || 'TRY'} />
                 <DetailRow icon="tag" label="Reference" value={record.reference} />
               </div>
               <div className="bg-surface-container-high rounded-lg p-3 md:p-4 space-y-2.5">
@@ -588,7 +588,7 @@ export default function Finance() {
   function openEdit(item) {
     setForm({
       type: item.type, category: item.category || 'General', amount: item.amount,
-      currency: item.currency || 'USD', date: item.date, reference: item.reference || '',
+      currency: item.currency || 'TRY', date: item.date, reference: item.reference || '',
       description: item.description || '', orderId: item.orderId || '',
       paymentMethod: item.paymentMethod || '',
       checkYil: item.checkYil || '', checkBanka: item.checkBanka || '',
@@ -628,7 +628,7 @@ export default function Finance() {
     const header = ['Code', 'Type', 'Category', 'Date', 'Reference', 'Amount', 'Currency', 'Description', 'Linked Order']
     const rows = filtered.map(r => [
       r.code, r.type, r.category, r.date,
-      r.reference || '', r.amount.toFixed(2), r.currency || 'USD',
+      r.reference || '', r.amount.toFixed(2), r.currency || 'TRY',
       r.description || '', r.order?.code || '',
     ])
     const csv = [header, ...rows]
@@ -675,7 +675,7 @@ export default function Finance() {
         r.date,
         r.reference || '',
         (r.type === 'income' ? '+' : '-') + fmt(r.amount),
-        r.currency || 'USD',
+        r.currency || 'TRY',
         r.description || '',
         r.order?.code || '',
       ]),
@@ -714,7 +714,7 @@ export default function Finance() {
       r.date,
       r.reference || '',
       r.amount,
-      r.currency || 'USD',
+      r.currency || 'TRY',
       r.description || '',
       r.order?.code || '',
     ])
@@ -988,7 +988,7 @@ export default function Finance() {
                     <td className="px-4 py-2.5 text-xs text-text-muted max-w-[160px] truncate" title={r.description || ''}>{r.description || '—'}</td>
                     <td className={`px-4 py-2.5 text-right font-bold tabular-nums ${r.type === 'income' ? 'text-primary' : 'text-error'}`}>
                       {r.type === 'income' ? '+' : '-'}{fmt(r.amount)}
-                      <span className="text-[10px] font-normal text-text-muted ml-1">{r.currency || 'USD'}</span>
+                      <span className="text-[10px] font-normal text-text-muted ml-1">{r.currency || 'TRY'}</span>
                     </td>
                     {isAdmin && (
                       <td className="px-4 py-2.5" onClick={e => e.stopPropagation()}>
@@ -1036,7 +1036,7 @@ export default function Finance() {
                 <div className="flex items-center justify-between mt-0.5">
                   <span className="text-[11px] font-semibold text-on-surface truncate pr-2">{r.category}</span>
                   <span className={`text-xs font-bold tabular-nums shrink-0 ${r.type === 'income' ? 'text-primary' : 'text-error'}`}>
-                    {r.type === 'income' ? '+' : '-'}{fmt(r.amount)} <span className="text-[9px] font-normal opacity-70 ml-0.5">{r.currency || 'USD'}</span>
+                    {r.type === 'income' ? '+' : '-'}{fmt(r.amount)} <span className="text-[9px] font-normal opacity-70 ml-0.5">{r.currency || 'TRY'}</span>
                   </span>
                 </div>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-text-muted mt-0.5">

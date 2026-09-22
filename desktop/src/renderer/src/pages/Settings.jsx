@@ -147,7 +147,7 @@ function MachineViewModal({ machine, onClose, onEdit }) {
                         </td>
                         <td className="px-2.5 md:px-3 py-2 md:py-2.5 text-[11px] md:text-xs max-w-[150px] md:max-w-[200px] truncate" title={r.description}>{r.description || '—'}</td>
                         <td className="px-2.5 md:px-3 py-2 md:py-2.5 text-[11px] md:text-xs text-right font-medium">
-                          {r.cost > 0 ? `${r.currency || 'USD'} ${r.cost.toFixed(2)}` : '—'}
+                          {r.cost > 0 ? `${r.currency || 'TRY'} ${r.cost.toFixed(2)}` : '—'}
                         </td>
                       </tr>
                     ))}
@@ -278,7 +278,7 @@ function MachineModal({ machine, onClose, onSave }) {
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-1 md:gap-0 border-b border-theme-border shrink-0 px-4 md:px-6 overflow-x-auto no-scrollbar">
+        <div className="flex gap-1 md:gap-0 border-b border-theme-border shrink-0 px-4 md:px-6 overflow-x-auto overflow-y-hidden ">
           <button className={tabCls('basic')} onClick={() => setTab('basic')}>
             <span className="material-symbols-outlined text-[13px] md:text-sm">info</span> Basic Info
           </button>
@@ -1414,7 +1414,7 @@ export default function Settings() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 md:gap-1.5 mb-5 md:mb-6 border-b border-theme-border overflow-x-auto overflow-y-hidden [&::-webkit-scrollbar]:hidden">
+      <div className="flex gap-1 md:gap-1.5 mb-5 md:mb-6 border-b border-theme-border overflow-x-auto overflow-y-hidden ">
         {TABS.map((t) => (
           <button
             key={t.key}

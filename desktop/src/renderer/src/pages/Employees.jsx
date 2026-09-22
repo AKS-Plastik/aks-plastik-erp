@@ -220,7 +220,7 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
         </div>
 
         {/* Tabs */}
-        <div className="flex overflow-x-auto shrink-0 border-b border-theme-border [&::-webkit-scrollbar]:hidden" style={{ scrollbarWidth: 'none' }}>
+        <div className="flex overflow-x-auto overflow-y-hidden shrink-0 border-b border-theme-border " >
           {TABS.map(tabItem => (
             <button
               key={tabItem.id}

@@ -268,7 +268,7 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange, machine
                     <td className="flex md:table-cell justify-between items-center px-2 md:px-4 py-1 md:py-3 text-right text-on-surface text-[11px] md:text-sm">
                       <span className="md:hidden text-[9px] font-bold uppercase text-text-muted">{t('orders.unitPrice')}</span>
                       <div className="font-medium">
-                        <span className="text-[9px] md:text-xs text-text-muted mr-1">{it.currency || 'USD'}</span>
+                        <span className="text-[9px] md:text-xs text-text-muted mr-1">{it.currency || 'TRY'}</span>
                         {parseFloat(it.unitPrice).toFixed(2)}
                       </div>
                     </td>
@@ -279,7 +279,7 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange, machine
                     <td className="flex md:table-cell justify-between items-center px-2 md:px-4 py-1 md:py-3 text-right font-bold md:font-semibold text-on-surface mt-1 md:mt-0 pt-1 md:pt-0 border-t border-surface-container md:border-0 text-[11px] md:text-sm">
                       <span className="md:hidden text-[9px] font-bold uppercase text-text-muted">{t('orders.lineTotal')}</span>
                       <div>
-                        <span className="text-[9px] md:text-xs text-text-muted mr-1">{it.currency || 'USD'}</span>
+                        <span className="text-[9px] md:text-xs text-text-muted mr-1">{it.currency || 'TRY'}</span>
                         {lineTotal.toFixed(2)}
                       </div>
                     </td>
@@ -458,7 +458,7 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
     if (prod) {
       setForm((f) => {
         const items = f.items.map((it, i) =>
-          i === idx ? { ...it, productName: prod.name, unitPrice: prod.price, productId: prod.id, currency: prod.currency || 'USD', unit: prod.unit || '' } : it
+          i === idx ? { ...it, productName: prod.name, unitPrice: prod.price, productId: prod.id, currency: prod.currency || 'TRY', unit: prod.unit || '' } : it
         )
         return { ...f, items }
       })
@@ -586,7 +586,7 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
                     <div className="w-[calc(50%-4px)] md:w-28 flex flex-col">
                       <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.unitPrice')}</span>
                       <div className={`flex items-center border rounded overflow-hidden bg-surface-container-lowest ${itemErr && !item.unitPrice ? 'border-error' : 'border-theme-border'}`}>
-                        <span className="px-1.5 text-[10px] text-text-muted border-r border-theme-border bg-surface-container-high">{item.currency || 'USD'}</span>
+                        <span className="px-1.5 text-[10px] text-text-muted border-r border-theme-border bg-surface-container-high">{item.currency || 'TRY'}</span>
                         <input
                           type="number" min="0" step="0.01"
                           className="w-full px-2 py-1.5 text-xs md:text-sm text-on-surface outline-none bg-transparent"
@@ -615,7 +615,7 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
                     <div className="flex flex-col md:items-end">
                       <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-0.5 block">{t('orders.total')}</span>
                       <span className="text-xs md:text-sm font-semibold text-on-surface md:w-24 md:text-right">
-                        {item.currency || 'USD'} {itemTotal.toFixed(2)}
+                        {item.currency || 'TRY'} {itemTotal.toFixed(2)}
                       </span>
                     </div>
                     {form.items.length > 1 && (
@@ -790,7 +790,7 @@ export default function Orders() {
           'Unit': it.product?.unit || '',
           'Unit Price': it.unitPrice ?? '',
           'VAT %': it.vat ?? '',
-          'Currency': it.currency || 'USD',
+          'Currency': it.currency || 'TRY',
         })
       })
     })
@@ -973,7 +973,7 @@ export default function Orders() {
             productName: it.productName,
             quantity: it.quantity,
             unitPrice: it.unitPrice,
-            currency: it.currency || 'USD',
+            currency: it.currency || 'TRY',
             vat: it.vat ?? '0',
             productId: it.productId || '',
           }))
@@ -1028,7 +1028,7 @@ export default function Orders() {
         productName: it.productName,
         quantity: it.quantity,
         unitPrice: it.unitPrice,
-        currency: it.currency || 'USD',
+        currency: it.currency || 'TRY',
         productId: it.productId || null,
       })),
     })
@@ -1083,7 +1083,7 @@ export default function Orders() {
             <p className="text-[10px] sm:text-sm text-text-muted sm:mt-0.5">{t('orders.totalOrders', { count: orders.length })}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full md:w-auto max-w-full pb-2 md:pb-0">
+        <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0 overflow-x-auto overflow-y-hidden w-full md:w-auto max-w-full pb-2 md:pb-0">
           <button onClick={syncAndRefreshOrders} className="flex items-center justify-center gap-1.5 border border-theme-border px-2.5 py-2 lg:px-3 lg:py-2 rounded-xl text-[11px] lg:text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap flex-shrink-0">
             <span className="material-symbols-outlined text-[14px] lg:text-base">refresh</span>
             <span className="hidden lg:inline">{t('common.refresh')}</span>

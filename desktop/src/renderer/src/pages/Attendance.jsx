@@ -808,7 +808,7 @@ export default function Attendance() {
       )}
 
       {/* Tabs */}
-      <div className="flex overflow-x-auto overflow-y-hidden no-scrollbar gap-1 md:gap-2 mb-6 md:mb-8 border-b border-theme-border">
+      <div className="flex overflow-x-auto overflow-y-hidden gap-1 md:gap-2 mb-6 md:mb-8 border-b border-theme-border">
         {allTabs.map((t) => (
           <button
             key={t.key}

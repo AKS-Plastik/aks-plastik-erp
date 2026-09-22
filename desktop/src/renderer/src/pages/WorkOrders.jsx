@@ -454,7 +454,7 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
         <div className="px-4 md:px-6 pb-4 pt-3 md:pb-6 md:pt-4 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0 border-t border-surface-container-low">
           {!editing ? (
             <>
-              <div className="flex items-center gap-1.5 md:gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
+              <div className="flex items-center gap-1.5 md:gap-2 w-full sm:w-auto overflow-x-auto overflow-y-hidden pb-1 sm:pb-0 ">
                 <button onClick={() => setEditing(true)} className="whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 border-primary text-primary text-[11px] md:text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center gap-1 md:gap-1.5">
                   <span className="material-symbols-outlined text-[14px] md:text-[18px]">edit</span>{t('common.edit')}
                 </button>
@@ -701,7 +701,7 @@ export default function SiteVisits() {
         </div>
 
         {/* Bottom Row: Status Filters */}
-        <div className="flex items-center gap-1.5 lg:gap-2 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full pb-1">
+        <div className="flex items-center gap-1.5 lg:gap-2 overflow-x-auto overflow-y-hidden w-full pb-1">
           {['', ...STATUSES].map((s) => (
             <button
               key={s || 'all'}
