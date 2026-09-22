@@ -70,7 +70,7 @@ router.get('/requests', async (req, res) => {
 
 router.post('/requests', async (req, res) => {
   try {
-    const { title, description, department, requestedBy, priority, category, estimatedAmount, currency, budgetCode, notes } = req.body
+    const { title, description, department, requestedBy, createdBy, priority, category, estimatedAmount, currency, budgetCode, supplierId, supplierName, notes } = req.body
     if (!title) return res.status(400).json({ error: 'Title is required' })
     const code = `PR-${String(Date.now()).slice(-6)}`
     const request = await prisma.purchaseRequest.create({
@@ -79,6 +79,9 @@ router.post('/requests', async (req, res) => {
         description: description || '',
         department: department || '',
         requestedBy: requestedBy || '',
+        createdBy: createdBy || '',
+        supplierId: supplierId || '',
+        supplierName: supplierName || '',
         priority: priority || 'Medium',
         category: category || 'General',
         estimatedAmount: parseFloat(estimatedAmount) || 0,
@@ -98,7 +101,7 @@ router.post('/requests', async (req, res) => {
 router.put('/requests/:id', async (req, res) => {
   try {
     const data = {}
-    const fields = ['title', 'description', 'department', 'requestedBy', 'priority', 'category', 'currency', 'budgetCode', 'notes',
+    const fields = ['title', 'description', 'department', 'requestedBy', 'createdBy', 'supplierId', 'supplierName', 'priority', 'category', 'currency', 'budgetCode', 'notes',
       'budgetApproved', 'budgetNotes', 'approvedBy', 'approvedAt', 'rejectionReason',
       'receivedDate', 'receivedBy', 'qcResult', 'qcNotes', 'qcDate',
       'invoiceNo', 'invoiceDate', 'invoiceMatched', 'paymentDueDate', 'paymentStatus', 'paymentDate', 'status']

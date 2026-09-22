@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
   try {
     const technicians = await prisma.technician.findMany({
       orderBy: { createdAt: 'desc' },
-      include: { customer: { select: { id: true, name: true, code: true } } },
+      include: { customer: { select: { id: true, name: true, code: true, accountCode: true } } },
     })
     res.json(technicians)
   } catch (err) {
@@ -49,7 +49,7 @@ router.post('/', async (req, res) => {
         customerId: customerId || null,
         specialization: specialization?.trim() || '—',
       },
-      include: { customer: { select: { id: true, name: true, code: true } } },
+      include: { customer: { select: { id: true, name: true, code: true, accountCode: true } } },
     })
     res.status(201).json(technician)
   } catch (err) {
@@ -76,7 +76,7 @@ router.put('/:id', async (req, res) => {
         specialization: specialization?.trim() || '—',
         certification: certification?.trim() || '—',
       },
-      include: { customer: { select: { id: true, name: true, code: true } } },
+      include: { customer: { select: { id: true, name: true, code: true, accountCode: true } } },
     })
     res.json(technician)
   } catch (err) {

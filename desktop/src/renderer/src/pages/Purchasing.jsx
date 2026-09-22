@@ -5,7 +5,7 @@ import { useData } from '../context/DataContext'
 import { API_URL } from '../config'
 
 // ── Constants ────────────────────────────────────────────────────────────────
-const CURRENCIES = ['TRY', 'USD', 'EUR', 'GBP', 'AED', 'SAR', 'JPY', 'CNY', 'INR', 'CAD', 'AUD']
+const CURRENCIES = ['TRY', 'USD', 'GBP', 'EUR']
 const PRIORITIES = ['Low', 'Medium', 'High', 'Urgent']
 const CATEGORIES = ['General', 'Raw Materials', 'Equipment', 'Services', 'IT & Software', 'Logistics', 'Spare Parts', 'Office Supplies', 'Other']
 const SUPPLIER_CATEGORIES = ['General', 'Raw Materials', 'Equipment', 'Services', 'IT & Software', 'Logistics', 'Other']
@@ -72,10 +72,12 @@ function StatCard({ icon, label, value, sub, color = 'text-primary' }) {
 // ── Request Modal ────────────────────────────────────────────────────────────
 function RequestModal({ initial, onClose, onSave }) {
   const { t } = useTranslation()
+  const { roles, employees, customers } = useData()
   const [form, setForm] = useState({
-    title: '', description: '', department: '', requestedBy: '',
+    title: '', description: '', department: '', requestedBy: '', createdBy: '',
+    supplierId: '', supplierName: '',
     priority: 'Medium', category: 'General', estimatedAmount: '',
-    currency: 'TRY', budgetCode: '', notes: '',
+    currency: 'TRY', notes: '',
     ...(initial || {}),
   })
   const [errors, setErrors] = useState({})
@@ -138,14 +140,21 @@ function RequestModal({ initial, onClose, onSave }) {
           <div className="grid grid-cols-2 gap-2 md:gap-3">
             <div>
               <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.department')}</label>
-              <input className={inp('department')} value={form.department} onChange={set('department')} />
+              <select className={inp('department')} value={form.department} onChange={set('department')}>
+                <option value="">{t('common.select', 'Select...')}</option>
+                {roles?.map(r => <option key={r.id} value={r.name}>{r.name}</option>)}
+              </select>
             </div>
             <div>
               <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('purchasing.requestedBy')}</label>
-              <input className={inp('requestedBy')} value={form.requestedBy} onChange={set('requestedBy')} />
+              <select className={inp('requestedBy')} value={form.requestedBy} onChange={set('requestedBy')}>
+                <option value="">{t('common.select', 'Select...')}</option>
+                <option value="Admin">Admin</option>
+                {employees?.filter(e => e.name !== 'Admin').map(e => <option key={e.id} value={e.name}>{e.name}</option>)}
+              </select>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-2 md:gap-3">
+          <div className="grid grid-cols-2 gap-2 md:gap-3">
             <div>
               <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('common.priority')}</label>
               <select className={inp('priority')} value={form.priority} onChange={set('priority')}>
@@ -158,9 +167,24 @@ function RequestModal({ initial, onClose, onSave }) {
                 {CATEGORIES.map((c) => <option key={c}>{c}</option>)}
               </select>
             </div>
+          </div>
+          <div className="grid grid-cols-1 gap-2 md:gap-3">
             <div>
-              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('purchasing.budgetCode')}</label>
-              <input className={inp('budgetCode')} value={form.budgetCode} onChange={set('budgetCode')} />
+              <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('purchasing.supplier', 'Tedarikçi / Cari')}</label>
+              <select 
+                className={inp('supplierId')} 
+                value={form.supplierId} 
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const sup = customers?.find(c => c.id === val);
+                  setForm(prev => ({ ...prev, supplierId: val, supplierName: sup ? sup.name : '' }));
+                }}
+              >
+                <option value="">{t('common.select', 'Select...')}</option>
+                {customers?.filter(c => c.code?.startsWith('130') || c.code?.startsWith('320')).map(c => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-2 md:gap-3">
@@ -477,6 +501,7 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
           <div className="grid grid-cols-3 gap-2">
             {[
               [t('common.department'), r.department],
+              [t('purchasing.createdBy', 'Oluşturan'), r.createdBy],
               [t('purchasing.requestedBy'), r.requestedBy],
               [t('common.category'), r.category],
               [t('purchasing.estimatedAmount'), `${r.currency} ${fmt(r.estimatedAmount)}`],
@@ -899,7 +924,7 @@ export default function Purchasing() {
         </div>
         {(tab === 'suppliers' ? isAdmin : canCreateEdit) && (
           <button
-            onClick={() => tab === 'suppliers' ? setSupplierModal('new') : setRequestModal({ _isNew: true, requestedBy: user?.name || '' })}
+            onClick={() => tab === 'suppliers' ? setSupplierModal('new') : setRequestModal({ _isNew: true, createdBy: user?.name || '', requestedBy: '' })}
             className="flex items-center gap-1 md:gap-1.5 primary-gradient text-white px-3 md:px-4 py-1.5 md:py-2 rounded-lg md:rounded-xl text-[10px] md:text-xs font-bold shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity"
           >
             <span className="material-symbols-outlined text-xs md:text-sm">add</span>
@@ -921,7 +946,7 @@ export default function Purchasing() {
       {/* Tabs + Table */}
       <div className="bg-surface-container-lowest border border-theme-border rounded-2xl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 md:px-5 pt-3 border-b border-theme-border">
-          <div className="flex items-center gap-3 md:gap-4 overflow-x-auto no-scrollbar w-full sm:w-auto">
+          <div className="flex items-center gap-3 md:gap-4 overflow-x-auto overflow-y-hidden w-full sm:w-auto">
             {[
               { key: 'requests', label: 'Purchase Requests' },
               { key: 'suppliers', label: 'Suppliers' },
@@ -1018,7 +1043,7 @@ function RequestTable({ requests, onOpen }) {
 
   return (
     <>
-      <div className="hidden 2xl:block overflow-x-auto">
+      <div className="hidden 2xl:block overflow-x-auto overflow-y-hidden">
         <table className="w-full text-sm whitespace-nowrap">
           <thead>
             <tr className="text-left text-xs text-text-muted border-b border-theme-border">
@@ -1099,7 +1124,7 @@ function SupplierTable({ suppliers, onEdit, onDelete }) {
 
   return (
     <>
-      <div className="hidden 2xl:block overflow-x-auto">
+      <div className="hidden 2xl:block overflow-x-auto overflow-y-hidden">
         <table className="w-full text-sm whitespace-nowrap">
           <thead>
             <tr className="text-left text-xs text-text-muted border-b border-theme-border">

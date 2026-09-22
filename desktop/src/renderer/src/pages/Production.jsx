@@ -37,7 +37,7 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo }) {
     (s, it) => s + (parseFloat(it.unitPrice) || 0) * (parseInt(it.quantity) || 0), 0
   )
   const vatAmount = subtotal * ((order.vat || 0) / 100)
-  const currency = order.items?.[0]?.currency || 'USD'
+  const currency = order.items?.[0]?.currency || 'TRY'
   const next = statusNext[order.status]
 
   return (
@@ -46,7 +46,14 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo }) {
         <div className="flex items-start justify-between mb-6">
           <div>
             <p className="text-[10px] md:text-xs font-mono text-text-muted mb-1">{order.code}</p>
-            <h2 className="text-lg md:text-xl font-bold text-on-surface">{order.customer?.name || '—'}</h2>
+            <h2 className="text-lg md:text-xl font-bold text-on-surface flex flex-col items-start gap-1">
+              <span>{order.customer?.name || '—'}</span>
+              {(order.customer?.accountCode || order.customer?.code) && (
+                <span className="text-[11px] font-bold text-amber-500 uppercase tracking-widest">
+                  {order.customer.accountCode || order.customer.code}
+                </span>
+              )}
+            </h2>
             <p className="text-xs md:text-sm text-text-muted mt-0.5">{t('orders.salesRep')}: {order.salesRep?.name || order.employee?.name || '—'}</p>
           </div>
           <div className="flex items-center gap-3">
@@ -96,7 +103,7 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo }) {
                     <div className="flex items-center justify-between md:justify-end">
                       <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.unitPrice')}</span>
                       <span>
-                        <span className="text-[10px] md:text-xs text-text-muted mr-1">{it.currency || 'USD'}</span>
+                        <span className="text-[10px] md:text-xs text-text-muted mr-1">{it.currency || 'TRY'}</span>
                         {parseFloat(it.unitPrice).toFixed(2)}
                       </span>
                     </div>
@@ -105,7 +112,7 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo }) {
                     <div className="flex items-center justify-between md:justify-end">
                       <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.lineTotal')}</span>
                       <span>
-                        <span className="text-[10px] md:text-xs text-text-muted mr-1">{it.currency || 'USD'}</span>
+                        <span className="text-[10px] md:text-xs text-text-muted mr-1">{it.currency || 'TRY'}</span>
                         {(parseFloat(it.unitPrice) * parseInt(it.quantity)).toFixed(2)}
                       </span>
                     </div>
@@ -200,22 +207,26 @@ export default function Production() {
   async function handleAdvance(id, nextStatus) {
     const order = orders.find((o) => o.id === id)
     if (!order) return
-    await updateOrder(id, {
-      customerId: order.customerId,
-      employeeId: order.employeeId,
-      salesRepId: order.salesRepId,
-      status: nextStatus,
-      vat: order.vat,
-      notes: order.notes,
-      items: (order.items || []).map((it) => ({
-        productName: it.productName,
-        quantity: it.quantity,
-        unitPrice: it.unitPrice,
-        currency: it.currency || 'USD',
-        productId: it.productId || null,
-      })),
-    })
-    setDetailOrder((prev) => prev?.id === id ? { ...prev, status: nextStatus } : prev)
+    try {
+      await updateOrder(id, {
+        customerId: order.customerId,
+        employeeId: order.employeeId,
+        salesRepId: order.salesRepId,
+        status: nextStatus,
+        vat: order.vat,
+        notes: order.notes,
+        items: (order.items || []).map((it) => ({
+          productName: it.productName,
+          quantity: it.quantity,
+          unitPrice: it.unitPrice,
+          currency: it.currency || 'TRY',
+          productId: it.productId || null,
+        })),
+      })
+      setDetailOrder((prev) => prev?.id === id ? { ...prev, status: nextStatus } : prev)
+    } catch (err) {
+      alert(t('common.error') + ': ' + (err.message || 'Bir hata oluştu. Önce tüm kalemleri üretin.'))
+    }
   }
 
   return (
@@ -304,7 +315,7 @@ export default function Production() {
               </tr>
             ) : (
               filtered.map((o) => {
-                const currency = o.items?.[0]?.currency || 'USD'
+                const currency = o.items?.[0]?.currency || 'TRY'
                 const productSummary = (o.items || []).map((it) => `${it.quantity}× ${it.productName}`).join(', ')
                 const totalQty = (o.items || []).reduce((s, it) => s + (parseInt(it.quantity) || 0), 0)
                 const createdAt = o.createdAt ? new Date(o.createdAt) : null
@@ -325,7 +336,14 @@ export default function Production() {
                     <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 px-3 xl:px-4 py-1 xl:py-4">
                       <div className="flex items-center justify-between xl:justify-start">
                         <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.customer')}</span>
-                        <span className="font-medium text-xs lg:text-sm text-on-surface">{o.customer?.name || '—'}</span>
+                        <span className="font-medium text-xs lg:text-sm text-on-surface flex flex-col items-start gap-0.5">
+                          <span className="line-clamp-2">{o.customer?.name || '—'}</span>
+                          {(o.customer?.accountCode || o.customer?.code) && (
+                            <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">
+                              {o.customer.accountCode || o.customer.code}
+                            </span>
+                          )}
+                        </span>
                       </div>
                     </td>
                     <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 px-3 xl:px-4 py-1 xl:py-4">

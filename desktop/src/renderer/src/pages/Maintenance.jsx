@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useData } from '../context/DataContext'
 import { API_URL } from '../config'
 const MAINTENANCE_TYPES = ['Preventive', 'Corrective', 'Predictive', 'Emergency']
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'JPY', 'CNY', 'INR', 'CAD', 'AUD']
+const CURRENCIES = ['TRY', 'USD', 'GBP', 'EUR']
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
@@ -294,7 +294,7 @@ function MonthlyScheduleTab({ machine }) {
 function MaintenanceHistoryTab({ machine }) {
   const { t } = useTranslation()
   const { addMaintenanceRecord, deleteMaintenanceRecord, isAdmin } = useData()
-  const [mForm, setMForm] = useState({ date: '', type: 'Preventive', description: '', technician: '', cost: '', currency: 'USD', nextDue: '' })
+  const [mForm, setMForm] = useState({ date: '', type: 'Preventive', description: '', technician: '', cost: '', currency: 'TRY', nextDue: '' })
   const [mSaving, setMSaving] = useState(false)
   const [deletingMId, setDeletingMId] = useState(null)
 
@@ -308,7 +308,7 @@ function MaintenanceHistoryTab({ machine }) {
     setMSaving(true)
     try {
       await addMaintenanceRecord(machine.id, mForm)
-      setMForm({ date: '', type: 'Preventive', description: '', technician: '', cost: '', currency: 'USD', nextDue: '' })
+      setMForm({ date: '', type: 'Preventive', description: '', technician: '', cost: '', currency: 'TRY', nextDue: '' })
     } finally { setMSaving(false) }
   }
 
@@ -403,7 +403,7 @@ function MaintenanceHistoryTab({ machine }) {
                 </div>
                 <div>
                   <span className="block text-[9px] md:text-[10px] font-bold text-text-muted mb-0.5 uppercase tracking-wider">Cost</span>
-                  <span className="text-on-surface">{r.cost > 0 ? `${r.cost.toFixed(2)} ${r.currency || 'USD'}` : '—'}</span>
+                  <span className="text-on-surface">{r.cost > 0 ? `${r.cost.toFixed(2)} ${r.currency || 'TRY'}` : '—'}</span>
                 </div>
                 <div className="col-span-2 md:col-span-2">
                   <span className="block text-[9px] md:text-[10px] font-bold text-text-muted mb-0.5 uppercase tracking-wider">{t('maintenance.nextDue')}</span>

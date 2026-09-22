@@ -6,7 +6,7 @@ import Pagination from '../components/Pagination'
 
 const ITEMS_PER_PAGE = 10
 
-const CURRENCIES = ['USD', 'EUR', 'GBP', 'TRY', 'AED', 'SAR', 'JPY', 'CNY', 'INR', 'CAD', 'AUD']
+const CURRENCIES = ['TRY', 'USD', 'GBP', 'EUR']
 const UNITS = ['ADET', 'KG', 'GR', 'METRE', 'LT', 'KUTU', 'PAKET', 'TAKIM', 'CUVAL', 'RULO']
 
 const CATEGORIES = [
@@ -30,7 +30,7 @@ const emptyForm = {
   name: '',
   category: '',
   unit: 'ADET',
-  currency: 'USD',
+  currency: 'TRY',
   price: '',
   stock: '',
   minStock: '',
@@ -225,7 +225,7 @@ function ProductDetailModal({ product, onClose, onEdit, onDelete, isAdmin }) {
             <div className="bg-surface-container-low rounded-xl p-3 md:p-4">
               <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-0.5 md:mb-1">{t('common.price')}</p>
               <p className="text-xs md:text-sm font-semibold text-on-surface">
-                <span className="text-[10px] md:text-xs text-on-surface-variant mr-1">{product.currency || 'USD'}</span>
+                <span className="text-[10px] md:text-xs text-on-surface-variant mr-1">{product.currency || 'TRY'}</span>
                 {parseFloat(product.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </p>
             </div>
@@ -326,7 +326,7 @@ export default function Products() {
       description: item.description || '',
       category: item.category || '',
       unit: item.unit || 'pcs',
-      currency: item.currency || 'USD',
+      currency: item.currency || 'TRY',
       price: item.price,
       stock: item.stock,
       minStock: item.minStock,
@@ -365,7 +365,7 @@ export default function Products() {
       'Name': p.name,
       'Category': p.category || '',
       'Unit': p.unit || '',
-      'Currency': p.currency || 'USD',
+      'Currency': p.currency || 'TRY',
       'Price': p.price,
       'Stock': p.stock,
       'Min Stock': p.minStock,
@@ -402,7 +402,7 @@ export default function Products() {
           name,
           category: String(row['Category'] || ''),
           unit: String(row['Unit'] || 'pcs'),
-          currency: String(row['Currency'] || 'USD'),
+          currency: String(row['Currency'] || 'TRY'),
           price: parseFloat(row['Price']) || 0,
           stock: parseInt(row['Stock']) || 0,
           minStock: parseInt(row['Min Stock']) || 0,
@@ -444,7 +444,7 @@ export default function Products() {
             {t('products.totalProducts', { count: products.length })}
           </p>
         </div>
-        <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full md:w-auto max-w-full pb-2 md:pb-0">
+        <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0 overflow-x-auto overflow-y-hidden w-full md:w-auto max-w-full pb-2 md:pb-0">
           <button onClick={handleTemplate} className="flex items-center justify-center gap-1.5 border border-theme-border px-2.5 py-2 lg:px-3 lg:py-2 rounded-xl text-[11px] lg:text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap flex-shrink-0">
             <span className="material-symbols-outlined text-[14px] lg:text-base">download</span>
             <span className="hidden lg:inline">{t('common.template')}</span>
@@ -519,7 +519,7 @@ export default function Products() {
                     <td className="block xl:table-cell xl:px-6 xl:py-4 mb-1.5 xl:mb-0 text-left xl:text-right">
                       <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted block mb-0.5">{t('common.price')}</span>
                       <div className="font-medium text-on-surface text-sm">
-                        <span className="text-xs text-text-muted mr-1">{p.currency || 'USD'}</span>
+                        <span className="text-xs text-text-muted mr-1">{p.currency || 'TRY'}</span>
                         {parseFloat(p.price).toFixed(2)}
                         <span className="text-[10px] xl:text-xs text-text-muted"> /{p.unit}</span>
                       </div>

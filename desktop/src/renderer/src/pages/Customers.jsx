@@ -457,7 +457,7 @@ function AddCustomerModal({ onClose, onSave }) {
         </div>
 
         {/* Tab bar */}
-        <div className="flex items-center justify-start gap-1 px-4 lg:px-6 pt-3 md:pt-4 pb-0 flex-shrink-0 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex items-center justify-start gap-1 px-4 lg:px-6 pt-3 md:pt-4 pb-0 flex-shrink-0 overflow-x-auto overflow-y-hidden ">
           {tabDefs.map((tab, i) => (
             <button
               key={tab.id}
@@ -585,7 +585,7 @@ function OrdersTab({ customerOrders }) {
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
       {/* Summary bar */}
-      <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-2 sm:py-3 bg-surface-container-low border-b border-surface-container text-[10px] sm:text-xs flex-shrink-0 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-2 sm:py-3 bg-surface-container-low border-b border-surface-container text-[10px] sm:text-xs flex-shrink-0 overflow-x-auto overflow-y-hidden ">
         <div className="text-on-surface-variant whitespace-nowrap">
           <span className="hidden sm:inline">{t('customers.totalOrders')}</span>
           <span className="sm:hidden">Top. S.</span>: <span className="font-bold text-on-surface">{customerOrders.length}</span>
@@ -685,7 +685,7 @@ function OrdersTab({ customerOrders }) {
                   {isExpanded && (
                     <tr key={`${o.id}-items`} className="block sm:table-row border-b border-surface-container-low bg-surface-container-low/50 -mt-5 sm:mt-0 pt-2 sm:pt-0 rounded-b-xl sm:rounded-none relative z-0">
                       <td colSpan={7} className="block sm:table-cell px-3 sm:px-6 pb-4 pt-4 sm:pt-1">
-                        <div className="overflow-hidden sm:overflow-x-auto rounded-xl sm:rounded-none bg-surface-container-lowest sm:bg-transparent border border-theme-border sm:border-0 p-2 sm:p-0">
+                        <div className="overflow-hidden sm:overflow-x-auto overflow-y-hidden rounded-xl sm:rounded-none bg-surface-container-lowest sm:bg-transparent border border-theme-border sm:border-0 p-2 sm:p-0">
                           <table className="w-full text-xs block sm:table min-w-0 sm:min-w-[500px]">
                           <thead className="hidden sm:table-header-group">
                             <tr className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant border-b border-surface-container">
@@ -976,7 +976,7 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
                 <h2 className="text-base md:text-lg font-extrabold text-white leading-tight">
                   {editing ? t('customers.editCustomer') : customer.name}
                 </h2>
-                <p className="text-blue-200 text-[9px] md:text-[10px] font-medium mt-0.5">ID: #{customer.id}</p>
+                <p className="text-blue-200 text-[9px] md:text-[10px] font-medium mt-0.5">Code: {customer.accountCode || customer.code}</p>
               </div>
             </div>
             <button
@@ -1027,7 +1027,7 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
         {!editing && (
           <>
             {/* Sub-tab bar */}
-            <div className="flex w-full justify-between sm:justify-start items-center px-2 sm:px-5 pt-2 pb-0 border-b border-surface-container-low flex-shrink-0 overflow-x-auto scrollbar-thin">
+            <div className="flex w-full justify-between sm:justify-start items-center px-2 sm:px-5 pt-2 pb-0 border-b border-surface-container-low flex-shrink-0 overflow-x-auto overflow-y-hidden scrollbar-thin">
               {[
                 { key: 'info',    label: t('customers.tabInfo'),    icon: 'person' },
                 { key: 'orders',  label: t('customers.tabOrders'),  icon: 'shopping_bag',           count: customerOrders.length },
@@ -1110,7 +1110,7 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
                   </span>
                   <div className="flex-1 h-px bg-surface-container-high" />
                 </div>
-                <DetailRow icon="tag"              label="Account Code"    value={customer.accountCode} />
+                <DetailRow icon="tag"              label="Account Code"    value={customer.accountCode || customer.code} />
                 <DetailRow icon="manage_accounts"  label="Account Type"    value={customer.accountType} />
                 <DetailRow icon="currency_exchange" label="Currency"       value={customer.currency} />
                 <DetailRow icon="schedule"         label="Payment Term"    value={customer.paymentTerm} />
@@ -1233,7 +1233,7 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
                   }
 
                   return (
-                    <div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-surface-container-low border-b border-surface-container flex-shrink-0 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <div className="flex items-center justify-between gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-surface-container-low border-b border-surface-container flex-shrink-0 overflow-x-auto overflow-y-hidden ">
                       <div className="flex items-center gap-3 sm:gap-4 text-[10px] sm:text-xs">
                         <div className="text-on-surface-variant whitespace-nowrap">
                           <span className="hidden sm:inline">{t('finance.records')}:</span>
@@ -1364,7 +1364,7 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
         {/* Edit mode – tabbed */}
         {editing && (
           <>
-            <div className="flex w-full justify-start items-center gap-1 px-2 sm:px-6 pt-4 flex-shrink-0 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex w-full justify-start items-center gap-1 px-2 sm:px-6 pt-4 flex-shrink-0 overflow-x-auto overflow-y-hidden ">
               {tabDefs.map((tab, i) => (
                 <button
                   key={tab.id}
@@ -1431,7 +1431,7 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
         <div className="px-4 md:px-5 pb-3 pt-2 md:pb-4 md:pt-3 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-2 flex-shrink-0 border-t border-surface-container-low">
           {!editing ? (
             <>
-              <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
+              <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto overflow-y-hidden pb-1 sm:pb-0 ">
                 <button
                   onClick={() => { setEditing(true); setViewTab('info') }}
                   className="whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-1.5 rounded-lg border border-primary text-primary text-[11px] md:text-xs font-bold hover:bg-primary hover:text-white transition-all flex items-center justify-center gap-1"
@@ -1486,6 +1486,7 @@ export default function Customers() {
   const { t } = useTranslation()
   const { customers, addCustomer, updateCustomer, deleteCustomer, syncAndRefreshCustomers, reports, user } = useData()
   const [search, setSearch] = useState('')
+  const [activeTab, setActiveTab] = useState('active')
   const [page, setPage] = useState(1)
   const [showModal, setShowModal] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState(null)
@@ -1502,6 +1503,11 @@ export default function Customers() {
   }
 
   const filtered = customers.filter((c) => {
+    const code = c.accountCode || c.code || ''
+    const isPotential = code.startsWith('130')
+    if (activeTab === 'potential' && !isPotential) return false
+    if (activeTab === 'active' && isPotential) return false
+
     if (!search) return true
     const q = search.toLowerCase()
     return (
@@ -1509,11 +1515,11 @@ export default function Customers() {
       (c.contactName || c.contact || '').toLowerCase().includes(q) ||
       (c.city || '').toLowerCase().includes(q) ||
       (c.country || '').toLowerCase().includes(q) ||
-      (c.accountCode || '').toLowerCase().includes(q)
+      code.toLowerCase().includes(q)
     )
   }).sort((a, b) => {
-    const codeA = a.accountCode || ''
-    const codeB = b.accountCode || ''
+    const codeA = a.accountCode || a.code || ''
+    const codeB = b.accountCode || b.code || ''
     const isMusteriA = codeA.startsWith('120')
     const isMusteriB = codeB.startsWith('120')
     const isTedarikciA = codeA.startsWith('320')
@@ -1560,7 +1566,7 @@ export default function Customers() {
             {t('customers.subtitle')}
           </p>
         </div>
-        <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full md:w-auto max-w-full pb-2 md:pb-0">
+        <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0 overflow-x-auto overflow-y-hidden w-full md:w-auto max-w-full pb-2 md:pb-0">
           <button onClick={syncAndRefreshCustomers} className="flex items-center justify-center gap-1.5 border border-theme-border px-2.5 py-2 lg:px-3 lg:py-2 rounded-xl text-[11px] lg:text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap flex-shrink-0">
             <span className="material-symbols-outlined text-[14px] lg:text-base">sync</span>
             <span className="hidden lg:inline">{t('common.refresh', 'Yenile/Senkronize Et')}</span>
@@ -1601,6 +1607,22 @@ export default function Customers() {
         )
       })()}
 
+      {/* Tabs */}
+      <div className="flex gap-4 md:gap-6 mb-4 md:mb-6 border-b border-surface-container-low overflow-x-auto overflow-y-hidden ">
+        <button
+          onClick={() => { setActiveTab('active'); setPage(1); }}
+          className={`pb-2.5 text-xs md:text-sm font-bold whitespace-nowrap transition-all border-b-2 ${activeTab === 'active' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-on-surface'}`}
+        >
+          {t('customers.activeCustomers', 'Aktif Cariler')}
+        </button>
+        <button
+          onClick={() => { setActiveTab('potential'); setPage(1); }}
+          className={`pb-2.5 text-xs md:text-sm font-bold whitespace-nowrap transition-all border-b-2 ${activeTab === 'potential' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-on-surface'}`}
+        >
+          {t('customers.potentialCustomers', 'Potansiyel Müşteriler')}
+        </button>
+      </div>
+
       {/* Search */}
       <div className="flex items-center gap-1.5 md:gap-2 bg-surface-container-low px-3 md:px-4 py-1.5 md:py-2.5 rounded-xl mb-4 md:mb-8 w-full max-w-sm">
         <span className="material-symbols-outlined text-on-surface-variant text-[16px] md:text-lg">search</span>
@@ -1614,7 +1636,7 @@ export default function Customers() {
       </div>
 
       {/* Customer Table / List */}
-      <div className="xl:bg-surface-container-lowest xl:rounded-2xl xl:overflow-x-auto xl:shadow-sm">
+      <div className="xl:bg-surface-container-lowest xl:rounded-2xl xl:overflow-x-auto overflow-y-hidden xl:shadow-sm">
         <table className="w-full text-left block xl:table border-collapse xl:min-w-[700px]">
           <thead className="hidden xl:table-header-group">
             <tr className="bg-surface-container-low">
@@ -1634,13 +1656,20 @@ export default function Customers() {
                 className="group xl:hover:bg-surface-container-low transition-colors cursor-pointer xl:border-b xl:border-surface-container-low block xl:table-row bg-surface-container-lowest rounded-xl xl:rounded-none p-3 xl:p-0 shadow-sm xl:shadow-none"
                 onClick={() => setSelectedCustomer(customer)}
               >
-                <td className="block xl:table-cell p-0 xl:px-6 xl:py-5 mb-2 xl:mb-0 border-b border-surface-container-low pb-3 xl:border-0 xl:pb-0">
+                <td className="block xl:table-cell p-0 xl:px-6 xl:py-5 mb-2 xl:mb-0 border-b border-surface-container-low pb-3 xl:border-0">
                   <div className="flex items-center gap-3">
                     <InitialsAvatar initials={customer.initials} size="lg" />
-                    <div>
-                      <div className="font-bold text-on-surface text-sm xl:text-base">{customer.name}</div>
+                    <div className="flex flex-col gap-1">
+                      <div className="font-bold text-on-surface text-sm xl:text-base flex flex-col items-start gap-0.5">
+                        <span className="line-clamp-2 leading-snug">{customer.name}</span>
+                        {(customer.accountCode || customer.code) && (
+                          <span className="text-[11px] font-extrabold text-amber-500 uppercase tracking-widest">
+                            {customer.accountCode || customer.code}
+                          </span>
+                        )}
+                      </div>
                       {customer.customerType && (
-                        <div className="text-[10px] text-on-surface-variant font-medium uppercase">{customer.customerType}</div>
+                        <div className="text-[9.5px] text-on-surface-variant/80 font-semibold uppercase tracking-wider">{customer.customerType}</div>
                       )}
                     </div>
                   </div>
@@ -1648,7 +1677,7 @@ export default function Customers() {
                 <td className="flex xl:table-cell justify-between items-center p-0 xl:px-6 xl:py-5 mb-1.5 xl:mb-0 mt-3 xl:mt-0">
                   <span className="xl:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('common.customerCode')}</span>
                   {(() => {
-                    const code = customer.accountCode || '';
+                    const code = customer.accountCode || customer.code || '';
                     const isMusteri = code.startsWith('120');
                     const isTedarikci = code.startsWith('320');
                     let badgeClass = 'bg-surface-container-high text-on-surface-variant';

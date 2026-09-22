@@ -42,7 +42,7 @@ router.get('/', async (req, res) => {
 // ── Create machine ─────────────────────────────────────────────────────────────
 router.post('/', adminOnly, async (req, res) => {
   try {
-    const { code, name, manufacturer, manufacturerCountry, manufacturerContact,
+    const { code, name, type, manufacturer, manufacturerCountry, manufacturerContact,
             productionYear, warrantyExpiry, status, location, nextMaintenanceDue, notes } = req.body
     if (!code?.trim()) return res.status(400).json({ error: 'Machine code is required' })
     if (!name?.trim()) return res.status(400).json({ error: 'Machine name is required' })
@@ -50,6 +50,7 @@ router.post('/', adminOnly, async (req, res) => {
       data: {
         code: code.trim(),
         name: name.trim(),
+        type: type?.trim() || '',
         manufacturer: manufacturer?.trim() || '',
         manufacturerCountry: manufacturerCountry?.trim() || '',
         manufacturerContact: manufacturerContact?.trim() || '',
@@ -72,13 +73,14 @@ router.post('/', adminOnly, async (req, res) => {
 // ── Update machine ─────────────────────────────────────────────────────────────
 router.put('/:id', adminOnly, async (req, res) => {
   try {
-    const { code, name, manufacturer, manufacturerCountry, manufacturerContact,
+    const { code, name, type, manufacturer, manufacturerCountry, manufacturerContact,
             productionYear, warrantyExpiry, status, location, nextMaintenanceDue, notes } = req.body
     const machine = await prisma.machine.update({
       where: { id: parseInt(req.params.id) },
       data: {
         ...(code !== undefined && { code: code.trim() }),
         ...(name !== undefined && { name: name.trim() }),
+        type: type?.trim() || '',
         manufacturer: manufacturer?.trim() || '',
         manufacturerCountry: manufacturerCountry?.trim() || '',
         manufacturerContact: manufacturerContact?.trim() || '',

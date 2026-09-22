@@ -3,8 +3,16 @@ import { useTranslation } from 'react-i18next'
 import { useData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
 import * as XLSX from 'xlsx'
+import SearchableSelect from '../components/SearchableSelect'
 
 const STATUSES = ['Scheduled', 'In Progress', 'Completed', 'Cancelled']
+
+const STATUS_KEYS = {
+  'Scheduled': 'scheduled',
+  'In Progress': 'inProgress',
+  'Completed': 'completed',
+  'Cancelled': 'cancelled'
+}
 
 const STATUS_STYLES = {
   'Scheduled':   { badge: 'status-scheduled-badge',   dot: 'status-scheduled-dot',              accent: 'status-scheduled-accent',  cardBg: 'bg-surface-container-lowest' },
@@ -100,10 +108,13 @@ function AddVisitModal({ customers, employees, onClose, onSave }) {
             <input type="text" placeholder="e.g. HVAC Inspection" value={form.title} onChange={set('title')} className={inputCls} />
           </FieldErr>
           <Field label={t('common.customer')} icon="business" span2>
-            <select value={form.customerId} onChange={set('customerId')} className={inputCls}>
-              <option value="">{t('common.noCustomer')}</option>
-              {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+            <SearchableSelect
+              options={customers.map(c => ({ value: c.id, label: c.code ? `${c.code} - ${c.name}` : c.name }))}
+              value={form.customerId}
+              onChange={(val) => set('customerId')({ target: { value: val } })}
+              placeholder={t('common.noCustomer')}
+              className="w-full bg-transparent"
+            />
           </Field>
           <Field label={t('common.location')} icon="location_on" span2>
             <input type="text" placeholder="e.g. Building A" value={form.location} onChange={set('location')} className={inputCls} />
@@ -305,10 +316,13 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
               <input type="text" value={form.title} onChange={set('title')} className={inputCls} />
             </FieldErr>
             <Field label={t('common.customer')} icon="business" span2>
-              <select value={form.customerId} onChange={set('customerId')} className={inputCls}>
-                <option value="">{t('common.noCustomer')}</option>
-                {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-              </select>
+              <SearchableSelect
+                options={customers.map(c => ({ value: c.id, label: c.code ? `${c.code} - ${c.name}` : c.name }))}
+                value={form.customerId}
+                onChange={(val) => set('customerId')({ target: { value: val } })}
+                placeholder={t('common.noCustomer')}
+                className="w-full bg-transparent"
+              />
             </Field>
             <Field label={t('common.location')} icon="location_on" span2>
               <input type="text" value={form.location} onChange={set('location')} className={inputCls} />
@@ -321,7 +335,7 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
             </Field>
             <Field label={t('common.status')} icon="flag">
               <select value={form.status} onChange={set('status')} className={inputCls}>
-                {STATUSES.map((s) => <option key={s}>{s}</option>)}
+                {STATUSES.map((s) => <option key={s} value={s}>{t('workOrders.' + STATUS_KEYS[s])}</option>)}
               </select>
             </Field>
             <FieldErr label={t('common.date')} icon="calendar_today" error={errors.date}>
@@ -353,7 +367,7 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
                     pendingStatus === s ? STATUS_CHANGE_ACTIVE[s] : STATUS_CHANGE_STYLES[s]
                   }`}
                 >
-                  {s}
+                  {t('workOrders.' + STATUS_KEYS[s])}
                 </button>
               ))}
             </div>
@@ -440,7 +454,7 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
         <div className="px-4 md:px-6 pb-4 pt-3 md:pb-6 md:pt-4 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0 border-t border-surface-container-low">
           {!editing ? (
             <>
-              <div className="flex items-center gap-1.5 md:gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0 scrollbar-hide">
+              <div className="flex items-center gap-1.5 md:gap-2 w-full sm:w-auto overflow-x-auto overflow-y-hidden pb-1 sm:pb-0 ">
                 <button onClick={() => setEditing(true)} className="whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 border-primary text-primary text-[11px] md:text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center gap-1 md:gap-1.5">
                   <span className="material-symbols-outlined text-[14px] md:text-[18px]">edit</span>{t('common.edit')}
                 </button>
@@ -502,7 +516,7 @@ function VisitCard({ visit, onClick }) {
         </div>
         <span className={`px-2.5 py-1 rounded-full text-[10px] font-black inline-flex items-center gap-1.5 ${st.badge}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${st.dot}`} />
-          {visit.status}
+          {t('workOrders.' + STATUS_KEYS[visit.status])}
         </span>
       </div>
 
@@ -585,9 +599,12 @@ export default function SiteVisits() {
 
   const q = search.toLowerCase()
   const filtered = siteVisits.filter((v) => {
+    const cust = customers?.find((c) => c.id === v.customerId)
+    const custCode = cust?.accountCode || cust?.code || ''
     const matchSearch = !q ||
       v.title?.toLowerCase().includes(q) ||
       v.customerName?.toLowerCase().includes(q) ||
+      custCode.toLowerCase().includes(q) ||
       v.location?.toLowerCase().includes(q) ||
       v.employeeName?.toLowerCase().includes(q)
     const matchStatus = !statusFilter || v.status === statusFilter
@@ -684,7 +701,7 @@ export default function SiteVisits() {
         </div>
 
         {/* Bottom Row: Status Filters */}
-        <div className="flex items-center gap-1.5 lg:gap-2 overflow-x-auto scrollbar-hide [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden w-full pb-1">
+        <div className="flex items-center gap-1.5 lg:gap-2 overflow-x-auto overflow-y-hidden w-full pb-1">
           {['', ...STATUSES].map((s) => (
             <button
               key={s || 'all'}
@@ -695,7 +712,7 @@ export default function SiteVisits() {
                   : 'border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary'
               }`}
             >
-              {s || t('common.all')}
+              {s ? t('workOrders.' + STATUS_KEYS[s]) : t('common.all')}
             </button>
           ))}
         </div>

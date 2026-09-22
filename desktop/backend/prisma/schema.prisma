@@ -206,6 +206,7 @@ model Employee {
   siteVisits    SiteVisit[]
   attendances   Attendance[]
   leaveRequests LeaveRequest[]
+  productionTasks ProductionTask[]
   user          User?
 }
 
@@ -242,11 +243,23 @@ model OrderItem {
   currency    String  @default("USD")
   vat         Float   @default(0)
 
+  status               String @default("Pending")
+  producedQuantity     Int    @default(0)
+  inProductionQuantity Int    @default(0)
+
   order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId   String
   product   Product? @relation(fields: [productId], references: [id])
   productId String?
   productCode String?
+
+  extrusionMachineId  Int?
+  extrusionOperatorId String?
+  cuttingMachineId    Int?
+  cuttingOperatorId   String?
+
+  productionTasks ProductionTask[]
+  productionLogs  ProductionLog[]
 }
 
 model UserRole {
@@ -263,7 +276,19 @@ model RolePermission {
   @@unique([role, page])
 }
 
-model RoleStatusPermission {
+model ProductionLog {
+  id               String          @id @default(cuid())
+  orderItemId      String
+  productionTaskId String?
+  action           String
+  details          String          @db.Text
+  createdAt        DateTime        @default(now())
+
+  orderItem        OrderItem       @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  productionTask   ProductionTask? @relation(fields: [productionTaskId], references: [id], onDelete: SetNull)
+}
+
+model StatusPermission {
   id     Int    @id @default(autoincrement())
   role   String
   status String
@@ -275,6 +300,7 @@ model Machine {
   id                  Int                        @id @default(autoincrement())
   code                String                     @unique
   name                String
+  type                String                     @default("General") // Extrusion, Cutting, General
   manufacturer        String                     @default("")
   manufacturerCountry String                     @default("")
   manufacturerContact String                     @default("")
@@ -289,6 +315,30 @@ model Machine {
   createdAt           DateTime                   @default(now())
   maintenanceRecords  MachineMaintenanceRecord[]
   monthlyMaintenance  MachineMonthlyMaintenance[]
+  productionTasks     ProductionTask[]
+}
+
+model ProductionTask {
+  id          String    @id @default(cuid())
+  code        String    @unique
+  quantity    Int       @default(0)
+  status      String    @default("open") // open, extrusion, cutting, completed
+  date        String    @default("")
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  orderItem   OrderItem  @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  orderItemId String
+
+  machine     Machine?   @relation(fields: [machineId], references: [id])
+  machineId   Int?
+
+  operator    Employee?  @relation(fields: [operatorId], references: [id])
+  operatorId  String?
+
+  logs        ProductionLog[]
 }
 
 model MachineMaintenanceRecord {
@@ -391,12 +441,15 @@ model PurchaseRequest {
   title           String
   description     String   @default("")
   department      String   @default("")
+  createdBy       String   @default("")
   requestedBy     String   @default("")
   priority        String   @default("Medium")
   category        String   @default("General")
   estimatedAmount Float    @default(0)
   currency        String   @default("TRY")
   budgetCode      String   @default("")
+  supplierId      String   @default("")
+  supplierName    String   @default("")
   notes           String   @default("")
   status          String   @default("Request")
   budgetApproved  Boolean  @default(false)

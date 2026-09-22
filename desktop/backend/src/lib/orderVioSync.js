@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
+const { getDecodedText } = require('./vioFetchHelper');
 
 // REST URL generator
 function getVioRestUrl(endpoint, params = {}) {
@@ -65,7 +66,7 @@ async function pullOrdersFromVio(days) {
       return [];
     }
 
-    const headersText = await response.text();
+    const headersText = await getDecodedText(response);
     let headersData = [];
     try {
       headersData = JSON.parse(headersText.trim() || '[]');
@@ -87,7 +88,7 @@ async function pullOrdersFromVio(days) {
 
         let detaylar = [];
         if (detailsResponse.ok) {
-          const detailsText = await detailsResponse.text();
+          const detailsText = await getDecodedText(detailsResponse);
           const dData = JSON.parse(detailsText.trim() || '[]');
           detaylar = Array.isArray(dData) ? dData : [];
         } else {
@@ -328,7 +329,7 @@ async function pushOrderToVio(orderId) {
       return false;
     }
 
-    const responseText = await response.text();
+    const responseText = await getDecodedText(response);
     let result;
     try {
       result = JSON.parse(responseText);

@@ -14,6 +14,7 @@ const ALL_NAV_ITEMS = [
   { key: 'work-orders', to: '/work-orders', icon: 'location_on', tKey: 'nav.siteVisits' },
   { key: 'reports', to: '/reports', icon: 'analytics', tKey: 'nav.tasks' },
   { key: 'production', to: '/production', icon: 'precision_manufacturing', tKey: 'nav.production' },
+  { key: 'production-tasks', to: '/production-tasks', icon: 'view_kanban', tKey: 'nav.productionTasks' },
   { key: 'maintenance', to: '/maintenance', icon: 'build', tKey: 'nav.maintenance' },
   { key: 'logistics', to: '/logistics', icon: 'local_shipping', tKey: 'nav.logistics' },
   { key: 'purchasing', to: '/purchasing', icon: 'shopping_bag', tKey: 'nav.purchasing' },
