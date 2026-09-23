@@ -176,12 +176,16 @@ function SendToProductionModal({ item, onClose, onSave, machines, employees }) {
 
 function OrderDetailModal({ order, onClose, currentUser, onStatusChange, machines, employees, addProductionTask }) {
   const { t } = useTranslation()
-  const { userStatusPermissions } = useData()
+  const { userStatusPermissions, statusPermissions } = useData()
   const [localStatus, setLocalStatus] = useState(order.status)
   const [pendingStatus, setPendingStatus] = useState(null)
   const isAdmin = currentUser?.role === 'admin'
   const nextStatus = ORDER_STATUSES[ORDER_STATUSES.indexOf(localStatus) + 1]
-  const canAdvanceFromCurrent = isAdmin || (userStatusPermissions[currentUser?.id] || []).includes(localStatus)
+
+  const userDept = currentUser?.department
+  const roleHasStatus = userDept ? (statusPermissions[userDept] || []).includes(localStatus) : false
+  const userHasStatus = (userStatusPermissions[currentUser?.id] || []).includes(localStatus)
+  const canAdvanceFromCurrent = isAdmin || roleHasStatus || userHasStatus
   const canChangeStatus = isAdmin || canAdvanceFromCurrent
 
   const currency = order.items?.[0]?.currency || 'TRY'
