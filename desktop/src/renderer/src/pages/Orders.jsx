@@ -488,7 +488,11 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
             <div className="flex-1 min-w-[200px]">
               <label className="block text-xs font-bold text-text-muted mb-1.5">{t('orders.customer')} *</label>
               <SearchableSelect
-                options={customers.filter(c => (c.code || c.accountCode || '').startsWith('120')).map(c => ({ value: c.id, label: `${c.code || c.accountCode || ''} - ${c.name}` }))}
+                options={customers.filter(c => {
+                  const code = c.code || '';
+                  const acc = c.accountCode || '';
+                  return code.startsWith('120') || acc.startsWith('120') || code.startsWith('CX-');
+                }).map(c => ({ value: c.id, label: `${c.code || c.accountCode || ''} - ${c.name}` }))}
                 value={form.customerId}
                 onChange={(val) => setForm((f) => ({ ...f, customerId: val }))}
                 placeholder={t('orders.selectCustomer')}
