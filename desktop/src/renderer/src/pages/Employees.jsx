@@ -195,16 +195,25 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
     if (!employee?.id) return
     const empId = employee.id
     const roleEnabled = (permissions[dept] || []).includes(pageKey)
-    if (roleEnabled) return // Cannot toggle if enabled by role
-    
     const current = employeePermissions[empId] || []
     let next
-    if (current.includes(pageKey)) {
-      const subs = PAGE_SUB_KEYS[pageKey] || []
-      next = current.filter(p => p !== pageKey && !subs.includes(p))
+
+    if (roleEnabled) {
+      if (current.includes(`-${pageKey}`)) {
+        next = current.filter(p => p !== `-${pageKey}`)
+      } else {
+        const subs = PAGE_SUB_KEYS[pageKey] || []
+        next = [...current, `-${pageKey}`, ...subs.map(s => `-${s}`)]
+      }
     } else {
-      next = [...current, pageKey]
+      if (current.includes(pageKey)) {
+        const subs = PAGE_SUB_KEYS[pageKey] || []
+        next = current.filter(p => p !== pageKey && !subs.includes(p))
+      } else {
+        next = [...current, pageKey]
+      }
     }
+
     setPermSaving(s => ({ ...s, [pageKey]: true }))
     try { await updateEmployeePermissions(empId, next) }
     finally { setPermSaving(s => ({ ...s, [pageKey]: false })) }
@@ -597,81 +606,87 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
                       <div className="space-y-1 md:space-y-1.5">
                         {PAGES.map((page) => {
                           const roleEnabled = (permissions[dept] || []).includes(page.key)
-                          const empEnabled = (employeePermissions[employee?.id] || []).includes(page.key)
-                          const enabled = roleEnabled || empEnabled
+                          const empExplicitDeny = (employeePermissions[employee?.id] || []).includes(`-${page.key}`)
+                          const empExplicitAllow = (employeePermissions[employee?.id] || []).includes(page.key)
+                          const enabled = empExplicitDeny ? false : (roleEnabled || empExplicitAllow)
                           const saving = !!permSaving[page.key]
 
                           const roleOrdersSub = page.key === 'orders' && roleEnabled && (permissions[dept] || []).includes('orders-create')
-                          const empOrdersSub = page.key === 'orders' && empEnabled && (employeePermissions[employee?.id] || []).includes('orders-create')
-                          const ordersSubEnabled = roleOrdersSub || empOrdersSub
+                          const empOrdersSubDeny = page.key === 'orders' && (employeePermissions[employee?.id] || []).includes('-orders-create')
+                          const empOrdersSubAllow = page.key === 'orders' && (employeePermissions[employee?.id] || []).includes('orders-create')
+                          const ordersSubEnabled = empOrdersSubDeny ? false : (roleOrdersSub || empOrdersSubAllow)
                           const ordersSubSaving = !!permSaving['orders-create']
 
                           const rolePurchasingSub = page.key === 'purchasing' && roleEnabled && (permissions[dept] || []).includes('purchasing:create')
-                          const empPurchasingSub = page.key === 'purchasing' && empEnabled && (employeePermissions[employee?.id] || []).includes('purchasing:create')
-                          const purchasingSubEnabled = rolePurchasingSub || empPurchasingSub
+                          const empPurchasingSubDeny = page.key === 'purchasing' && (employeePermissions[employee?.id] || []).includes('-purchasing:create')
+                          const empPurchasingSubAllow = page.key === 'purchasing' && (employeePermissions[employee?.id] || []).includes('purchasing:create')
+                          const purchasingSubEnabled = empPurchasingSubDeny ? false : (rolePurchasingSub || empPurchasingSubAllow)
                           const purchasingSubSaving = !!permSaving['purchasing:create']
 
                           return (
                             <div key={page.key}>
                               <button
                                 onClick={() => togglePermission(page.key)}
-                                disabled={saving || roleEnabled}
+                                disabled={saving}
                                 className={`w-full flex items-center gap-2 md:gap-3 px-2.5 md:px-3 py-1.5 md:py-2.5 rounded-lg md:rounded-xl border transition text-[11px] md:text-sm ${
-                                  roleEnabled
-                                    ? 'bg-primary/5 border-primary/30 text-primary/70 cursor-not-allowed'
+                                  empExplicitDeny
+                                    ? 'bg-error/10 border-error/30 text-error'
                                     : enabled
                                       ? 'bg-primary/10 border-primary text-primary'
                                       : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
                                 }`}
-                                title={roleEnabled ? 'Assigned by department' : 'Assign to this employee'}
+                                title={empExplicitDeny ? 'Explicitly denied for this employee' : roleEnabled ? 'Assigned by department' : 'Assign to this employee'}
                               >
                                 <span className="material-symbols-outlined text-[14px] md:text-base">{page.icon}</span>
-                                <span className="flex-1 text-left font-medium">{page.tKey ? t(page.tKey, page.label) : page.label}</span>
-                                {roleEnabled && <span className="text-[9px] uppercase font-bold tracking-wider opacity-60 mr-2">Dept</span>}
+                                <span className={`flex-1 text-left font-medium ${empExplicitDeny ? 'line-through opacity-70' : ''}`}>{page.tKey ? t(page.tKey, page.label) : page.label}</span>
+                                {roleEnabled && !empExplicitDeny && <span className="text-[9px] uppercase font-bold tracking-wider opacity-60 mr-2">Dept</span>}
+                                {empExplicitDeny && <span className="text-[9px] uppercase font-bold tracking-wider text-error opacity-80 mr-2">Denied</span>}
                                 {saving
                                   ? <span className="material-symbols-outlined text-[12px] md:text-sm animate-spin">progress_activity</span>
-                                  : <span className="material-symbols-outlined text-[12px] md:text-sm">{enabled ? 'check_circle' : 'radio_button_unchecked'}</span>
+                                  : <span className="material-symbols-outlined text-[12px] md:text-sm">{empExplicitDeny ? 'block' : enabled ? 'check_circle' : 'radio_button_unchecked'}</span>
                                 }
                               </button>
                               {page.key === 'orders' && enabled && (
                                 <button
                                   onClick={() => togglePermission('orders-create')}
-                                  disabled={ordersSubSaving || roleOrdersSub}
+                                  disabled={ordersSubSaving}
                                   className={`w-full flex items-center gap-2 md:gap-3 pl-6 md:pl-8 pr-2.5 md:pr-3 py-1.5 md:py-2 rounded-lg md:rounded-xl border transition text-[10px] md:text-sm mt-1 ${
-                                    roleOrdersSub
-                                      ? 'bg-primary/5 border-primary/30 text-primary/70 cursor-not-allowed'
+                                    empOrdersSubDeny
+                                      ? 'bg-error/10 border-error/30 text-error'
                                       : ordersSubEnabled
                                         ? 'bg-primary/10 border-primary text-primary'
                                         : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
                                   }`}
                                 >
                                   <span className="material-symbols-outlined text-[14px] md:text-base">add_circle</span>
-                                  <span className="flex-1 text-left font-medium">Can create &amp; edit orders</span>
-                                  {roleOrdersSub && <span className="text-[9px] uppercase font-bold tracking-wider opacity-60 mr-2">Dept</span>}
+                                  <span className={`flex-1 text-left font-medium ${empOrdersSubDeny ? 'line-through opacity-70' : ''}`}>Can create &amp; edit orders</span>
+                                  {roleOrdersSub && !empOrdersSubDeny && <span className="text-[9px] uppercase font-bold tracking-wider opacity-60 mr-2">Dept</span>}
+                                  {empOrdersSubDeny && <span className="text-[9px] uppercase font-bold tracking-wider text-error opacity-80 mr-2">Denied</span>}
                                   {ordersSubSaving
                                     ? <span className="material-symbols-outlined text-[12px] md:text-sm animate-spin">progress_activity</span>
-                                    : <span className="material-symbols-outlined text-[12px] md:text-sm">{ordersSubEnabled ? 'check_circle' : 'radio_button_unchecked'}</span>
+                                    : <span className="material-symbols-outlined text-[12px] md:text-sm">{empOrdersSubDeny ? 'block' : ordersSubEnabled ? 'check_circle' : 'radio_button_unchecked'}</span>
                                   }
                                 </button>
                               )}
                               {page.key === 'purchasing' && enabled && (
                                 <button
                                   onClick={() => togglePermission('purchasing:create')}
-                                  disabled={purchasingSubSaving || rolePurchasingSub}
+                                  disabled={purchasingSubSaving}
                                   className={`w-full flex items-center gap-2 md:gap-3 pl-6 md:pl-8 pr-2.5 md:pr-3 py-1.5 md:py-2 rounded-lg md:rounded-xl border transition text-[10px] md:text-sm mt-1 ${
-                                    rolePurchasingSub
-                                      ? 'bg-primary/5 border-primary/30 text-primary/70 cursor-not-allowed'
+                                    empPurchasingSubDeny
+                                      ? 'bg-error/10 border-error/30 text-error'
                                       : purchasingSubEnabled
                                         ? 'bg-primary/10 border-primary text-primary'
                                         : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
                                   }`}
                                 >
                                   <span className="material-symbols-outlined text-[14px] md:text-base">add_circle</span>
-                                  <span className="flex-1 text-left font-medium">Can create &amp; edit purchase</span>
-                                  {rolePurchasingSub && <span className="text-[9px] uppercase font-bold tracking-wider opacity-60 mr-2">Dept</span>}
+                                  <span className={`flex-1 text-left font-medium ${empPurchasingSubDeny ? 'line-through opacity-70' : ''}`}>Can create &amp; edit purchase</span>
+                                  {rolePurchasingSub && !empPurchasingSubDeny && <span className="text-[9px] uppercase font-bold tracking-wider opacity-60 mr-2">Dept</span>}
+                                  {empPurchasingSubDeny && <span className="text-[9px] uppercase font-bold tracking-wider text-error opacity-80 mr-2">Denied</span>}
                                   {purchasingSubSaving
                                     ? <span className="material-symbols-outlined text-[12px] md:text-sm animate-spin">progress_activity</span>
-                                    : <span className="material-symbols-outlined text-[12px] md:text-sm">{purchasingSubEnabled ? 'check_circle' : 'radio_button_unchecked'}</span>
+                                    : <span className="material-symbols-outlined text-[12px] md:text-sm">{empPurchasingSubDeny ? 'block' : purchasingSubEnabled ? 'check_circle' : 'radio_button_unchecked'}</span>
                                   }
                                 </button>
                               )}

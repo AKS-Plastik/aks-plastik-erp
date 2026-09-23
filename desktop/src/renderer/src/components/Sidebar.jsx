@@ -43,6 +43,9 @@ export default function Sidebar({ isOpen, setIsOpen }) {
   
   const canSee = (page) => {
     if (isAdmin) return true
+    const isEmpDenied = (employeePermissions?.[empId] || []).includes(`-${page}`)
+    if (isEmpDenied) return false
+    
     const hasRolePerm = (permissions[dept] || []).includes(page)
     const hasEmpPerm = (employeePermissions?.[empId] || []).includes(page)
     return hasRolePerm || hasEmpPerm
