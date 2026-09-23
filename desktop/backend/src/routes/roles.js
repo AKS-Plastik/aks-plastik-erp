@@ -39,7 +39,7 @@ router.put('/:id', adminOnly, async (req, res) => {
     // Rename in rolePermission and employee records too
     await prisma.$transaction([
       prisma.rolePermission.updateMany({ where: { role: old.name }, data: { role: name.trim() } }),
-      prisma.roleStatusPermission.updateMany({ where: { role: old.name }, data: { role: name.trim() } }),
+      prisma.statusPermission.updateMany({ where: { role: old.name }, data: { role: name.trim() } }),
       prisma.employee.updateMany({ where: { department: old.name }, data: { department: name.trim() } }),
       prisma.userRole.update({ where: { id: parseInt(req.params.id) }, data: { name: name.trim() } }),
     ])

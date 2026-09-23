@@ -12,7 +12,7 @@ const adminOnly = (req, res, next) => {
 // GET /api/status-permissions — returns { roleName: ['status1', ...] }
 router.get('/', async (req, res) => {
   try {
-    const rows = await prisma.roleStatusPermission.findMany()
+    const rows = await prisma.statusPermission.findMany()
     const map = {}
     rows.forEach(({ role, status }) => {
       if (!map[role]) map[role] = []
@@ -29,9 +29,9 @@ router.put('/:role', adminOnly, async (req, res) => {
   try {
     const { role } = req.params
     const { statuses } = req.body
-    await prisma.roleStatusPermission.deleteMany({ where: { role } })
+    await prisma.statusPermission.deleteMany({ where: { role } })
     if (statuses?.length) {
-      await prisma.roleStatusPermission.createMany({
+      await prisma.statusPermission.createMany({
         data: statuses.map((status) => ({ role, status })),
         skipDuplicates: true,
       })
