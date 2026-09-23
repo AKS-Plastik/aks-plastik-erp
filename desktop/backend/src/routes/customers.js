@@ -13,10 +13,8 @@ router.get('/', async (req, res) => {
       where: {
         OR: [
           { code: { startsWith: '120' } },
-          { code: { startsWith: '130' } },
           { code: { startsWith: '320' } },
           { accountCode: { startsWith: '120' } },
-          { accountCode: { startsWith: '130' } },
           { accountCode: { startsWith: '320' } }
         ]
       },
@@ -66,6 +64,7 @@ function buildCustomerData(body) {
     invoiceType, paymentMethod, paymentTerms,
     // Optional
     industry, customerCategory, salesRepName, notes, gdprConsent,
+    isCustomer,
   } = body
 
   const name = customerType === 'Individual' ? fullName : companyName
@@ -75,7 +74,7 @@ function buildCustomerData(body) {
     .map((w) => w[0]?.toUpperCase() || '')
     .join('')
 
-  return {
+  const data = {
     name: name || '',
     initials,
     customerType: customerType || 'Company',
@@ -129,6 +128,12 @@ function buildCustomerData(body) {
     notes: notes || null,
     gdprConsent: !!gdprConsent,
   }
+
+  if (isCustomer !== undefined) {
+    data.isCustomer = isCustomer === true || isCustomer === 'true';
+  }
+
+  return data;
 }
 
 // POST create customer

@@ -566,7 +566,19 @@ function UserRolesTab() {
   }
 
   async function handleDeleteDept() {
-    await deleteRole(deletingRole.id)
+    if (deletingRole.id) {
+      await deleteRole(deletingRole.id)
+    } else {
+      // Virtual department: clear department for all employees in it
+      const emps = employees.filter(e => (e.department || 'Unassigned') === deletingRole.name)
+      await Promise.all(emps.map(e => 
+        fetch(`${API_URL}/employees/${e.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ department: '' })
+        })
+      ))
+    }
     setDeletingRole(null)
     setDeleteConfirmText('')
     load()
@@ -577,7 +589,20 @@ function UserRolesTab() {
     if (!name || name === renamingRole.name) return
     try {
       setRenameError('')
-      await renameRole(renamingRole.id, name)
+      if (renamingRole.id) {
+        await renameRole(renamingRole.id, name)
+      } else {
+        // Virtual department
+        try { await addRole(name) } catch (err) { /* ignore if already exists */ }
+        const emps = employees.filter(e => (e.department || 'Unassigned') === renamingRole.name)
+        await Promise.all(emps.map(e => 
+          fetch(`${API_URL}/employees/${e.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ department: name })
+          })
+        ))
+      }
       setRenamingRole(null)
       setRenameText('')
       load()
@@ -643,17 +668,17 @@ function UserRolesTab() {
                 <p className="text-sm font-semibold text-on-surface truncate">{dept}</p>
                 <p className="text-xs text-text-muted">{count} {count === 1 ? 'person' : 'people'}</p>
               </div>
-              {role && (
+              {dept !== 'Unassigned' && (
                 <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition" onClick={(e) => e.stopPropagation()}>
                   <button
-                    onClick={() => { setRenamingRole({ id: role.id, name: role.name }); setRenameText(role.name); setRenameError('') }}
+                    onClick={() => { setRenamingRole({ id: role?.id, name: dept }); setRenameText(dept); setRenameError('') }}
                     className="p-1 rounded text-text-muted hover:text-primary hover:bg-hover-bg transition"
                     title={t('common.edit')}
                   >
                     <span className="material-symbols-outlined text-sm">edit</span>
                   </button>
                   <button
-                    onClick={() => { setDeletingRole({ id: role.id, name: role.name }); setDeleteConfirmText('') }}
+                    onClick={() => { setDeletingRole({ id: role?.id, name: dept }); setDeleteConfirmText('') }}
                     className="p-1 rounded text-text-muted hover:text-error hover:bg-hover-bg transition"
                     title={t('common.delete')}
                   >

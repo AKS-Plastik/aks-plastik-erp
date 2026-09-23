@@ -117,6 +117,7 @@ const emptyForm = {
   salesRepName: '',
   notes: '',
   gdprConsent: false,
+  isCustomer: false,
 }
 
 function getTabDefs(t) {
@@ -142,6 +143,7 @@ function getTabFields(tabId, form, t) {
           ? [{ id: 'fullName', label: f('fullName'), icon: 'person', type: 'text', col: 2, placeholder: f('fullNamePh') }]
           : [{ id: 'companyName', label: f('companyName'), icon: 'business', type: 'text', col: 2, placeholder: f('companyNamePh') }]
         ),
+        { id: 'isCustomer', label: t('customers.isCustomer', 'Müşteri (Sipariş Alınmış)'), icon: 'verified_user', type: 'toggle', col: 2 },
         {
           id: 'mukellefTipi', label: f('mukellefTipi'), icon: 'gavel', type: 'radio', col: 2,
           options: [
@@ -822,6 +824,7 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
     salesRepName:    customer.salesRepName    || '',
     notes:           customer.notes           || '',
     gdprConsent:     customer.gdprConsent     || false,
+    isCustomer:      customer.isCustomer      || false,
   })
 
   useEffect(() => {
@@ -1504,7 +1507,7 @@ export default function Customers() {
 
   const filtered = customers.filter((c) => {
     const code = c.accountCode || c.code || ''
-    const isPotential = code.startsWith('130')
+    const isPotential = !c.isCustomer;
     if (activeTab === 'potential' && !isPotential) return false
     if (activeTab === 'active' && isPotential) return false
 

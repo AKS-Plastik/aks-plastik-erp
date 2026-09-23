@@ -115,6 +115,13 @@ router.post('/', async (req, res) => {
     order.shipmentType = shipmentType || ''
     order.paymentMethod = paymentMethod || ''
 
+    if (customerId) {
+      await prisma.customer.update({
+        where: { id: customerId },
+        data: { isCustomer: true }
+      }).catch(err => console.error('Failed to update customer isCustomer flag:', err))
+    }
+
     // Sipariş oluşur oluşmaz Vio'ya yolla ve stok tutarlılığı için ürünleri tekrar çek
     pushOrderToVio(order.id).then(success => {
       if (success) {

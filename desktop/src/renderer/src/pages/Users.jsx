@@ -13,7 +13,7 @@ export default function Users() {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', password: '', phone: '', role: 'user', department: '', employeeId: '' })
   const [editingUser, setEditingUser] = useState(null)
-  const [editForm, setEditForm] = useState({ name: '', email: '', role: 'user' })
+  const [editForm, setEditForm] = useState({ name: '', email: '', role: 'user', department: '' })
   const [resetEmailStatus, setResetEmailStatus] = useState(null) // null | 'sending' | 'sent' | 'error'
   const [error, setError] = useState('')
   const [editError, setEditError] = useState('')
@@ -26,14 +26,14 @@ export default function Users() {
       .then((data) => {
         setUsers(Array.isArray(data) ? data : [])
       })
-      .catch(() => {})
+      .catch(() => { })
 
     fetch(`${API_URL}/employees`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((r) => r.json())
       .then(setEmployees)
-      .catch(() => {})
+      .catch(() => { })
   }, [token])
 
   // Employees without a linked user account
@@ -100,7 +100,7 @@ export default function Users() {
 
   function startEdit(u) {
     setEditingUser(u.id)
-    setEditForm({ name: u.name, email: u.email, phone: u.phone || '', role: u.role })
+    setEditForm({ name: u.name, email: u.email, phone: u.phone || '', role: u.role, department: u.department || '' })
     setEditError('')
     setConfirmEdit(false)
   }
@@ -131,7 +131,7 @@ export default function Users() {
       const res = await fetch(`${API_URL}/auth/users/${editingUser}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ name: editForm.name, email: editForm.email, phone: editForm.phone, role: editForm.role }),
+        body: JSON.stringify({ name: editForm.name, email: editForm.email, phone: editForm.phone, role: editForm.role, department: editForm.department }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
@@ -185,108 +185,108 @@ export default function Users() {
 
             {/* Body */}
             <form onSubmit={handleCreate} className="p-4 space-y-3">
-          {error && (
-            <div className="bg-error-container text-on-error-container text-xs px-3 py-2 rounded-lg">
-              {error}
-            </div>
-          )}
-
-          {/* Employee picker */}
-          <div>
-            <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">
-              Link to Employee <span className="text-text-subtle">(required)</span>
-            </label>
-            <select
-              value={form.employeeId}
-              onChange={(e) => handleEmployeePick(e.target.value)}
-              required
-              className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="">— Select an employee —</option>
-              {availableEmployees.map((e) => (
-                <option key={e.id} value={e.id}>
-                  {e.name} {e.department ? `(${e.department})` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-            <div>
-              <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Full Name</label>
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                required
-                className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border bg-input-bg text-on-surface text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                placeholder="John Doe"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Email</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                required
-                className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border bg-input-bg text-on-surface text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                placeholder="user@fieldhub.com"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Password</label>
-              <input
-                type="password"
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                required
-                minLength={6}
-                className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border bg-input-bg text-on-surface text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                placeholder="Min 6 characters"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Phone <span className="text-text-subtle">(optional)</span></label>
-              <input
-                type="tel"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border bg-input-bg text-on-surface text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-                placeholder="+1 234 567 8900"
-              />
-            </div>
-            <div>
-              <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Role</label>
-              <select
-                value={form.role}
-                onChange={(e) => setForm({ ...form, role: e.target.value })}
-                className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-              >
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
-            {form.department && (
-              <div>
-                <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Department</label>
-                <div className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border bg-surface-container-high text-on-surface-variant text-[11px] md:text-sm flex items-center gap-2">
-                  <span className="material-symbols-outlined text-sm md:text-base text-text-muted">apartment</span>
-                  {form.department}
+              {error && (
+                <div className="bg-error-container text-on-error-container text-xs px-3 py-2 rounded-lg">
+                  {error}
                 </div>
+              )}
+
+              {/* Employee picker */}
+              <div>
+                <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">
+                  Link to Employee <span className="text-text-subtle">(required)</span>
+                </label>
+                <select
+                  value={form.employeeId}
+                  onChange={(e) => handleEmployeePick(e.target.value)}
+                  required
+                  className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                >
+                  <option value="">— Select an employee —</option>
+                  {availableEmployees.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.name} {e.department ? `(${e.department})` : ''}
+                    </option>
+                  ))}
+                </select>
               </div>
-            )}
-          </div>
-          <div className="flex gap-2 justify-end pt-2">
-            <button type="button" onClick={() => { setShowForm(false); setError('') }} className="px-3 py-1.5 text-xs md:text-sm text-on-surface-variant hover:text-on-surface transition-colors">
-              {t('common.cancel')}
-            </button>
-            <button type="submit" className="px-4 py-1.5 md:py-2 rounded-lg primary-gradient text-white text-xs md:text-sm font-bold hover:opacity-90 flex items-center gap-1.5">
-              <span className="material-symbols-outlined text-sm md:text-base">person_add</span>
-              Create User
-            </button>
-          </div>
-        </form>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+                <div>
+                  <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Full Name</label>
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => setForm({ ...form, name: e.target.value })}
+                    required
+                    className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border bg-input-bg text-on-surface text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="John Doe"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Email</label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm({ ...form, email: e.target.value })}
+                    required
+                    className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border bg-input-bg text-on-surface text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="user@fieldhub.com"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Password</label>
+                  <input
+                    type="password"
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    required
+                    minLength={6}
+                    className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border bg-input-bg text-on-surface text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="Min 6 characters"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Phone <span className="text-text-subtle">(optional)</span></label>
+                  <input
+                    type="tel"
+                    value={form.phone}
+                    onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                    className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border bg-input-bg text-on-surface text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                    placeholder="+1 234 567 8900"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Role</label>
+                  <select
+                    value={form.role}
+                    onChange={(e) => setForm({ ...form, role: e.target.value })}
+                    className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="user">User</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                {form.department && (
+                  <div>
+                    <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Department</label>
+                    <div className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border bg-surface-container-high text-on-surface-variant text-[11px] md:text-sm flex items-center gap-2">
+                      <span className="material-symbols-outlined text-sm md:text-base text-text-muted">apartment</span>
+                      {form.department}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 justify-end pt-2">
+                <button type="button" onClick={() => { setShowForm(false); setError('') }} className="px-3 py-1.5 text-xs md:text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+                  {t('common.cancel')}
+                </button>
+                <button type="submit" className="px-4 py-1.5 md:py-2 rounded-lg primary-gradient text-white text-xs md:text-sm font-bold hover:opacity-90 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm md:text-base">person_add</span>
+                  Create User
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -362,14 +362,26 @@ export default function Users() {
                       <option value="admin">Admin</option>
                     </select>
                   </div>
-                  {users.find((u) => u.id === editingUser)?.department && (
+                  {users.find((u) => u.id === editingUser)?.employeeId ? (
                     <div>
                       <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Department</label>
                       <div className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border bg-surface-container-high text-on-surface-variant text-[11px] md:text-sm flex items-center gap-2">
                         <span className="material-symbols-outlined text-sm md:text-base text-text-muted">apartment</span>
-                        {users.find((u) => u.id === editingUser)?.department}
-                        <span className="ml-auto text-[10px] md:text-xs text-text-muted">Change in Employee Detail</span>
+                        {users.find((u) => u.id === editingUser)?.department || '—'}
+                        <span className="ml-auto text-[10px] md:text-xs text-text-muted italic bg-surface-container-lowest px-2 py-0.5 rounded border border-theme-border">From Employee</span>
                       </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Department</label>
+                      <select
+                        value={editForm.department}
+                        onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
+                        className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none bg-surface-container-lowest"
+                      >
+                        <option value="">— Select Department —</option>
+                        {roles.map((r) => <option key={r.id} value={r.name}>{r.name}</option>)}
+                      </select>
                     </div>
                   )}
                   <div className="flex gap-2 justify-end pt-2">
@@ -424,9 +436,8 @@ export default function Users() {
                 </div>
                 <div>
                   <h2 className="text-base md:text-xl font-extrabold text-white leading-tight">{viewUser.name}</h2>
-                  <span className={`inline-flex mt-0.5 md:mt-1 px-2 py-0.5 md:px-2.5 md:py-1 rounded-full text-[9px] md:text-xs font-bold ${
-                    viewUser.role === 'admin' ? 'bg-surface-container-lowest/30 text-white' : 'bg-surface-container-lowest/20 text-white/80'
-                  }`}>
+                  <span className={`inline-flex mt-0.5 md:mt-1 px-2 py-0.5 md:px-2.5 md:py-1 rounded-full text-[9px] md:text-xs font-bold ${viewUser.role === 'admin' ? 'bg-surface-container-lowest/30 text-white' : 'bg-surface-container-lowest/20 text-white/80'
+                    }`}>
                     {viewUser.role === 'manager' ? 'Dept. Manager' : viewUser.role.charAt(0).toUpperCase() + viewUser.role.slice(1)}
                   </span>
                 </div>
@@ -576,13 +587,12 @@ export default function Users() {
                 <td className="px-6 py-4 text-sm text-text-muted">{u.email}</td>
                 <td className="px-6 py-4 text-sm text-text-muted">{u.phone || '—'}</td>
                 <td className="px-6 py-4">
-                  <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-bold ${
-                    u.role === 'admin'
+                  <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-bold ${u.role === 'admin'
                       ? 'bg-primary/10 text-primary border border-primary/20'
                       : u.role === 'manager'
-                      ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                      : 'bg-surface-container border border-theme-border text-text-muted'
-                  }`}>
+                        ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                        : 'bg-surface-container border border-theme-border text-text-muted'
+                    }`}>
                     {u.role === 'manager' ? 'Dept. Manager' : u.role.charAt(0).toUpperCase() + u.role.slice(1)}
                   </span>
                   {u.department && (
@@ -631,13 +641,12 @@ export default function Users() {
                 </div>
               </div>
               <div className="flex flex-col items-end gap-1 flex-shrink-0 max-w-[45%]">
-                <span className={`inline-flex px-2 py-0.5 md:px-2.5 md:py-1 rounded-md text-[9px] md:text-[10px] font-bold truncate max-w-full ${
-                  u.role === 'admin'
+                <span className={`inline-flex px-2 py-0.5 md:px-2.5 md:py-1 rounded-md text-[9px] md:text-[10px] font-bold truncate max-w-full ${u.role === 'admin'
                     ? 'bg-primary/10 text-primary border border-primary/20'
                     : u.role === 'manager'
-                    ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                    : 'bg-surface-container border border-theme-border text-text-muted'
-                }`}>
+                      ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                      : 'bg-surface-container border border-theme-border text-text-muted'
+                  }`}>
                   {u.role === 'manager' ? 'Dept. Manager' : u.role.charAt(0).toUpperCase() + u.role.slice(1)}
                 </span>
                 {u.department && (
