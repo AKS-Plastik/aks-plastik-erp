@@ -21,7 +21,6 @@ build/
 !.env.example
 
 # Prisma
-desktop/backend/prisma/migrations/
 
 # Uploads (employee photos etc.)
 desktop/backend/uploads/
