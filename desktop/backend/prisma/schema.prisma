@@ -104,6 +104,8 @@ model Customer {
   paymentMethod String?
   paymentTerms  String?
 
+  isCustomer    Boolean @default(false)
+
   // Optional
   industry         String?
   customerCategory String?

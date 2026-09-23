@@ -181,7 +181,7 @@ function RequestModal({ initial, onClose, onSave }) {
                 }}
               >
                 <option value="">{t('common.select', 'Select...')}</option>
-                {customers?.filter(c => c.code?.startsWith('130') || c.code?.startsWith('320')).map(c => (
+                {customers?.filter(c => (!c.isCustomer && c.code?.startsWith('120')) || c.code?.startsWith('320')).map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>

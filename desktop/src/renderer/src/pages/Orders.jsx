@@ -58,14 +58,14 @@ function emptyForm() {
 
 // ─── Order Detail Modal ───────────────────────────────────────────────────────
 const detailStatusStyle = {
-  Processing:    'bg-amber-100 text-amber-700',
-  Confirmed:     'bg-primary-fixed text-on-primary-fixed-variant',
+  Processing: 'bg-amber-100 text-amber-700',
+  Confirmed: 'bg-primary-fixed text-on-primary-fixed-variant',
   'In-Production': 'bg-orange-500 text-white shadow-sm',
   'Production Completed': 'bg-green-100 text-green-700',
-  'E-WayBill':   'bg-orange-100 text-orange-700',
+  'E-WayBill': 'bg-orange-100 text-orange-700',
   'In Delivery': 'bg-blue-100 text-blue-700',
-  'E-Invoice':   'bg-teal-100 text-teal-700',
-  Delivered:     'bg-green-400 text-green-900',
+  'E-Invoice': 'bg-teal-100 text-teal-700',
+  Delivered: 'bg-green-400 text-green-900',
 }
 
 function SendToProductionModal({ item, onClose, onSave, machines, employees }) {
@@ -84,16 +84,16 @@ function SendToProductionModal({ item, onClose, onSave, machines, employees }) {
   const [errors, setErrors] = useState({})
 
   const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
-  
+
   function handleSave() {
     const e = {}
     if (!form.quantity || form.quantity < 1 || form.quantity > remaining) e.quantity = 'Invalid'
-    
+
     if (Object.keys(e).length > 0) {
       setErrors(e)
       return
     }
-    
+
     onSave({ ...form, orderItemId: item.id })
   }
 
@@ -106,7 +106,7 @@ function SendToProductionModal({ item, onClose, onSave, machines, employees }) {
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
-        
+
         <div className="mb-4 bg-surface-container-high rounded-xl p-3">
           <p className="text-xs font-bold text-on-surface mb-1">{item.productName}</p>
           <div className="flex justify-between text-[11px] text-text-muted">
@@ -286,11 +286,11 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange, machine
                     <td className="block md:table-cell px-2 md:px-4 py-2 md:py-3 text-center border-t border-surface-container md:border-0 mt-2 md:mt-0">
                       <div className="flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2">
                         <div className="flex gap-1.5 text-[9px] md:text-[10px] font-bold items-center">
-                           <span className="text-text-muted bg-surface-container-high px-1 py-0.5 rounded" title="Remaining">{remaining}</span>
-                           <span className="text-white bg-orange-500 px-1 py-0.5 rounded shadow-sm" title="In Production">{inProd}</span>
-                           <span className="text-green-700 bg-green-100 px-1 py-0.5 rounded" title="Produced">{produced}</span>
-                           <span className="text-text-muted mx-0.5">=</span>
-                           <span className="text-primary bg-primary/10 px-1.5 py-0.5 rounded font-extrabold" title="Total">{it.quantity}</span>
+                          <span className="text-text-muted bg-surface-container-high px-1 py-0.5 rounded" title="Remaining">{remaining}</span>
+                          <span className="text-white bg-orange-500 px-1 py-0.5 rounded shadow-sm" title="In Production">{inProd}</span>
+                          <span className="text-green-700 bg-green-100 px-1 py-0.5 rounded" title="Produced">{produced}</span>
+                          <span className="text-text-muted mx-0.5">=</span>
+                          <span className="text-primary bg-primary/10 px-1.5 py-0.5 rounded font-extrabold" title="Total">{it.quantity}</span>
                         </div>
                         {canProduce && isAdmin && (
                           <button onClick={() => setProductionItem(it)} className="bg-primary/10 text-primary hover:bg-primary hover:text-white rounded px-2 py-1 text-[10px] font-bold transition-colors whitespace-nowrap">
@@ -488,9 +488,9 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
             <div className="flex-1 min-w-[200px]">
               <label className="block text-xs font-bold text-text-muted mb-1.5">{t('orders.customer')} *</label>
               <SearchableSelect
-                options={customers.map(c => ({ value: c.id, label: `${c.code} - ${c.name}` }))}
+                options={customers.filter(c => (c.code || c.accountCode || '').startsWith('120')).map(c => ({ value: c.id, label: `${c.code || c.accountCode || ''} - ${c.name}` }))}
                 value={form.customerId}
-                onChange={set('customerId')}
+                onChange={(val) => setForm((f) => ({ ...f, customerId: val }))}
                 placeholder={t('orders.selectCustomer')}
                 error={errors.customerId}
               />
@@ -548,84 +548,85 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
                 const itemErr = errors.items && item.productName && (!item.unitPrice || parseInt(item.quantity) < 1)
                 const itemTotal = (parseFloat(item.unitPrice) || 0) * (parseInt(item.quantity) || 0) * (1 + (parseFloat(item.vat) || 0) / 100)
                 return (
-                <div key={idx} className="flex flex-col md:flex-row md:items-center gap-3 md:gap-2 border border-theme-border md:border-0 rounded-xl md:rounded-none p-3 md:p-0 bg-surface-container-high/30 md:bg-transparent">
-                  <div className="flex-1 md:w-auto mt-2 md:mt-0">
-                    <SearchableSelect
-                      options={products.map(p => ({
-                        value: p.id,
-                        label: p.stockNo ? `${p.stockNo} — ${p.name}` : p.name
-                      }))}
-                      value={item.productId || ''}
-                      onChange={(val) => fillFromProduct(idx, val)}
-                      placeholder={t('orders.selectProduct')}
-                      error={errors.items && !item.productName}
-                    />
-                  </div>
-                  
-                  <div className="flex flex-wrap md:flex-nowrap items-end gap-2 w-full md:w-auto">
-                    <div className="w-[calc(50%-4px)] md:w-14">
-                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.qty')}</span>
-                      <input
-                        type="number" min="1"
-                        className={`w-full border rounded px-2 py-1.5 text-xs md:text-sm bg-surface-container-lowest text-on-surface outline-none focus:border-primary text-center ${itemErr && parseInt(item.quantity) < 1 ? 'border-error' : 'border-theme-border'}`}
-                        placeholder="1"
-                        value={item.quantity}
-                        onChange={(e) => setItem(idx, 'quantity', e.target.value)}
+                  <div key={idx} className="flex flex-col md:flex-row md:items-center gap-3 md:gap-2 border border-theme-border md:border-0 rounded-xl md:rounded-none p-3 md:p-0 bg-surface-container-high/30 md:bg-transparent">
+                    <div className="flex-1 md:w-auto mt-2 md:mt-0">
+                      <SearchableSelect
+                        options={products.map(p => ({
+                          value: p.id,
+                          label: p.stockNo ? `${p.stockNo} — ${p.name}` : p.name
+                        }))}
+                        value={item.productId || ''}
+                        onChange={(val) => fillFromProduct(idx, val)}
+                        placeholder={t('orders.selectProduct')}
+                        error={errors.items && !item.productName}
                       />
                     </div>
-                    <div className="w-[calc(50%-4px)] md:w-12 flex flex-col">
-                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('common.unit')}</span>
-                      <div className="h-[28px] md:h-auto flex items-center justify-center">
-                        {item.unit ? (
-                          <span className="text-[11px] font-semibold text-text-muted bg-surface-container-high border border-theme-border rounded px-1.5 py-1 leading-none w-full text-center">{item.unit}</span>
-                        ) : (
-                          <span className="text-[11px] text-text-muted/40 w-full text-center">—</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="w-[calc(50%-4px)] md:w-28 flex flex-col">
-                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.unitPrice')}</span>
-                      <div className={`flex items-center border rounded overflow-hidden bg-surface-container-lowest ${itemErr && !item.unitPrice ? 'border-error' : 'border-theme-border'}`}>
-                        <span className="px-1.5 text-[10px] text-text-muted border-r border-theme-border bg-surface-container-high">{item.currency || 'TRY'}</span>
+
+                    <div className="flex flex-wrap md:flex-nowrap items-end gap-2 w-full md:w-auto">
+                      <div className="w-[calc(50%-4px)] md:w-14">
+                        <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.qty')}</span>
                         <input
-                          type="number" min="0" step="0.01"
-                          className="w-full px-2 py-1.5 text-xs md:text-sm text-on-surface outline-none bg-transparent"
-                          placeholder="0.00"
-                          value={item.unitPrice}
-                          onChange={(e) => setItem(idx, 'unitPrice', e.target.value)}
+                          type="number" min="1"
+                          className={`w-full border rounded px-2 py-1.5 text-xs md:text-sm bg-surface-container-lowest text-on-surface outline-none focus:border-primary text-center ${itemErr && parseInt(item.quantity) < 1 ? 'border-error' : 'border-theme-border'}`}
+                          placeholder="1"
+                          value={item.quantity}
+                          onChange={(e) => setItem(idx, 'quantity', e.target.value)}
                         />
                       </div>
-                    </div>
-                    <div className="w-[calc(50%-4px)] md:w-16 flex flex-col">
-                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.vat')}</span>
-                      <div className="flex items-center border border-theme-border rounded overflow-hidden bg-surface-container-lowest">
-                        <input
-                          type="number" min="0" max="100" step="0.1"
-                          className="w-full px-2 py-1.5 text-xs md:text-sm text-on-surface outline-none bg-transparent text-center"
-                          placeholder="0"
-                          value={item.vat}
-                          onChange={(e) => setItem(idx, 'vat', e.target.value)}
-                        />
-                        <span className="px-1.5 text-[10px] text-text-muted border-l border-theme-border bg-surface-container-high">%</span>
+                      <div className="w-[calc(50%-4px)] md:w-12 flex flex-col">
+                        <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('common.unit')}</span>
+                        <div className="h-[28px] md:h-auto flex items-center justify-center">
+                          {item.unit ? (
+                            <span className="text-[11px] font-semibold text-text-muted bg-surface-container-high border border-theme-border rounded px-1.5 py-1 leading-none w-full text-center">{item.unit}</span>
+                          ) : (
+                            <span className="text-[11px] text-text-muted/40 w-full text-center">—</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="w-[calc(50%-4px)] md:w-28 flex flex-col">
+                        <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.unitPrice')}</span>
+                        <div className={`flex items-center border rounded overflow-hidden bg-surface-container-lowest ${itemErr && !item.unitPrice ? 'border-error' : 'border-theme-border'}`}>
+                          <span className="px-1.5 text-[10px] text-text-muted border-r border-theme-border bg-surface-container-high">{item.currency || 'TRY'}</span>
+                          <input
+                            type="number" min="0" step="0.01"
+                            className="w-full px-2 py-1.5 text-xs md:text-sm text-on-surface outline-none bg-transparent"
+                            placeholder="0.00"
+                            value={item.unitPrice}
+                            onChange={(e) => setItem(idx, 'unitPrice', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                      <div className="w-[calc(50%-4px)] md:w-16 flex flex-col">
+                        <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.vat')}</span>
+                        <div className="flex items-center border border-theme-border rounded overflow-hidden bg-surface-container-lowest">
+                          <input
+                            type="number" min="0" max="100" step="0.1"
+                            className="w-full px-2 py-1.5 text-xs md:text-sm text-on-surface outline-none bg-transparent text-center"
+                            placeholder="0"
+                            value={item.vat}
+                            onChange={(e) => setItem(idx, 'vat', e.target.value)}
+                          />
+                          <span className="px-1.5 text-[10px] text-text-muted border-l border-theme-border bg-surface-container-high">%</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between w-full md:w-auto mt-1 md:mt-0 pt-2 md:pt-0 border-t border-theme-border md:border-0">
-                    <div className="flex flex-col md:items-end">
-                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-0.5 block">{t('orders.total')}</span>
-                      <span className="text-xs md:text-sm font-semibold text-on-surface md:w-24 md:text-right">
-                        {item.currency || 'TRY'} {itemTotal.toFixed(2)}
-                      </span>
+
+                    <div className="flex items-center justify-between w-full md:w-auto mt-1 md:mt-0 pt-2 md:pt-0 border-t border-theme-border md:border-0">
+                      <div className="flex flex-col md:items-end">
+                        <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-0.5 block">{t('orders.total')}</span>
+                        <span className="text-xs md:text-sm font-semibold text-on-surface md:w-24 md:text-right">
+                          {item.currency || 'TRY'} {itemTotal.toFixed(2)}
+                        </span>
+                      </div>
+                      {form.items.length > 1 && (
+                        <button onClick={() => removeItem(idx)} className="text-text-muted hover:text-error flex items-center justify-center p-1.5 rounded-lg hover:bg-error/10 transition">
+                          <span className="material-symbols-outlined text-base">remove_circle</span>
+                        </button>
+                      )}
                     </div>
-                    {form.items.length > 1 && (
-                      <button onClick={() => removeItem(idx)} className="text-text-muted hover:text-error flex items-center justify-center p-1.5 rounded-lg hover:bg-error/10 transition">
-                        <span className="material-symbols-outlined text-base">remove_circle</span>
-                      </button>
-                    )}
                   </div>
-                </div>
-              )})}
+                )
+              })}
             </div>
             <div className="mt-3 flex justify-end">
               <span className="font-bold text-on-surface border-t border-theme-border pt-1">
@@ -676,14 +677,14 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
 }
 
 const statusStyle = {
-  Processing:      'bg-amber-200 text-amber-700',
-  Confirmed:       'bg-primary-fixed text-on-primary-fixed-variant',
+  Processing: 'bg-amber-200 text-amber-700',
+  Confirmed: 'bg-primary-fixed text-on-primary-fixed-variant',
   'In-Production': 'bg-tertiary-fixed text-on-tertiary-fixed-variant',
   'Production Completed': 'bg-green-100 text-green-700',
-  'E-WayBill':     'bg-orange-100 text-orange-700',
-  'In Delivery':   'bg-blue-100 text-blue-700',
-  'E-Invoice':     'bg-teal-100 text-teal-700',
-  Delivered:       'bg-green-400 text-green-900',
+  'E-WayBill': 'bg-orange-100 text-orange-700',
+  'In Delivery': 'bg-blue-100 text-blue-700',
+  'E-Invoice': 'bg-teal-100 text-teal-700',
+  Delivered: 'bg-green-400 text-green-900',
 }
 
 // Load bundled Roboto font as base64 for jsPDF (cached after first load)
@@ -737,7 +738,7 @@ export default function Orders() {
     })
       .then((r) => r.json())
       .then((data) => Array.isArray(data) && setSalesTeam(data))
-      .catch(() => {})
+      .catch(() => { })
   }, [token])
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
@@ -823,7 +824,7 @@ export default function Orders() {
     try {
       const logoBase64 = await loadImageAsBase64(aksLogoUrl)
       doc.addImage(logoBase64, 'PNG', pageW - margin - 36, 10, 36, 12)
-    } catch (_) {}
+    } catch (_) { }
 
     // Title
     doc.setFont(tf, 'bold')
@@ -969,14 +970,14 @@ export default function Orders() {
       paymentMethod: item.paymentMethod || '',
       items: item.items?.length
         ? item.items.map((it) => ({
-            id: it.id,
-            productName: it.productName,
-            quantity: it.quantity,
-            unitPrice: it.unitPrice,
-            currency: it.currency || 'TRY',
-            vat: it.vat ?? '0',
-            productId: it.productId || '',
-          }))
+          id: it.id,
+          productName: it.productName,
+          quantity: it.quantity,
+          unitPrice: it.unitPrice,
+          currency: it.currency || 'TRY',
+          vat: it.vat ?? '0',
+          productId: it.productId || '',
+        }))
         : [{ ...emptyItem }],
     })
     setErrors({})

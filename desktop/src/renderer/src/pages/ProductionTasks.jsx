@@ -284,7 +284,7 @@ function KanbanCard({ task, onClick, locked }) {
   )
 }
 
-function EodWizardModal({ tasks, onProcess }) {
+function EodWizardModal({ tasks, onProcess, onClose }) {
   const { t } = useTranslation()
   const todayIso = getLocalTodayIso()
   
@@ -342,6 +342,9 @@ function EodWizardModal({ tasks, onProcess }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
        <div className="bg-surface-container-lowest rounded-2xl w-[95%] md:w-[500px] p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+          <button onClick={onClose} className="absolute top-4 right-4 text-text-muted hover:text-error transition-colors">
+            <span className="material-symbols-outlined">close</span>
+          </button>
           <div className="flex items-center gap-3 text-error mb-4">
             <span className="material-symbols-outlined text-3xl">warning</span>
             <h2 className="text-lg font-bold">Geçmişten Kalan Görevler ({currentIndex + 1}/{tasks.length})</h2>
@@ -518,6 +521,7 @@ export default function ProductionTasks() {
 
   const todayIso = getLocalTodayIso()
   const [currentDate, setCurrentDate] = useState(todayIso)
+  const [isWizardDismissed, setIsWizardDismissed] = useState(false)
 
   // Rollover/EOD Wizard Logic
   // Find tasks that belong to past days and are not completed
@@ -610,9 +614,10 @@ export default function ProductionTasks() {
         />
       )}
       
-      {showEodWizard && isAdmin && (
+      {showEodWizard && isAdmin && !isWizardDismissed && (
         <EodWizardModal 
           tasks={pendingPastTasks} 
+          onClose={() => setIsWizardDismissed(true)}
           onProcess={async (data) => {
             try {
               await rolloverProductionTask(data)
@@ -621,6 +626,23 @@ export default function ProductionTasks() {
             }
           }} 
         />
+      )}
+
+      {showEodWizard && isAdmin && isWizardDismissed && (
+        <div className="bg-error/10 border border-error/40 text-error rounded-2xl p-4 md:p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm cursor-pointer hover:bg-error/20 transition-all select-none" onClick={() => setIsWizardDismissed(false)}>
+          <div className="flex items-center gap-3 md:gap-4">
+             <div className="w-10 h-10 rounded-full bg-error/20 flex items-center justify-center flex-shrink-0">
+               <span className="material-symbols-outlined text-error text-2xl">warning</span>
+             </div>
+             <div>
+                <h2 className="text-sm md:text-base font-extrabold">Geçmişten Kalan Görevler Bekliyor</h2>
+                <p className="text-xs md:text-sm opacity-90 mt-0.5">Bugünün panosunda işlem yapabilmek için önce geçmişteki <span className="font-bold">{pendingPastTasks.length}</span> görevi çözüme kavuşturmalısınız.</p>
+             </div>
+          </div>
+          <button className="w-full sm:w-auto bg-error text-white px-5 py-2.5 rounded-xl text-xs font-bold hover:opacity-90 shadow-md whitespace-nowrap active:scale-95 transition-all">
+            Çözüme Kavuştur
+          </button>
+        </div>
       )}
 
       {/* Header */}
@@ -722,7 +744,9 @@ export default function ProductionTasks() {
                     key={task.id}
                     task={task}
                     locked={isPastBoard || showEodWizard}
-                    onClick={() => setDetailTask(task)}
+                    onClick={() => {
+                      if (!showEodWizard) setDetailTask(task)
+                    }}
                   />
                 ))}
                 {colTasks.length === 0 && (
