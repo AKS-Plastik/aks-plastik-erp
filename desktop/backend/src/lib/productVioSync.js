@@ -30,7 +30,7 @@ async function fetchProductsFromVio() {
       queries: [
         {
           tip: 'select',
-          table: 'stkmst'
+          table: 'stkmst', keys: ['*']
         }
       ]
     };
@@ -143,7 +143,7 @@ async function fetchSingleVioProduct(stockNo) {
       queries: [
         {
           tip: 'select',
-          table: 'stkmst',
+          table: 'stkmst', keys: ['*'],
           filters: [`kod = '${stockNo}'`]
         }
       ]
@@ -367,7 +367,7 @@ async function syncProductToVio(product, changedFields = null) {
       queries: [
         {
           tip: 'insertOrUpdate',
-          table: 'stkmst',
+          table: 'stkmst', keys: ['*'],
           data: [stkmstData]
         }
       ]
@@ -421,7 +421,7 @@ async function deleteProductFromVio(productCode) {
       queries: [
         {
           tip: 'delete',
-          table: 'stkmst',
+          table: 'stkmst', keys: ['*'],
           filters: [`kod = '${kod}'`]
         }
       ]

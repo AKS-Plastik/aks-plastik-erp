@@ -21,8 +21,8 @@ function isExpired(token) {
 export function AuthProvider({ children }) {
   const [user, setUser]   = useState(null)
   const [token, setToken] = useState(null)
-  const [loading, setLoading] = useState(false)
   const savedRt = !window.api ? (localStorage.getItem('aks_refresh_token') || sessionStorage.getItem('aks_refresh_token')) : null
+  const [loading, setLoading] = useState(!!savedRt)
   const refreshTokenRef = useRef(savedRt)
 
   // Web-only: Restore session on mount if we have a refresh token saved

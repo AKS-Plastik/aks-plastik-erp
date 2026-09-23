@@ -42,4 +42,37 @@ router.put('/:role', adminOnly, async (req, res) => {
   }
 })
 
+// GET /api/permissions/employee — returns { employeeId: ['page1', 'page2', ...] }
+router.get('/employee', async (req, res) => {
+  try {
+    const rows = await prisma.employeePermission.findMany()
+    const map = {}
+    rows.forEach(({ employeeId, page }) => {
+      if (!map[employeeId]) map[employeeId] = []
+      map[employeeId].push(page)
+    })
+    res.json(map)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// PUT /api/permissions/employee/:employeeId — replace all pages for an employee
+router.put('/employee/:employeeId', adminOnly, async (req, res) => {
+  try {
+    const { employeeId } = req.params
+    const { pages } = req.body // array of page strings
+    await prisma.employeePermission.deleteMany({ where: { employeeId } })
+    if (pages?.length) {
+      await prisma.employeePermission.createMany({
+        data: pages.map((page) => ({ employeeId, page })),
+        skipDuplicates: true,
+      })
+    }
+    res.json({ success: true })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 module.exports = router

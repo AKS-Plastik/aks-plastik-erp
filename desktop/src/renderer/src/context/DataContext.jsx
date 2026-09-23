@@ -149,10 +149,17 @@ export function DataProvider({ children }) {
   }, [token])
   useEffect(() => { refreshProductionTasks() }, [token])
 
+  const [employeePermissions, setEmployeePermissions] = useState({})
+
   const refreshPermissions = useCallback(() => {
     fetch(`${API_URL}/permissions`, { headers: authHeaders })
       .then((r) => r.json())
       .then((data) => setPermissions(data || {}))
+      .catch(() => { })
+      
+    fetch(`${API_URL}/permissions/employee`, { headers: authHeaders })
+      .then((r) => r.json())
+      .then((data) => setEmployeePermissions(data || {}))
       .catch(() => { })
   }, [token])
   useEffect(() => { refreshPermissions() }, [token])
@@ -404,6 +411,14 @@ export function DataProvider({ children }) {
     setPermissions((prev) => ({ ...prev, [role]: pages }))
   }
 
+  async function updateEmployeePermissions(employeeId, pages) {
+    const res = await fetch(`${API_URL}/permissions/employee/${encodeURIComponent(employeeId)}`, {
+      method: 'PUT', headers, body: JSON.stringify({ pages }),
+    })
+    if (!res.ok) throw new Error((await res.json()).error || 'Failed')
+    setEmployeePermissions((prev) => ({ ...prev, [employeeId]: pages }))
+  }
+
   // ── Status Permissions ──
   async function updateRoleStatusPermissions(role, statuses) {
     const res = await fetch(`${API_URL}/status-permissions/${encodeURIComponent(role)}`, {
@@ -610,6 +625,7 @@ export function DataProvider({ children }) {
       financeRecords, addFinanceRecord, updateFinanceRecord, deleteFinanceRecord, refreshFinanceRecords,
       roles, addRole, renameRole, deleteRole,
       permissions, updateRolePermissions, refreshPermissions,
+      employeePermissions, updateEmployeePermissions,
       statusPermissions, updateRoleStatusPermissions, refreshStatusPermissions,
       userStatusPermissions, updateUserStatusPermissions, refreshUserStatusPermissions,
       userPurchasingStatusPermissions, updateUserPurchasingStatusPermissions, refreshUserPurchasingStatusPermissions,
