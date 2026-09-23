@@ -6,19 +6,19 @@ import { API_URL } from '../config'
 import InitialsAvatar from '../components/InitialsAvatar'
 
 const PAGES = [
-  { key: 'customers',   label: 'Customers',   icon: 'groups' },
-  { key: 'products',    label: 'Products',    icon: 'inventory_2' },
-  { key: 'orders',      label: 'Orders',      icon: 'shopping_cart' },
-  { key: 'work-orders', label: 'Site Visits', icon: 'location_on' },
-  { key: 'reports',     label: 'Tasks',       icon: 'analytics' },
-  { key: 'employees',   label: 'Employees',   icon: 'badge' },
-  { key: 'finance',     label: 'Finance',     icon: 'account_balance_wallet' },
-  { key: 'production',  label: 'Production',  icon: 'precision_manufacturing' },
-  { key: 'production-tasks', label: 'Production Tasks', icon: 'view_kanban' },
-  { key: 'maintenance', label: 'Maintenance', icon: 'build' },
-  { key: 'logistics',   label: 'Logistics',   icon: 'local_shipping' },
-  { key: 'purchasing',  label: 'Purchasing',  icon: 'shopping_bag' },
-  { key: 'attendance',  label: 'Attendance',  icon: 'schedule' },
+  { key: 'customers',   tKey: 'nav.customers', label: 'Customers',   icon: 'groups' },
+  { key: 'products',    tKey: 'nav.products', label: 'Products',    icon: 'inventory_2' },
+  { key: 'orders',      tKey: 'nav.orders', label: 'Orders',      icon: 'shopping_cart' },
+  { key: 'work-orders', tKey: 'nav.siteVisits', label: 'Site Visits', icon: 'location_on' },
+  { key: 'reports',     tKey: 'nav.tasks', label: 'Tasks',       icon: 'analytics' },
+  { key: 'employees',   tKey: 'nav.employees', label: 'Employees',   icon: 'badge' },
+  { key: 'finance',     tKey: 'nav.finance', label: 'Finance',     icon: 'account_balance_wallet' },
+  { key: 'production',  tKey: 'nav.production', label: 'Production',  icon: 'precision_manufacturing' },
+  { key: 'production-tasks', tKey: 'nav.productionTasks', label: 'Production Tasks', icon: 'view_kanban' },
+  { key: 'maintenance', tKey: 'nav.maintenance', label: 'Maintenance', icon: 'build' },
+  { key: 'logistics',   tKey: 'nav.logistics', label: 'Logistics',   icon: 'local_shipping' },
+  { key: 'purchasing',  tKey: 'nav.purchasing', label: 'Purchasing',  icon: 'shopping_bag' },
+  { key: 'attendance',  tKey: 'nav.attendance', label: 'Attendance',  icon: 'schedule' },
 ]
 
 const ITEMS_PER_PAGE = 10
@@ -121,7 +121,7 @@ function DocCheckbox({ label, checked, onChange }) {
 function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveError, employee, allEmployees, onPhotoFileSelected }) {
   const { t } = useTranslation()
   const [tab, setTab] = useState('identity')
-  const { roles, permissions, updateRolePermissions, uploadEmployeePhoto } = useData()
+  const { roles, permissions, employeePermissions, updateEmployeePermissions, uploadEmployeePhoto } = useData()
   const { token } = useAuth()
   const [isManagerLocal, setIsManagerLocal] = useState(!!employee?.isManager)
   const [managerSaving, setManagerSaving] = useState(false)
@@ -192,8 +192,12 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
   const PAGE_SUB_KEYS = { orders: ['orders-create'], purchasing: ['purchasing:create'] }
 
   async function togglePermission(pageKey) {
-    if (!dept) return
-    const current = permissions[dept] || []
+    if (!employee?.id) return
+    const empId = employee.id
+    const roleEnabled = (permissions[dept] || []).includes(pageKey)
+    if (roleEnabled) return // Cannot toggle if enabled by role
+    
+    const current = employeePermissions[empId] || []
     let next
     if (current.includes(pageKey)) {
       const subs = PAGE_SUB_KEYS[pageKey] || []
@@ -202,7 +206,7 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
       next = [...current, pageKey]
     }
     setPermSaving(s => ({ ...s, [pageKey]: true }))
-    try { await updateRolePermissions(dept, next) }
+    try { await updateEmployeePermissions(empId, next) }
     finally { setPermSaving(s => ({ ...s, [pageKey]: false })) }
   }
 
@@ -592,25 +596,38 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
                     ) : (
                       <div className="space-y-1 md:space-y-1.5">
                         {PAGES.map((page) => {
-                          const enabled = (permissions[dept] || []).includes(page.key)
+                          const roleEnabled = (permissions[dept] || []).includes(page.key)
+                          const empEnabled = (employeePermissions[employee?.id] || []).includes(page.key)
+                          const enabled = roleEnabled || empEnabled
                           const saving = !!permSaving[page.key]
-                          const ordersSubEnabled = page.key === 'orders' && enabled && (permissions[dept] || []).includes('orders-create')
+
+                          const roleOrdersSub = page.key === 'orders' && roleEnabled && (permissions[dept] || []).includes('orders-create')
+                          const empOrdersSub = page.key === 'orders' && empEnabled && (employeePermissions[employee?.id] || []).includes('orders-create')
+                          const ordersSubEnabled = roleOrdersSub || empOrdersSub
                           const ordersSubSaving = !!permSaving['orders-create']
-                          const purchasingSubEnabled = page.key === 'purchasing' && enabled && (permissions[dept] || []).includes('purchasing:create')
+
+                          const rolePurchasingSub = page.key === 'purchasing' && roleEnabled && (permissions[dept] || []).includes('purchasing:create')
+                          const empPurchasingSub = page.key === 'purchasing' && empEnabled && (employeePermissions[employee?.id] || []).includes('purchasing:create')
+                          const purchasingSubEnabled = rolePurchasingSub || empPurchasingSub
                           const purchasingSubSaving = !!permSaving['purchasing:create']
+
                           return (
                             <div key={page.key}>
                               <button
                                 onClick={() => togglePermission(page.key)}
-                                disabled={saving}
+                                disabled={saving || roleEnabled}
                                 className={`w-full flex items-center gap-2 md:gap-3 px-2.5 md:px-3 py-1.5 md:py-2.5 rounded-lg md:rounded-xl border transition text-[11px] md:text-sm ${
-                                  enabled
-                                    ? 'bg-primary/10 border-primary text-primary'
-                                    : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
+                                  roleEnabled
+                                    ? 'bg-primary/5 border-primary/30 text-primary/70 cursor-not-allowed'
+                                    : enabled
+                                      ? 'bg-primary/10 border-primary text-primary'
+                                      : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
                                 }`}
+                                title={roleEnabled ? 'Assigned by department' : 'Assign to this employee'}
                               >
                                 <span className="material-symbols-outlined text-[14px] md:text-base">{page.icon}</span>
-                                <span className="flex-1 text-left font-medium">{page.label}</span>
+                                <span className="flex-1 text-left font-medium">{page.tKey ? t(page.tKey, page.label) : page.label}</span>
+                                {roleEnabled && <span className="text-[9px] uppercase font-bold tracking-wider opacity-60 mr-2">Dept</span>}
                                 {saving
                                   ? <span className="material-symbols-outlined text-[12px] md:text-sm animate-spin">progress_activity</span>
                                   : <span className="material-symbols-outlined text-[12px] md:text-sm">{enabled ? 'check_circle' : 'radio_button_unchecked'}</span>
@@ -619,15 +636,18 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
                               {page.key === 'orders' && enabled && (
                                 <button
                                   onClick={() => togglePermission('orders-create')}
-                                  disabled={ordersSubSaving}
+                                  disabled={ordersSubSaving || roleOrdersSub}
                                   className={`w-full flex items-center gap-2 md:gap-3 pl-6 md:pl-8 pr-2.5 md:pr-3 py-1.5 md:py-2 rounded-lg md:rounded-xl border transition text-[10px] md:text-sm mt-1 ${
-                                    ordersSubEnabled
-                                      ? 'bg-primary/10 border-primary text-primary'
-                                      : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
+                                    roleOrdersSub
+                                      ? 'bg-primary/5 border-primary/30 text-primary/70 cursor-not-allowed'
+                                      : ordersSubEnabled
+                                        ? 'bg-primary/10 border-primary text-primary'
+                                        : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
                                   }`}
                                 >
                                   <span className="material-symbols-outlined text-[14px] md:text-base">add_circle</span>
                                   <span className="flex-1 text-left font-medium">Can create &amp; edit orders</span>
+                                  {roleOrdersSub && <span className="text-[9px] uppercase font-bold tracking-wider opacity-60 mr-2">Dept</span>}
                                   {ordersSubSaving
                                     ? <span className="material-symbols-outlined text-[12px] md:text-sm animate-spin">progress_activity</span>
                                     : <span className="material-symbols-outlined text-[12px] md:text-sm">{ordersSubEnabled ? 'check_circle' : 'radio_button_unchecked'}</span>
@@ -637,15 +657,18 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
                               {page.key === 'purchasing' && enabled && (
                                 <button
                                   onClick={() => togglePermission('purchasing:create')}
-                                  disabled={purchasingSubSaving}
+                                  disabled={purchasingSubSaving || rolePurchasingSub}
                                   className={`w-full flex items-center gap-2 md:gap-3 pl-6 md:pl-8 pr-2.5 md:pr-3 py-1.5 md:py-2 rounded-lg md:rounded-xl border transition text-[10px] md:text-sm mt-1 ${
-                                    purchasingSubEnabled
-                                      ? 'bg-primary/10 border-primary text-primary'
-                                      : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
+                                    rolePurchasingSub
+                                      ? 'bg-primary/5 border-primary/30 text-primary/70 cursor-not-allowed'
+                                      : purchasingSubEnabled
+                                        ? 'bg-primary/10 border-primary text-primary'
+                                        : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
                                   }`}
                                 >
                                   <span className="material-symbols-outlined text-[14px] md:text-base">add_circle</span>
                                   <span className="flex-1 text-left font-medium">Can create &amp; edit purchase</span>
+                                  {rolePurchasingSub && <span className="text-[9px] uppercase font-bold tracking-wider opacity-60 mr-2">Dept</span>}
                                   {purchasingSubSaving
                                     ? <span className="material-symbols-outlined text-[12px] md:text-sm animate-spin">progress_activity</span>
                                     : <span className="material-symbols-outlined text-[12px] md:text-sm">{purchasingSubEnabled ? 'check_circle' : 'radio_button_unchecked'}</span>

@@ -551,3 +551,19 @@ model UserPurchasingStatusPermission {
 
   @@unique([userId, status])
 }
+
+model EmployeePermission {
+  id         Int    @id @default(autoincrement())
+  employeeId String
+  page       String
+
+  @@unique([employeeId, page])
+}
+
+model EmployeeStatusPermission {
+  id         Int    @id @default(autoincrement())
+  employeeId String
+  status     String
+
+  @@unique([employeeId, status])
+}

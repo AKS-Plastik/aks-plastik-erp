@@ -492,7 +492,12 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
                   const code = c.code || '';
                   const acc = c.accountCode || '';
                   return code.startsWith('120') || acc.startsWith('120') || code.startsWith('CX-');
-                }).map(c => ({ value: c.id, label: `${c.code || c.accountCode || ''} - ${c.name}` }))}
+                }).map(c => {
+                  const displayCode = c.accountCode && c.code && c.code !== c.accountCode 
+                    ? `${c.code} (${c.accountCode})` 
+                    : (c.accountCode || c.code || '');
+                  return { value: c.id, label: `${displayCode} - ${c.name}` };
+                })}
                 value={form.customerId}
                 onChange={(val) => setForm((f) => ({ ...f, customerId: val }))}
                 placeholder={t('orders.selectCustomer')}

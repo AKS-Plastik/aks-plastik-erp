@@ -438,19 +438,30 @@ function MachineModal({ machine, onClose, onSave }) {
 }
 
 const PAGES = [
-  { key: 'customers',   label: 'Customers',   icon: 'groups' },
-  { key: 'products',    label: 'Products',    icon: 'inventory_2' },
-  { key: 'orders',      label: 'Orders',      icon: 'shopping_cart' },
-  { key: 'work-orders', label: 'Site Visits', icon: 'location_on' },
-  { key: 'reports',     label: 'Tasks',       icon: 'analytics' },
-  { key: 'employees',   label: 'Employees',   icon: 'badge' },
-  { key: 'finance',     label: 'Finance',     icon: 'account_balance_wallet' },
-  { key: 'production',  label: 'Production',  icon: 'precision_manufacturing' },
-  { key: 'production-tasks', label: 'Production Tasks', icon: 'view_kanban' },
-  { key: 'maintenance', label: 'Maintenance', icon: 'build' },
-  { key: 'logistics',   label: 'Logistics',   icon: 'local_shipping' },
-  { key: 'purchasing',  label: 'Purchasing',  icon: 'shopping_bag' },
-  { key: 'attendance',  label: 'Attendance',  icon: 'schedule' },
+  { key: 'customers',   tKey: 'nav.customers', label: 'Customers',   icon: 'groups' },
+  { key: 'products',    tKey: 'nav.products', label: 'Products',    icon: 'inventory_2' },
+  { key: 'orders',      tKey: 'nav.orders', label: 'Orders',      icon: 'shopping_cart' },
+  { key: 'work-orders', tKey: 'nav.siteVisits', label: 'Site Visits', icon: 'location_on' },
+  { key: 'reports',     tKey: 'nav.tasks', label: 'Tasks',       icon: 'analytics' },
+  { key: 'employees',   tKey: 'nav.employees', label: 'Employees',   icon: 'badge' },
+  { key: 'finance',     tKey: 'nav.finance', label: 'Finance',     icon: 'account_balance_wallet' },
+  { key: 'production',  tKey: 'nav.production', label: 'Production',  icon: 'precision_manufacturing' },
+  { key: 'production-tasks', tKey: 'nav.productionTasks', label: 'Production Tasks', icon: 'view_kanban' },
+  { key: 'maintenance', tKey: 'nav.maintenance', label: 'Maintenance', icon: 'build' },
+  { key: 'logistics',   tKey: 'nav.logistics', label: 'Logistics',   icon: 'local_shipping' },
+  { key: 'purchasing',  tKey: 'nav.purchasing', label: 'Purchasing',  icon: 'shopping_bag' },
+  { key: 'attendance',  tKey: 'nav.attendance', label: 'Attendance',  icon: 'schedule' },
+]
+
+const ORDER_STATUSES = [
+  { key: 'Processing',           label: 'Processing',           icon: 'hourglass_top' },
+  { key: 'Confirmed',            label: 'Confirmed',            icon: 'check_circle' },
+  { key: 'In-Production',        label: 'In-Production',        icon: 'precision_manufacturing' },
+  { key: 'Production Completed', label: 'Production Completed', icon: 'done_all' },
+  { key: 'E-WayBill',            label: 'E-WayBill',            icon: 'receipt_long' },
+  { key: 'In Delivery',          label: 'In Delivery',          icon: 'local_shipping' },
+  { key: 'E-Invoice',            label: 'E-Invoice',            icon: 'request_quote' },
+  { key: 'Delivered',            label: 'Delivered',            icon: 'inventory' },
 ]
 
 // ─── Employee Assign Modal ────────────────────────────────────────────────────
@@ -527,7 +538,7 @@ function EmployeeAssignModal({ employee, allEmployees, onClose, onSave }) {
 function UserRolesTab() {
   const { t } = useTranslation()
   const { token } = useAuth()
-  const { roles, addRole, renameRole, deleteRole } = useData()
+  const { roles, addRole, renameRole, deleteRole, permissions, updateRolePermissions, statusPermissions, updateRoleStatusPermissions } = useData()
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(true)
   const [newDept, setNewDept] = useState('')
@@ -538,6 +549,34 @@ function UserRolesTab() {
   const [renamingRole, setRenamingRole] = useState(null)   // { id, name }
   const [renameText, setRenameText] = useState('')
   const [renameError, setRenameError] = useState('')
+  const [permSaving, setPermSaving] = useState({})
+
+  async function togglePermission(pageKey) {
+    if (!viewDept) return
+    const current = permissions[viewDept] || []
+    let next
+    if (current.includes(pageKey)) {
+      // Unchecking a page — also strip any of its sub-permissions
+      let subs = []
+      if (pageKey === 'orders') subs = ['orders-create']
+      if (pageKey === 'purchasing') subs = ['purchasing:create']
+      next = current.filter((p) => p !== pageKey && !subs.includes(p))
+    } else {
+      next = [...current, pageKey]
+    }
+    setPermSaving((s) => ({ ...s, [pageKey]: true }))
+    try { await updateRolePermissions(viewDept, next) }
+    finally { setPermSaving((s) => ({ ...s, [pageKey]: false })) }
+  }
+
+  async function toggleStatusPermission(statusKey) {
+    if (!viewDept) return
+    const current = statusPermissions[viewDept] || []
+    const next = current.includes(statusKey) ? current.filter((s) => s !== statusKey) : [...current, statusKey]
+    setPermSaving((s) => ({ ...s, [statusKey]: true }))
+    try { await updateRoleStatusPermissions(viewDept, next) }
+    finally { setPermSaving((s) => ({ ...s, [statusKey]: false })) }
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -732,6 +771,105 @@ function UserRolesTab() {
                 </div>
               ))}
             </div>
+            
+            <div className="border-t border-theme-border p-3 max-h-80 overflow-y-auto">
+              <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-text-muted mb-2 md:mb-3">Department Page Access</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                {PAGES.map((page) => {
+                  const enabled = (permissions[viewDept] || []).includes(page.key)
+                  const saving = !!permSaving[page.key]
+                  const ordersSubEnabled = page.key === 'orders' && enabled && (permissions[viewDept] || []).includes('orders-create')
+                  const ordersSubSaving = !!permSaving['orders-create']
+                  const purchasingSubEnabled = page.key === 'purchasing' && enabled && (permissions[viewDept] || []).includes('purchasing:create')
+                  const purchasingSubSaving = !!permSaving['purchasing:create']
+
+                  return (
+                    <div key={page.key} className="flex flex-col gap-1">
+                      <button
+                        onClick={() => togglePermission(page.key)}
+                        disabled={saving}
+                        className={`w-full flex items-center gap-2 px-2.5 py-1.5 md:py-2 rounded-lg border transition text-[11px] md:text-xs ${
+                          enabled
+                            ? 'bg-primary/10 border-primary text-primary'
+                            : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[14px] md:text-base">{page.icon}</span>
+                        <span className="flex-1 text-left font-medium">{page.tKey ? t(page.tKey, page.label) : page.label}</span>
+                        {saving
+                          ? <span className="material-symbols-outlined text-[12px] md:text-sm animate-spin">progress_activity</span>
+                          : <span className="material-symbols-outlined text-[12px] md:text-sm">{enabled ? 'check_circle' : 'radio_button_unchecked'}</span>
+                        }
+                      </button>
+                      {page.key === 'orders' && enabled && (
+                        <button
+                          onClick={() => togglePermission('orders-create')}
+                          disabled={ordersSubSaving}
+                          className={`ml-4 w-[calc(100%-1rem)] flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition text-[10px] md:text-xs ${
+                            ordersSubEnabled
+                              ? 'bg-primary/10 border-primary text-primary'
+                              : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-[12px]">add_circle</span>
+                          <span className="flex-1 text-left font-medium">Can Create/Edit Orders</span>
+                          {ordersSubSaving
+                            ? <span className="material-symbols-outlined text-[12px] animate-spin">progress_activity</span>
+                            : <span className="material-symbols-outlined text-[12px]">{ordersSubEnabled ? 'check_box' : 'check_box_outline_blank'}</span>
+                          }
+                        </button>
+                      )}
+                      {page.key === 'purchasing' && enabled && (
+                        <button
+                          onClick={() => togglePermission('purchasing:create')}
+                          disabled={purchasingSubSaving}
+                          className={`ml-4 w-[calc(100%-1rem)] flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition text-[10px] md:text-xs ${
+                            purchasingSubEnabled
+                              ? 'bg-primary/10 border-primary text-primary'
+                              : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-[12px]">add_circle</span>
+                          <span className="flex-1 text-left font-medium">Can Create/Edit</span>
+                          {purchasingSubSaving
+                            ? <span className="material-symbols-outlined text-[12px] animate-spin">progress_activity</span>
+                            : <span className="material-symbols-outlined text-[12px]">{purchasingSubEnabled ? 'check_box' : 'check_box_outline_blank'}</span>
+                          }
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+              <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-text-muted mt-4 mb-2 md:mb-3">Order Status Changes</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                {ORDER_STATUSES.map((status) => {
+                  const enabled = (statusPermissions[viewDept] || []).includes(status.key)
+                  const saving = !!permSaving[status.key]
+
+                  return (
+                    <div key={status.key} className="flex flex-col gap-1">
+                      <button
+                        onClick={() => toggleStatusPermission(status.key)}
+                        disabled={saving}
+                        className={`w-full flex items-center gap-2 px-2.5 py-1.5 md:py-2 rounded-lg border transition text-[11px] md:text-xs ${
+                          enabled
+                            ? 'bg-primary/10 border-primary text-primary'
+                            : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[14px] md:text-base">{status.icon}</span>
+                        <span className="flex-1 text-left font-medium">{t(`order.status.${status.key}`, status.label)}</span>
+                        {saving
+                          ? <span className="material-symbols-outlined text-[12px] md:text-sm animate-spin">progress_activity</span>
+                          : <span className="material-symbols-outlined text-[12px] md:text-sm">{enabled ? 'check_circle' : 'radio_button_unchecked'}</span>
+                        }
+                      </button>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -813,171 +951,8 @@ function UserRolesTab() {
   )
 }
 
-const ORDER_STATUSES = [
-  { key: 'Processing',           label: 'Processing',           icon: 'hourglass_top' },
-  { key: 'Confirmed',            label: 'Confirmed',            icon: 'check_circle' },
-  { key: 'In-Production',        label: 'In-Production',        icon: 'precision_manufacturing' },
-  { key: 'Production Completed', label: 'Production Completed', icon: 'done_all' },
-  { key: 'E-WayBill',            label: 'E-WayBill',            icon: 'receipt_long' },
-  { key: 'In Delivery',          label: 'In Delivery',          icon: 'local_shipping' },
-  { key: 'E-Invoice',            label: 'E-Invoice',            icon: 'request_quote' },
-  { key: 'Delivered',            label: 'Delivered',            icon: 'inventory' },
-]
 
-function PermissionGrid({ columns, getValue, onToggle, saving, emptyMessage, subPermissions = {} }) {
-  const { roles } = useData()
-  if (roles.length === 0) return <p className="text-sm text-text-muted">{emptyMessage}</p>
-  return (
-    <div className="rounded-2xl border border-theme-border overflow-auto max-h-[420px]">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-theme-border bg-surface-container-high text-text-muted text-xs uppercase tracking-wider sticky top-0 z-10">
-            <th className="text-left px-4 py-3 font-semibold sticky left-0 bg-surface-container-high">Role</th>
-            {columns.map((c) => (
-              <th key={c.key} className="text-center px-3 py-3 font-semibold whitespace-nowrap bg-surface-container-high">
-                <div className="flex flex-col items-center gap-1">
-                  {c.icon && <span className="material-symbols-outlined text-base">{c.icon}</span>}
-                  {c.label}
-                </div>
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="bg-surface-container-lowest">
-          {roles.map((r) => (
-            <tr key={r.id} className="border-b border-theme-border last:border-0">
-              <td className="px-4 py-3 font-medium text-on-surface sticky left-0 bg-surface-container-lowest">
-                <div className="flex items-center gap-2">
-                  {saving[r.name] && <span className="material-symbols-outlined text-base text-text-muted animate-spin">progress_activity</span>}
-                  {r.name}
-                </div>
-              </td>
-              {columns.map((c) => {
-                const subs = subPermissions[c.key] || []
-                const pageEnabled = getValue(r.name, c.key)
-                return (
-                  <td key={c.key} className="px-3 py-3 text-center">
-                    <div className="flex flex-col items-center gap-1.5">
-                      <input
-                        type="checkbox"
-                        checked={pageEnabled}
-                        onChange={() => onToggle(r.name, c.key)}
-                        className="w-4 h-4 accent-primary cursor-pointer"
-                      />
-                      {pageEnabled && subs.map((sub) => (
-                        <label key={sub.key} className="flex items-center gap-1 text-[11px] text-text-muted whitespace-nowrap cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={getValue(r.name, sub.key)}
-                            onChange={() => onToggle(r.name, sub.key)}
-                            className="w-3 h-3 accent-primary cursor-pointer"
-                          />
-                          {sub.label}
-                        </label>
-                      ))}
-                    </div>
-                  </td>
-                )
-              })}
-            </tr>
-          ))}
-          </tbody>
-        </table>
-    </div>
-  )
-}
 
-const PAGE_SUB_PERMISSIONS = {
-  purchasing: [{ key: 'purchasing:create', label: 'Can Create & edit' }],
-}
-
-function PageAccessTab() {
-  const { permissions, updateRolePermissions } = useData()
-  const [saving, setSaving] = useState({})
-
-  async function toggle(roleName, pageKey) {
-    const current = permissions[roleName] || []
-    let next
-    if (current.includes(pageKey)) {
-      // Unchecking a page — also strip any of its sub-permissions
-      const subs = (PAGE_SUB_PERMISSIONS[pageKey] || []).map((s) => s.key)
-      next = current.filter((p) => p !== pageKey && !subs.includes(p))
-    } else {
-      next = [...current, pageKey]
-    }
-    setSaving((s) => ({ ...s, [roleName]: true }))
-    try { await updateRolePermissions(roleName, next) }
-    finally { setSaving((s) => ({ ...s, [roleName]: false })) }
-  }
-
-  return (
-    <div>
-      <p className="text-sm text-text-muted mb-4">Choose which pages each role can access.</p>
-      <PermissionGrid
-        columns={PAGES}
-        getValue={(role, key) => (permissions[role] || []).includes(key)}
-        onToggle={toggle}
-        saving={saving}
-        emptyMessage="Add roles first before configuring page permissions."
-        subPermissions={PAGE_SUB_PERMISSIONS}
-      />
-    </div>
-  )
-}
-
-function StatusChangesTab() {
-  const { statusPermissions, updateRoleStatusPermissions } = useData()
-  const [saving, setSaving] = useState({})
-
-  async function toggle(roleName, statusKey) {
-    const current = statusPermissions[roleName] || []
-    const next = current.includes(statusKey) ? current.filter((s) => s !== statusKey) : [...current, statusKey]
-    setSaving((s) => ({ ...s, [roleName]: true }))
-    try { await updateRoleStatusPermissions(roleName, next) }
-    finally { setSaving((s) => ({ ...s, [roleName]: false })) }
-  }
-
-  return (
-    <div>
-      <p className="text-sm text-text-muted mb-4">Choose which order statuses each role can change to.</p>
-      <PermissionGrid
-        columns={ORDER_STATUSES}
-        getValue={(role, key) => (statusPermissions[role] || []).includes(key)}
-        onToggle={toggle}
-        saving={saving}
-        emptyMessage="Add roles first before configuring status permissions."
-      />
-    </div>
-  )
-}
-
-// ─── Permissions Tab ──────────────────────────────────────────────────────────
-function PermissionsTab() {
-  const [subTab, setSubTab] = useState('pages')
-
-  return (
-    <div>
-      <div className="flex gap-1 mb-6 border-b border-theme-border">
-        <button
-          onClick={() => setSubTab('pages')}
-          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 -mb-px transition ${subTab === 'pages' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-on-surface'}`}
-        >
-          <span className="material-symbols-outlined text-base">web</span>
-          Page Access
-        </button>
-        <button
-          onClick={() => setSubTab('statuses')}
-          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium border-b-2 -mb-px transition ${subTab === 'statuses' ? 'border-primary text-primary' : 'border-transparent text-text-muted hover:text-on-surface'}`}
-        >
-          <span className="material-symbols-outlined text-base">swap_horiz</span>
-          Status Changes
-        </button>
-      </div>
-      {subTab === 'pages'    && <PageAccessTab />}
-      {subTab === 'statuses' && <StatusChangesTab />}
-    </div>
-  )
-}
 
 // ─── Machines Tab ─────────────────────────────────────────────────────────────
 function MachinesTab() {

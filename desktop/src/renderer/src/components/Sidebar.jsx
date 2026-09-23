@@ -30,7 +30,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
   const { t } = useTranslation()
   const { logout, isAdmin, user } = useAuth()
   const { dark } = useTheme()
-  const { permissions } = useData()
+  const { permissions, employeePermissions } = useData()
   const navigate = useNavigate()
 
   function handleLogout() {
@@ -39,7 +39,14 @@ export default function Sidebar({ isOpen, setIsOpen }) {
   }
 
   const dept = user?.department
-  const canSee = (page) => isAdmin || (permissions[dept] || []).includes(page)
+  const empId = user?.employeeId
+  
+  const canSee = (page) => {
+    if (isAdmin) return true
+    const hasRolePerm = (permissions[dept] || []).includes(page)
+    const hasEmpPerm = (employeePermissions?.[empId] || []).includes(page)
+    return hasRolePerm || hasEmpPerm
+  }
 
   const base = ALL_NAV_ITEMS.filter((item) => item.key === 'dashboard' || canSee(item.key))
   const items = isAdmin ? [...ALL_NAV_ITEMS, ...adminNavItems] : base

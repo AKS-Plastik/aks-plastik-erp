@@ -134,7 +134,7 @@ async function syncCustomer(customer) {
       queries: [
         {
           tip: 'insertOrUpdate',
-          table: 'carmst',
+          table: 'carmst', keys: ['*'],
           data: [carmstData]
         }
       ]
@@ -189,7 +189,7 @@ async function deleteCustomerFromVio(customerCode) {
       queries: [
         {
           tip: 'delete',
-          table: 'carmst',
+          table: 'carmst', keys: ['*'],
           filters: [`must = '${mustCode}'`]
         }
       ]
@@ -240,7 +240,7 @@ async function pullCustomersFromVio() {
       queries: [
         {
           tip: 'select',
-          table: 'carmst'
+          table: 'carmst', keys: ['*']
         }
       ]
     };
@@ -443,7 +443,7 @@ async function fetchSingleVioCustomer(code) {
       queries: [
         {
           tip: 'select',
-          table: 'carmst',
+          table: 'carmst', keys: ['*'],
           filters: [`must = '${mustCode}'`]
         }
       ]
