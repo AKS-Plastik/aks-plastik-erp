@@ -98,7 +98,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         </nav>
 
         {/* Logout */}
-        <div className="mt-auto border-t border-theme-border pt-2">
+        <div className="mt-auto border-t border-theme-border pt-2 pb-2">
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-4 py-2.5 md:px-6 md:py-3 text-text-muted hover:text-error transition-colors w-full"
@@ -108,6 +108,9 @@ export default function Sidebar({ isOpen, setIsOpen }) {
               {t('nav.logout')}
             </span>
           </button>
+          <div className="text-center text-[9px] text-text-muted opacity-40 mt-2">
+            v1.1.0
+          </div>
         </div>
       </aside>
     </>
