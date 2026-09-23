@@ -63,7 +63,7 @@ router.post('/users', authenticate, adminOnly, async (req, res) => {
         name,
         phone: phone || null,
         role: role || 'user',
-        department: role === 'user' ? (department || null) : null,
+        department: department || null,
         employeeId: employeeId || null,
       },
       select: { id: true, email: true, name: true, phone: true, role: true, department: true, employeeId: true, createdAt: true },
@@ -95,7 +95,7 @@ router.put('/users/:id', authenticate, adminOnly, async (req, res) => {
         email,
         phone: phone || null,
         role,
-        department: role === 'user' ? (department || null) : null,
+        department: department || null,
       },
       select: { id: true, email: true, name: true, phone: true, role: true, department: true, employeeId: true, createdAt: true },
     })
