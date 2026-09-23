@@ -14,6 +14,7 @@ router.get('/', async (req, res) => {
         OR: [
           { code: { startsWith: '120' } },
           { code: { startsWith: '320' } },
+          { code: { startsWith: 'CX-' } },
           { accountCode: { startsWith: '120' } },
           { accountCode: { startsWith: '320' } }
         ]
