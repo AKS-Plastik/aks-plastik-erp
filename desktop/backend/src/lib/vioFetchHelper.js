@@ -1,7 +1,11 @@
 async function getDecodedText(response) {
-  let text = await response.text();
-  if (text.startsWith('ï»¿') || text.startsWith('\uFEFF')) {
-    text = text.replace(/^ï»¿|^\uFEFF/, '');
+  const arrayBuffer = await response.arrayBuffer();
+  const decoder = new TextDecoder('windows-1254');
+  let text = decoder.decode(arrayBuffer);
+  if (text.startsWith('ï»¿')) {
+    text = text.substring(3);
+  } else if (text.charCodeAt(0) === 0xFEFF) {
+    text = text.substring(1);
   }
   return text;
 }
