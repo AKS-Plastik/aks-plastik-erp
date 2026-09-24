@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
@@ -15,10 +16,10 @@ const STATUS_KEYS = {
 }
 
 const STATUS_STYLES = {
-  'Scheduled':   { badge: 'status-scheduled-badge',   dot: 'status-scheduled-dot',              accent: 'status-scheduled-accent',  cardBg: 'bg-surface-container-lowest' },
-  'In Progress': { badge: 'status-progress-badge',    dot: 'status-progress-dot animate-pulse', accent: 'status-progress-accent',   cardBg: 'status-progress-card' },
-  'Completed':   { badge: 'status-completed-badge',   dot: 'status-completed-dot',              accent: 'status-completed-accent',  cardBg: 'bg-surface-container-lowest' },
-  'Cancelled':   { badge: 'status-cancelled-badge',   dot: 'status-cancelled-dot',              accent: 'status-cancelled-accent',  cardBg: 'bg-surface-container-lowest' },
+  'Scheduled': { badge: 'status-scheduled-badge', dot: 'status-scheduled-dot', accent: 'status-scheduled-accent', cardBg: 'bg-surface-container-lowest' },
+  'In Progress': { badge: 'status-progress-badge', dot: 'status-progress-dot animate-pulse', accent: 'status-progress-accent', cardBg: 'status-progress-card' },
+  'Completed': { badge: 'status-completed-badge', dot: 'status-completed-dot', accent: 'status-completed-accent', cardBg: 'bg-surface-container-lowest' },
+  'Cancelled': { badge: 'status-cancelled-badge', dot: 'status-cancelled-dot', accent: 'status-cancelled-accent', cardBg: 'bg-surface-container-lowest' },
 }
 
 function fmtDate(d) {
@@ -58,10 +59,16 @@ function FieldErr({ label, icon, error, children, span2 = false }) {
   )
 }
 
-function AddVisitModal({ customers, employees, onClose, onSave }) {
+function AddVisitModal({ customers, employees, onClose, onSave, initialDate, initialTime, initialCustomer }) {
   const { t } = useTranslation()
+  const { user } = useAuth()
+  const { isAdmin } = useData()
   const today = new Date().toISOString().split('T')[0]
-  const [form, setForm] = useState({ title: '', customerId: '', location: '', employeeId: '', date: today, time: '09:00', notes: '' })
+  const [form, setForm] = useState({
+    title: '', customerId: initialCustomer || '', location: '',
+    employeeId: '', assignees: isAdmin ? [] : (user?.employeeId ? [user.employeeId] : []),
+    date: initialDate || today, time: initialTime || '09:00', notes: '', isVisit: true
+  })
   const [errors, setErrors] = useState({})
   const set = (f) => (e) => {
     const val = e.target.value
@@ -74,11 +81,12 @@ function AddVisitModal({ customers, employees, onClose, onSave }) {
 
   function handleSave() {
     const e = {}
-    if (!form.title.trim()) e.title = 'Required'
-    if (!form.date)         e.date  = 'Required'
+    if (!form.isVisit && !form.title.trim()) e.title = 'Required'
+    if (form.isVisit && !form.customerId) e.customerId = 'Required'
+    if (!form.date) e.date = 'Required'
     if (Object.keys(e).length) { setErrors(e); return }
-    const customerName = customers.find((c) => c.id === form.customerId)?.name   || ''
-    const employeeName = employees.find((e) => e.id === form.employeeId)?.name   || ''
+    const customerName = customers.find((c) => c.id === form.customerId)?.name || ''
+    const employeeName = employees.find((e) => e.id === form.employeeId)?.name || ''
     const today = new Date().toISOString().split('T')[0]
     const status = form.date <= today ? 'In Progress' : 'Scheduled'
     onSave({ ...form, customerName, employeeName, status })
@@ -104,10 +112,28 @@ function AddVisitModal({ customers, employees, onClose, onSave }) {
         </div>
 
         <div className="px-4 md:px-6 py-4 md:py-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 overflow-y-auto max-h-[60vh]">
-          <FieldErr label={t('workOrders.visitTitle')} icon="title" error={errors.title} span2>
-            <input type="text" placeholder="e.g. HVAC Inspection" value={form.title} onChange={set('title')} className={inputCls} />
-          </FieldErr>
-          <Field label={t('common.customer')} icon="business" span2>
+          <div className="col-span-1 md:col-span-2 flex items-center justify-between p-3 md:p-4 bg-surface-container-low/50 rounded-xl border border-theme-border">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                <span className="material-symbols-outlined text-lg">storefront</span>
+              </div>
+              <div>
+                <p className="text-xs md:text-sm font-bold text-on-surface">Müşteri Ziyareti</p>
+                <p className="text-[9px] md:text-[10px] text-on-surface-variant">Belirli bir müşteriye ziyarete gidilecekse işaretleyin.</p>
+              </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input type="checkbox" className="sr-only peer" checked={form.isVisit} onChange={(e) => setForm(p => ({ ...p, isVisit: e.target.checked, title: '' }))} />
+              <div className="w-9 h-5 bg-surface-container-high rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+            </label>
+          </div>
+
+          {!form.isVisit && (
+            <FieldErr label={t('workOrders.visitTitle')} icon="title" error={errors.title} span2>
+              <input type="text" placeholder="e.g. HVAC Inspection" value={form.title} onChange={set('title')} className={inputCls} />
+            </FieldErr>
+          )}
+          <FieldErr label={t('common.customer')} icon="business" error={errors.customerId} span2>
             <SearchableSelect
               options={customers.map(c => ({ value: c.id, label: c.code ? `${c.code} - ${c.name}` : c.name }))}
               value={form.customerId}
@@ -115,15 +141,24 @@ function AddVisitModal({ customers, employees, onClose, onSave }) {
               placeholder={t('common.noCustomer')}
               className="w-full bg-transparent"
             />
-          </Field>
+          </FieldErr>
           <Field label={t('common.location')} icon="location_on" span2>
             <input type="text" placeholder="e.g. Building A" value={form.location} onChange={set('location')} className={inputCls} />
           </Field>
-          <Field label={t('common.employee')} icon="badge" span2>
-            <select value={form.employeeId} onChange={set('employeeId')} className={inputCls}>
-              <option value="">{t('common.unassigned')}</option>
-              {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-            </select>
+          <Field label="GÖREVLİLER" icon="group" span2>
+            {isAdmin ? (
+              <SearchableSelect
+                options={employees.map(e => ({ value: e.id, label: `${e.name} (${e.department || 'Personel'})` }))}
+                value={form.assignees}
+                onChange={(val) => setForm(p => ({ ...p, assignees: val }))}
+                placeholder="Görevli Seç..."
+                className="w-full bg-transparent"
+              />
+            ) : (
+              <div className="text-xs md:text-sm text-on-surface px-2 py-1 font-semibold">
+                {employees.find(e => e.id === user?.employeeId)?.name || 'Kendiniz'}
+              </div>
+            )}
           </Field>
           <FieldErr label={t('common.date')} icon="calendar_today" error={errors.date}>
             <input type="date" value={form.date} onChange={set('date')} className={inputCls} />
@@ -167,41 +202,43 @@ function DetailRow({ icon, label, value }) {
 }
 
 const STATUS_CHANGE_STYLES = {
-  'Scheduled':   'border-blue-400 text-blue-600 bg-blue-50 hover:bg-blue-100',
+  'Scheduled': 'border-blue-400 text-blue-600 bg-blue-50 hover:bg-blue-100',
   'In Progress': 'border-amber-400 text-amber-600 bg-amber-50 hover:bg-amber-100',
-  'Completed':   'border-emerald-400 text-emerald-600 bg-emerald-50 hover:bg-emerald-100',
-  'Cancelled':   'border-red-400 text-red-600 bg-red-50 hover:bg-red-100',
+  'Completed': 'border-emerald-400 text-emerald-600 bg-emerald-50 hover:bg-emerald-100',
+  'Cancelled': 'border-red-400 text-red-600 bg-red-50 hover:bg-red-100',
 }
 const STATUS_CHANGE_ACTIVE = {
-  'Scheduled':   'border-blue-500 bg-blue-500 text-white',
+  'Scheduled': 'border-blue-500 bg-blue-500 text-white',
   'In Progress': 'border-amber-500 bg-amber-500 text-white',
-  'Completed':   'border-emerald-500 bg-emerald-500 text-white',
-  'Cancelled':   'border-red-500 bg-red-500 text-white',
+  'Completed': 'border-emerald-500 bg-emerald-500 text-white',
+  'Cancelled': 'border-red-500 bg-red-500 text-white',
 }
 
 export function VisitDetailModal({ visit, customers, employees, onClose, onSave, onDelete }) {
+  const navigate = useNavigate()
   const { t } = useTranslation()
   const { isAdmin } = useData()
   const { user } = useAuth()
   const canChangeStatus = isAdmin || user?.department === 'Sales'
 
-  const [editing, setEditing]       = useState(false)
+  const [editing, setEditing] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [confirmComplete, setConfirmComplete] = useState(false)
   const [showStatusPanel, setShowStatusPanel] = useState(false)
-  const [pendingStatus, setPendingStatus]     = useState(visit.status)
-  const [cancelNote, setCancelNote]           = useState('')
-  const [cancelNoteError, setCancelNoteError] = useState(false)
+  const [pendingStatus, setPendingStatus] = useState(visit.status)
+  const [statusNote, setStatusNote] = useState('')
+  const [statusNoteError, setStatusNoteError] = useState(false)
 
   const [form, setForm] = useState({
-    title:      visit.title,
+    title: visit.title,
     customerId: visit.customerId || '',
-    location:   visit.location   || '',
+    location: visit.location || '',
     employeeId: visit.employeeId || '',
-    date:       visit.date,
-    time:       visit.time,
-    status:     visit.status,
-    notes:      visit.notes      || '',
+    assignees: visit.assignees?.map(a => a.id) || [],
+    date: visit.date,
+    time: visit.time,
+    status: visit.status,
+    notes: visit.notes || '',
   })
   const [errors, setErrors] = useState({})
   const set = (f) => (e) => {
@@ -221,33 +258,36 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
 
   function handleSave() {
     const e = {}
-    if (!form.title.trim()) e.title = 'Required'
-    if (!form.date)         e.date  = 'Required'
+    if (!visit.isVisit && !form.title.trim()) e.title = 'Required'
+    if (visit.isVisit && !form.customerId) e.customerId = 'Required'
+    if (!form.date) e.date = 'Required'
     if (Object.keys(e).length) { setErrors(e); return }
-    const customerName = customers.find((c) => c.id === form.customerId)?.name  || visit.customerName || ''
-    const employeeName = employees.find((e) => e.id === form.employeeId)?.name  || visit.employeeName || ''
-    onSave(visit.id, { ...form, customerName, employeeName })
+    const customerName = customers.find((c) => c.id === form.customerId)?.name || visit.customerName || ''
+    const employeeName = employees.find((e) => e.id === form.employeeId)?.name || visit.employeeName || ''
+    onSave(visit.id, { ...form, customerName, employeeName, isVisit: visit.isVisit })
   }
 
   function handleCancel() {
-    setForm({ title: visit.title, customerId: visit.customerId || '', location: visit.location || '', employeeId: visit.employeeId || '', date: visit.date, time: visit.time, status: visit.status, notes: visit.notes || '' })
+    setForm({ title: visit.title, customerId: visit.customerId || '', location: visit.location || '', employeeId: visit.employeeId || '', assignees: visit.assignees?.map(a => a.id) || [], date: visit.date, time: visit.time, status: visit.status, notes: visit.notes || '' })
     setErrors({})
     setEditing(false)
   }
 
   function handleStatusChange() {
-    if (pendingStatus === 'Cancelled' && !cancelNote.trim()) {
-      setCancelNoteError(true)
+    if (pendingStatus === 'Cancelled' && !statusNote.trim()) {
+      setStatusNoteError(true)
       return
     }
     const customerName = customers.find((c) => c.id === visit.customerId)?.name || visit.customerName || ''
     const employeeName = employees.find((e) => e.id === visit.employeeId)?.name || visit.employeeName || ''
     onSave(visit.id, {
       title: visit.title, customerId: visit.customerId || '', location: visit.location || '',
-      employeeId: visit.employeeId || '', date: visit.date, time: visit.time, notes: visit.notes || '',
+      employeeId: visit.employeeId || '', assignees: visit.assignees?.map(a => a.id) || [],
+      date: visit.date, time: visit.time, notes: visit.notes || '',
       customerName, employeeName,
       status: pendingStatus,
-      cancelledReason: pendingStatus === 'Cancelled' ? cancelNote.trim() : (visit.cancelledReason || ''),
+      cancelledReason: pendingStatus === 'Cancelled' ? statusNote.trim() : (visit.cancelledReason || ''),
+      statusNote: statusNote.trim(),
     })
   }
 
@@ -265,7 +305,7 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
               <div className="w-10 h-10 md:w-12 md:h-12 bg-surface-container-lowest/20 rounded-xl sm:rounded-2xl flex items-center justify-center flex-shrink-0">
                 <span className="material-symbols-outlined text-white text-[18px] md:text-[24px]">location_on</span>
               </div>
-              <div>
+              <div className="flex-1">
                 <h2 className="text-base md:text-lg font-extrabold text-white leading-tight">
                   {editing ? t('workOrders.editVisit') : visit.title}
                 </h2>
@@ -299,12 +339,83 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
         {/* View */}
         {!editing && (
           <div className="px-4 md:px-6 py-2 md:py-4 overflow-y-auto flex-1">
-            <DetailRow icon="business"      label={t('common.customer')}    value={visit.customerName} />
-            <DetailRow icon="location_on"   label={t('common.location')}    value={visit.location} />
-            <DetailRow icon="badge"         label={t('common.employee')}    value={visit.employeeName} />
+            <DetailRow icon="business" label={t('common.customer')} value={visit.customerName} />
+            <DetailRow icon="location_on" label={t('common.location')} value={visit.location} />
+            <DetailRow icon="group" label="GÖREVLİLER" value={visit.assignees?.length > 0 ? visit.assignees.map(a => a.name).join(', ') : (visit.employeeName || '—')} />
             {visit.notes && <DetailRow icon="notes" label={t('common.notes')} value={visit.notes} />}
             {visit.status === 'Cancelled' && visit.cancelledReason && (
               <DetailRow icon="cancel" label={t('workOrders.cancelReason')} value={visit.cancelledReason} />
+            )}
+            {visit.orders && visit.orders.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-outline-variant/20">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant mb-3 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px]">shopping_cart</span> Bağlı Siparişler
+                </h4>
+                <div className="space-y-2">
+                  {visit.orders.map(order => (
+                    <div
+                      key={order.id}
+                      onClick={() => { onClose(); navigate('/orders', { state: { openOrderId: order.id } }) }}
+                      className="bg-surface-container hover:bg-surface-container-high transition-all cursor-pointer rounded-xl p-3 flex items-center justify-between border border-outline-variant/30 shadow-sm"
+                    >
+                      <div>
+                        <div className="text-sm font-bold text-on-surface flex items-center gap-2 mb-1">
+                          {order.code}
+                          <span className={`px-2 py-0.5 rounded-md text-[10px] bg-primary/10 text-primary`}>{order.status}</span>
+                        </div>
+                        <div className="text-xs font-semibold text-on-surface-variant">Tutar: {getOrderTotals(order.items) || "0.00"}</div>
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-surface-container-high flex items-center justify-center text-primary">
+                        <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {visit.statusNotes && visit.statusNotes.length > 0 && (
+              <div className="mt-6 pt-4 border-t border-outline-variant/20">
+                <h4 className="text-[11px] font-bold uppercase tracking-wider text-on-surface-variant mb-3 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[16px]">history</span> Notlar
+                </h4>
+                <div className="space-y-3">
+                  {visit.statusNotes.map((sn) => (
+                    <div key={sn.id} className="bg-surface-container-low rounded-lg p-3 text-sm border border-outline-variant/20">
+                      <div className="flex items-center justify-between gap-2 mb-2 pb-2 border-b border-outline-variant/10">
+                        <div className="flex items-center gap-2 text-xs font-bold text-on-surface">
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] ${STATUS_STYLES[sn.fromStatus]?.badge || 'bg-gray-100'}`}>{t('workOrders.' + STATUS_KEYS[sn.fromStatus])}</span>
+                          <span className="material-symbols-outlined text-[14px] text-on-surface-variant">arrow_forward</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] ${STATUS_STYLES[sn.toStatus]?.badge || 'bg-gray-100'}`}>{t('workOrders.' + STATUS_KEYS[sn.toStatus])}</span>
+                        </div>
+                        <span className="text-[10px] text-on-surface-variant font-medium">
+                          {new Date(sn.createdAt).toLocaleString()}
+                        </span>
+                      </div>
+                      <p className="text-on-surface text-xs leading-relaxed">
+                        {sn.note && sn.note.match(/Sipari\u015F olu\u015Fturuldu:\s*#([A-Za-z0-9\-]+)/) ? (
+                          <>
+                            Sipariş oluşturuldu:{' '}
+                            <span
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onClose();
+                                navigate('/orders', { state: { openOrderCode: sn.note.match(/#([A-Za-z0-9\-]+)/)[1] } });
+                              }}
+                              className="text-primary hover:underline cursor-pointer font-bold bg-primary/10 px-1.5 py-0.5 rounded"
+                            >
+                              #{sn.note.match(/#([A-Za-z0-9\-]+)/)[1]}
+                            </span>
+                          </>
+                        ) : (
+                          sn.note
+                        )}
+                      </p>
+                      {sn.createdBy && <p className="text-[10px] text-on-surface-variant mt-1.5 text-right">- {sn.createdBy.name}</p>}
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         )}
@@ -312,10 +423,12 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
         {/* Edit */}
         {editing && (
           <div className="px-4 md:px-6 py-4 md:py-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 overflow-y-auto flex-1">
-            <FieldErr label={t('workOrders.visitTitle')} icon="title" error={errors.title} span2>
-              <input type="text" value={form.title} onChange={set('title')} className={inputCls} />
-            </FieldErr>
-            <Field label={t('common.customer')} icon="business" span2>
+            {!visit.isVisit && (
+              <FieldErr label={t('workOrders.visitTitle')} icon="title" error={errors.title} span2>
+                <input type="text" value={form.title} onChange={set('title')} className={inputCls} />
+              </FieldErr>
+            )}
+            <FieldErr label={t('common.customer')} icon="business" error={errors.customerId} span2>
               <SearchableSelect
                 options={customers.map(c => ({ value: c.id, label: c.code ? `${c.code} - ${c.name}` : c.name }))}
                 value={form.customerId}
@@ -323,15 +436,24 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
                 placeholder={t('common.noCustomer')}
                 className="w-full bg-transparent"
               />
-            </Field>
+            </FieldErr>
             <Field label={t('common.location')} icon="location_on" span2>
               <input type="text" value={form.location} onChange={set('location')} className={inputCls} />
             </Field>
-            <Field label={t('common.employee')} icon="badge">
-              <select value={form.employeeId} onChange={set('employeeId')} className={inputCls}>
-                <option value="">{t('common.unassigned')}</option>
-                {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-              </select>
+            <Field label="GÖREVLİLER" icon="group">
+              {isAdmin ? (
+                <SearchableSelect
+                  options={employees.map(e => ({ value: e.id, label: `${e.name} (${e.department || 'Personel'})` }))}
+                  value={form.assignees}
+                  onChange={(val) => setForm(p => ({ ...p, assignees: val }))}
+                  placeholder="Görevli Seç..."
+                  className="w-full bg-transparent"
+                />
+              ) : (
+                <div className="text-xs md:text-sm text-on-surface px-2 py-1 font-semibold">
+                  {visit.assignees?.length > 0 ? visit.assignees.map(a => a.name).join(', ') : (employees.find(e => e.id === user?.employeeId)?.name || 'Kendiniz')}
+                </div>
+              )}
             </Field>
             <Field label={t('common.status')} icon="flag">
               <select value={form.status} onChange={set('status')} className={inputCls}>
@@ -362,38 +484,36 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
               {STATUSES.map((s) => (
                 <button
                   key={s}
-                  onClick={() => { setPendingStatus(s); setCancelNoteError(false) }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${
-                    pendingStatus === s ? STATUS_CHANGE_ACTIVE[s] : STATUS_CHANGE_STYLES[s]
-                  }`}
+                  onClick={() => { setPendingStatus(s); setStatusNoteError(false) }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border-2 transition-all ${pendingStatus === s ? STATUS_CHANGE_ACTIVE[s] : STATUS_CHANGE_STYLES[s]
+                    }`}
                 >
                   {t('workOrders.' + STATUS_KEYS[s])}
                 </button>
               ))}
             </div>
-            {pendingStatus === 'Cancelled' && (
+            {(pendingStatus !== visit.status) && (
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">
-                  {t('workOrders.cancelReason')} <span className="text-error">*</span>
+                  Not Ekle {pendingStatus === 'Cancelled' && <span className="text-error">*</span>}
                 </label>
                 <textarea
                   autoFocus
-                  rows={3}
-                  value={cancelNote}
-                  onChange={(e) => { setCancelNote(e.target.value); setCancelNoteError(false) }}
-                  placeholder="Explain why this visit is being cancelled…"
-                  className={`w-full bg-surface-container-lowest border rounded-lg px-3 py-2 text-sm text-on-surface resize-none outline-none transition-all ${
-                    cancelNoteError ? 'border-error ring-2 ring-error/20' : 'border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/20'
-                  }`}
+                  rows={2}
+                  value={statusNote}
+                  onChange={(e) => { setStatusNote(e.target.value); setStatusNoteError(false) }}
+                  placeholder="Bu statü değişimi için bir not girebilirsiniz..."
+                  className={`w-full bg-surface-container-lowest border rounded-lg px-3 py-2 text-sm text-on-surface resize-none outline-none transition-all ${statusNoteError ? 'border-error ring-2 ring-error/20' : 'border-outline-variant focus:border-primary focus:ring-2 focus:ring-primary/20'
+                    }`}
                 />
-                {cancelNoteError && (
-                  <p className="text-[11px] text-error font-medium mt-1">{t('workOrders.cancelRequired')}</p>
+                {statusNoteError && (
+                  <p className="text-[11px] text-error font-medium mt-1">İptal nedeni zorunludur.</p>
                 )}
               </div>
             )}
             <div className="flex items-center justify-end gap-2">
               <button
-                onClick={() => { setShowStatusPanel(false); setPendingStatus(visit.status); setCancelNote(''); setCancelNoteError(false) }}
+                onClick={() => { setShowStatusPanel(false); setPendingStatus(visit.status); setStatusNote(''); setStatusNoteError(false) }}
                 className="px-4 py-2 rounded-lg text-on-surface-variant text-xs font-bold hover:bg-surface-container-high transition-colors"
               >
                 {t('common.cancel')}
@@ -455,24 +575,34 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
           {!editing ? (
             <>
               <div className="flex items-center gap-1.5 md:gap-2 w-full sm:w-auto overflow-x-auto overflow-y-hidden pb-1 sm:pb-0 ">
+                <button
+                  onClick={() => {
+                    onClose()
+                    navigate('/orders', { state: { newOrderForCustomer: visit.customerId, visitId: visit.id } })
+                  }}
+                  className="whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border border-theme-border bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant text-[11px] md:text-sm font-bold shadow-sm transition-all flex items-center gap-1 md:gap-1.5"
+                >
+                  <span className="material-symbols-outlined text-[14px] md:text-[18px] text-blue-500">shopping_cart</span>
+                  Sipariş Oluştur
+                </button>
                 <button onClick={() => setEditing(true)} className="whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 border-primary text-primary text-[11px] md:text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center gap-1 md:gap-1.5">
                   <span className="material-symbols-outlined text-[14px] md:text-[18px]">edit</span>{t('common.edit')}
                 </button>
                 {canChangeStatus && (
                   <button
-                    onClick={() => { setShowStatusPanel((v) => !v); setPendingStatus(visit.status); setCancelNote(''); setCancelNoteError(false) }}
+                    onClick={() => { setShowStatusPanel((v) => !v); setPendingStatus(visit.status); setStatusNote(''); setStatusNoteError(false) }}
                     className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 text-[11px] md:text-sm font-bold transition-all flex items-center gap-1 md:gap-1.5 ${showStatusPanel ? 'border-secondary bg-secondary text-white' : 'border-secondary text-secondary hover:bg-secondary hover:text-white'}`}
                   >
                     <span className="material-symbols-outlined text-[14px] md:text-[18px]">flag</span>{t('common.status')}
                   </button>
                 )}
                 {isAdmin && (
-                <button
-                  onClick={() => setConfirming((v) => !v)}
-                  className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 text-[11px] md:text-sm font-bold transition-all flex items-center gap-1 md:gap-1.5 ${confirming ? 'border-error bg-error text-white' : 'border-error text-error hover:bg-error hover:text-white'}`}
-                >
-                  <span className="material-symbols-outlined text-[14px] md:text-[18px]">delete</span>{t('common.delete')}
-                </button>
+                  <button
+                    onClick={() => setConfirming((v) => !v)}
+                    className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 text-[11px] md:text-sm font-bold transition-all flex items-center gap-1 md:gap-1.5 ${confirming ? 'border-error bg-error text-white' : 'border-error text-error hover:bg-error hover:text-white'}`}
+                  >
+                    <span className="material-symbols-outlined text-[14px] md:text-[18px]">delete</span>{t('common.delete')}
+                  </button>
                 )}
               </div>
               <button onClick={onClose} className="w-full sm:w-auto px-4 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity">{t('common.close')}</button>
@@ -493,6 +623,7 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
 
 function VisitCard({ visit, onClick }) {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const st = STATUS_STYLES[visit.status] ?? STATUS_STYLES['Scheduled']
   const isToday = visit.date === new Date().toISOString().split('T')[0]
 
@@ -540,16 +671,42 @@ function VisitCard({ visit, onClick }) {
             <span className="truncate">{visit.location}</span>
           </div>
         )}
+
+        {visit.orders && visit.orders.length > 0 && (
+          <div className="mt-3 space-y-1.5">
+            {visit.orders.map(order => (
+              <div
+                key={order.id}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  navigate('/orders', { state: { openOrderId: order.id } })
+                }}
+                className="bg-surface-container-high hover:bg-surface-container-highest transition-all cursor-pointer rounded-lg px-2.5 py-1.5 flex items-center justify-between border border-theme-border shadow-sm"
+              >
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span className="material-symbols-outlined text-[14px] text-blue-500">shopping_cart</span>
+                  <span className="text-xs font-bold text-on-surface truncate">{order.code}</span>
+                </div>
+                <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary flex-shrink-0">{order.status}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
       </div>
 
       {/* Card footer — employee */}
       <div className="px-5 pb-5 flex items-center justify-between">
-        {visit.employeeName ? (
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full primary-gradient flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0">
-              {visit.employeeName.split(' ').map((w) => w[0]).slice(0, 2).join('')}
-            </div>
-            <span className="text-xs font-semibold text-on-surface-variant">{visit.employeeName}</span>
+        {(visit.assignees?.length > 0 || visit.employeeName) ? (
+          <div className="flex flex-wrap items-center gap-2">
+            {(visit.assignees?.length > 0 ? visit.assignees.map(a => a.name) : [visit.employeeName]).map((name, i) => (
+              <div key={i} className="flex items-center gap-1.5 bg-surface-container-high px-1.5 py-1 rounded-full">
+                <div className="w-6 h-6 rounded-full primary-gradient flex items-center justify-center text-white text-[9px] font-bold flex-shrink-0">
+                  {name.split(' ').map((w) => w[0]).slice(0, 2).join('')}
+                </div>
+                <span className="text-[10px] font-semibold text-on-surface-variant pr-1">{name}</span>
+              </div>
+            ))}
           </div>
         ) : (
           <div className="flex items-center gap-2 text-on-surface-variant/50">
@@ -562,15 +719,93 @@ function VisitCard({ visit, onClick }) {
   )
 }
 
+function VisitCardCompact({ visit, onClick }) {
+  const style = STATUS_STYLES[visit.status] || STATUS_STYLES['Scheduled']
+  return (
+    <div
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className={`p-2 rounded-lg cursor-pointer transition-all hover:opacity-80 active:scale-95 shadow-sm border flex flex-col overflow-hidden ${style.cardBg} ${style.accent.replace('bg-', 'border-')}`}
+    >
+      <div className="flex items-center gap-1.5 mb-1 min-w-0">
+        <div className={`w-1.5 h-1.5 flex-shrink-0 rounded-full ${style.dot}`} />
+        <span className="text-[9px] font-extrabold uppercase tracking-wide truncate text-on-surface-variant flex-1">{visit.customerName || 'Bilinmeyen'}</span>
+      </div>
+      <h3 className="text-[11px] font-bold text-on-surface leading-tight line-clamp-2 break-words">{visit.title}</h3>
+      <div className="flex items-center justify-between mt-1.5 min-w-0 gap-1">
+        <span className="text-[9px] font-bold text-on-surface-variant truncate flex-1">{visit.assignees?.length > 0 ? visit.assignees.map(a => a.name).join(', ') : visit.employeeName}</span>
+        {visit.time && (
+          <span className="text-[9px] font-bold text-on-surface-variant bg-surface-container-high/50 px-1 rounded flex-shrink-0">{visit.time}</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function SiteVisits() {
   const { t } = useTranslation()
   const { customers, employees, siteVisits, addSiteVisit, updateSiteVisit, deleteSiteVisit } = useData()
-  const [showModal, setShowModal]     = useState(false)
-  const [selected, setSelected]       = useState(null)
-  const [search, setSearch]           = useState('')
+  const [showModal, setShowModal] = useState(false)
+  const [initialSlot, setInitialSlot] = useState(null)
+  const [selected, setSelected] = useState(null)
+  const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [currentDate, setCurrentDate] = useState(new Date())
+  const [promptNewCustomer, setPromptNewCustomer] = useState(null)
 
-  const today = new Date().toISOString().split('T')[0]
+  const dateInputRef = useRef(null)
+
+  // --- Drag to Scroll Logic ---
+  const scrollRef = useRef(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [startX, setStartX] = useState(0)
+  const [scrollLeftPos, setScrollLeftPos] = useState(0)
+  const [hasDragged, setHasDragged] = useState(false)
+
+  const handleMouseDown = (e) => {
+    if (!scrollRef.current) return
+    setIsDragging(true)
+    setHasDragged(false)
+    setStartX(e.pageX - scrollRef.current.offsetLeft)
+    setScrollLeftPos(scrollRef.current.scrollLeft)
+  }
+
+  const handleMouseLeave = () => setIsDragging(false)
+  const handleMouseUp = () => setIsDragging(false)
+
+  const handleMouseMove = (e) => {
+    if (!isDragging || !scrollRef.current) return
+    e.preventDefault()
+    const x = e.pageX - scrollRef.current.offsetLeft
+    const walk = (x - startX) * 2
+    if (Math.abs(walk) > 5) setHasDragged(true)
+    scrollRef.current.scrollLeft = scrollLeftPos - walk
+  }
+
+  // --- Calendar Logic ---
+  const startOfWeek = new Date(currentDate)
+  const day = startOfWeek.getDay()
+  const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1)
+  startOfWeek.setDate(diff)
+  startOfWeek.setHours(0, 0, 0, 0)
+
+  const daysOfWeek = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date(startOfWeek)
+    d.setDate(d.getDate() + i)
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const dayStr = String(d.getDate()).padStart(2, '0')
+
+    return {
+      date: d,
+      dateString: `${y}-${m}-${dayStr}`,
+      dateNumber: d.getDate(),
+      shortName: d.toLocaleDateString(undefined, { weekday: 'short' }),
+      isToday: d.toDateString() === new Date().toDateString()
+    }
+  })
+
+  // We can render hours from 08:00 to 19:00 (12 rows).
+  const hours = Array.from({ length: 12 }).map((_, i) => i + 8)
 
   function handleExport() {
     const rows = siteVisits.map((v) => ({
@@ -579,7 +814,7 @@ export default function SiteVisits() {
       Date: v.date || '',
       Time: v.time || '',
       Customer: v.customerName || '',
-      Employee: v.employeeName || '',
+      Employee: v.assignees?.length > 0 ? v.assignees.map(a => a.name).join(', ') : (v.employeeName || ''),
       Location: v.location || '',
       Notes: v.notes || '',
     }))
@@ -590,11 +825,11 @@ export default function SiteVisits() {
   }
 
   const stats = [
-    { label: t('workOrders.totalVisits'),  value: siteVisits.length,                                                icon: 'location_on',   color: 'bg-surface-tint'   },
-    { label: t('workOrders.scheduled'),    value: siteVisits.filter((v) => v.status === 'Scheduled').length,        icon: 'calendar_today', color: 'bg-blue-400'       },
-    { label: t('workOrders.inProgress'),   value: siteVisits.filter((v) => v.status === 'In Progress').length,      icon: 'pending',       color: 'bg-amber-400'      },
-    { label: t('workOrders.completed'),    value: siteVisits.filter((v) => v.status === 'Completed').length,        icon: 'check_circle',  color: 'bg-emerald-400'    },
-    { label: t('workOrders.cancelled'),    value: siteVisits.filter((v) => v.status === 'Cancelled').length,        icon: 'cancel',        color: 'bg-red-400'        },
+    { label: t('workOrders.totalVisits'), value: siteVisits.length, icon: 'location_on', color: 'bg-surface-tint' },
+    { label: t('workOrders.scheduled'), value: siteVisits.filter((v) => v.status === 'Scheduled').length, icon: 'calendar_today', color: 'bg-blue-400' },
+    { label: t('workOrders.inProgress'), value: siteVisits.filter((v) => v.status === 'In Progress').length, icon: 'pending', color: 'bg-amber-400' },
+    { label: t('workOrders.completed'), value: siteVisits.filter((v) => v.status === 'Completed').length, icon: 'check_circle', color: 'bg-emerald-400' },
+    { label: t('workOrders.cancelled'), value: siteVisits.filter((v) => v.status === 'Cancelled').length, icon: 'cancel', color: 'bg-red-400' },
   ]
 
   const q = search.toLowerCase()
@@ -606,6 +841,7 @@ export default function SiteVisits() {
       v.customerName?.toLowerCase().includes(q) ||
       custCode.toLowerCase().includes(q) ||
       v.location?.toLowerCase().includes(q) ||
+      v.assignees?.some(a => a.name.toLowerCase().includes(q)) ||
       v.employeeName?.toLowerCase().includes(q)
     const matchStatus = !statusFilter || v.status === statusFilter
     return matchSearch && matchStatus
@@ -626,8 +862,11 @@ export default function SiteVisits() {
         <AddVisitModal
           customers={customers}
           employees={employees}
-          onClose={() => setShowModal(false)}
-          onSave={(form) => { addSiteVisit(form); setShowModal(false) }}
+          initialDate={initialSlot?.date}
+          initialTime={initialSlot?.time}
+          initialCustomer={initialSlot?.customerId}
+          onClose={() => { setShowModal(false); setInitialSlot(null); }}
+          onSave={(form) => { addSiteVisit(form); setShowModal(false); setInitialSlot(null); }}
         />
       )}
       {selected && (
@@ -636,9 +875,43 @@ export default function SiteVisits() {
           customers={customers}
           employees={employees}
           onClose={() => setSelected(null)}
-          onSave={(id, form) => { updateSiteVisit(id, form); setSelected(null) }}
+          onSave={async (id, form) => {
+            const wasCompleted = selected.status === 'Completed'
+            await updateSiteVisit(id, form);
+            setSelected(null)
+
+            if (form.status === 'Completed' && !wasCompleted) {
+              setTimeout(() => {
+                setPromptNewCustomer(form.customerId || selected.customerId)
+              }, 1000)
+            }
+          }}
           onDelete={(id) => { deleteSiteVisit(id); setSelected(null) }}
         />
+      )}
+
+
+      {promptNewCustomer && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center">
+          <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={() => setPromptNewCustomer(null)} />
+          <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl p-6 w-[90%] max-w-sm text-center flex flex-col gap-4">
+            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-2">
+              <span className="material-symbols-outlined text-blue-500 text-3xl">event_available</span>
+            </div>
+            <h3 className="text-lg font-extrabold text-on-surface">Yeni Ziyaret?</h3>
+            <p className="text-sm text-on-surface-variant">
+              Bu ziyareti tamamladınız. Aynı müşteri için ileri tarihli yeni bir ziyaret planlamak ister misiniz?
+            </p>
+            <div className="flex items-center gap-3 mt-2">
+              <button onClick={() => setPromptNewCustomer(null)} className="flex-1 py-2 rounded-xl text-on-surface-variant bg-surface-container-high hover:bg-surface-container-highest transition-colors font-bold text-sm">Hayır, İstemiyorum</button>
+              <button onClick={() => {
+                setInitialSlot({ customerId: promptNewCustomer })
+                setShowModal(true)
+                setPromptNewCustomer(null)
+              }} className="flex-1 py-2 rounded-xl text-white primary-gradient hover:opacity-90 transition-opacity font-bold text-sm shadow-lg shadow-primary/20">Evet, Planla</button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Header */}
@@ -675,63 +948,150 @@ export default function SiteVisits() {
       </div>
 
       {/* Filters Section */}
-      <div className="flex flex-col gap-3 lg:gap-4 mb-6 lg:mb-8">
-        {/* Top Row: Search and Export */}
-        <div className="flex items-center justify-between gap-2 lg:gap-3">
-          {/* Search */}
-          <div className="flex items-center gap-1.5 lg:gap-2 bg-surface-container-low px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg lg:rounded-xl flex-1 max-w-sm">
-            <span className="material-symbols-outlined text-on-surface-variant text-base lg:text-lg">search</span>
-            <input
-              type="text"
-              placeholder={t('workOrders.searchPlaceholder')}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="bg-transparent border-none outline-none text-xs lg:text-sm w-full placeholder-slate-400"
-            />
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-3 lg:mb-4">
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
+          <div className="flex items-center gap-1.5 lg:gap-2 overflow-x-auto overflow-y-hidden w-full sm:w-auto pb-1 sm:pb-0">
+            {['', ...STATUSES].map((s) => (
+              <button
+                key={s || 'all'}
+                onClick={() => setStatusFilter(s)}
+                className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 rounded-lg text-[10px] lg:text-xs font-bold border-2 transition-all ${statusFilter === s
+                    ? 'primary-gradient border-transparent text-white'
+                    : 'border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary'
+                  }`}
+              >
+                {s ? t('workOrders.' + STATUS_KEYS[s]) : t('common.all')}
+              </button>
+            ))}
           </div>
 
-          {/* Export Button */}
-          <button
-            onClick={handleExport}
-            className="primary-gradient text-white px-4 lg:px-6 py-2 lg:py-2.5 rounded-lg lg:rounded-xl font-bold text-xs lg:text-sm shadow-xl shadow-primary/20 flex items-center gap-1.5 lg:gap-2 hover:opacity-90 hover:scale-[1.02] transition-all flex-shrink-0"
-          >
-            <span className="material-symbols-outlined text-[18px] lg:text-[24px]">download</span>
-            <span className="hidden sm:inline">{t('common.export')}</span>
-          </button>
-        </div>
-
-        {/* Bottom Row: Status Filters */}
-        <div className="flex items-center gap-1.5 lg:gap-2 overflow-x-auto overflow-y-hidden w-full pb-1">
-          {['', ...STATUSES].map((s) => (
+          <div className="flex items-center gap-2 w-full sm:w-auto ml-auto">
+            <div className="flex items-center gap-2 bg-surface-container-low px-3 py-2 rounded-xl flex-1 sm:w-48 lg:w-64">
+              <span className="material-symbols-outlined text-on-surface-variant text-base">search</span>
+              <input
+                type="text"
+                placeholder={t('workOrders.searchPlaceholder')}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="bg-transparent border-none outline-none text-xs lg:text-sm w-full placeholder-slate-400"
+              />
+            </div>
             <button
-              key={s || 'all'}
-              onClick={() => setStatusFilter(s)}
-              className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 lg:px-4 lg:py-2 rounded-lg lg:rounded-xl text-[10px] lg:text-xs font-bold border-2 transition-all ${
-                statusFilter === s
-                  ? 'primary-gradient border-transparent text-white'
-                  : 'border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary'
-              }`}
+              onClick={handleExport}
+              className="bg-surface-container-lowest border border-surface-container text-on-surface px-3 py-2 rounded-xl font-bold text-xs lg:text-sm shadow-sm flex items-center gap-1.5 hover:bg-surface-container transition-all flex-shrink-0"
             >
-              {s ? t('workOrders.' + STATUS_KEYS[s]) : t('common.all')}
+              <span className="material-symbols-outlined text-[18px]">download</span>
+              <span className="hidden md:inline">{t('common.export')}</span>
             </button>
-          ))}
+          </div>
         </div>
       </div>
 
-      {/* Cards grid */}
-      {sorted.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 md:py-24 text-on-surface-variant/40 text-center px-4">
-          <span className="material-symbols-outlined text-4xl md:text-5xl mb-3">location_off</span>
-          <p className="text-base md:text-lg font-bold">{t('workOrders.noVisits')}</p>
-          <p className="text-xs md:text-sm mt-1">{t('workOrders.scheduleFirst')}</p>
+      {/* Calendar Navigation */}
+      <div className="flex items-center gap-2 bg-surface-container-lowest p-2 rounded-xl border border-surface-container shadow-sm w-full mb-4 md:mb-6">
+        <button
+          onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 7))}
+          className="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant transition-colors flex-shrink-0"
+        >
+          <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+        </button>
+
+        <div
+          className="relative flex items-center justify-center flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => dateInputRef.current?.showPicker()}
+        >
+          <div className="font-extrabold text-sm md:text-base text-on-surface flex items-center justify-center gap-2 pointer-events-none whitespace-nowrap">
+            <span className="material-symbols-outlined text-[18px] md:text-[20px] text-primary">calendar_month</span>
+            {daysOfWeek[0].dateNumber} {daysOfWeek[0].date.toLocaleDateString(undefined, { month: 'short' })} - {daysOfWeek[6].dateNumber} {daysOfWeek[6].date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+          </div>
+          <input
+            ref={dateInputRef}
+            type="date"
+            className="absolute opacity-0 w-0 h-0 pointer-events-none"
+            value={currentDate.toISOString().split('T')[0]}
+            onChange={(e) => {
+              if (e.target.value) setCurrentDate(new Date(e.target.value))
+            }}
+          />
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
-          {sorted.map((visit) => (
-            <VisitCard key={visit.id} visit={visit} onClick={() => setSelected(visit)} />
-          ))}
+
+        <button
+          onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 7))}
+          className="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant transition-colors flex-shrink-0"
+        >
+          <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+        </button>
+      </div>
+
+      {/* Calendar Grid */}
+      <div className="bg-surface-container-lowest border border-theme-border rounded-2xl overflow-hidden shadow-sm flex flex-col">
+        {/* Mobile View: Horizontal Scroll */}
+        <div
+          ref={scrollRef}
+          className="overflow-auto hide-scrollbar select-none max-h-[calc(100vh-220px)]"
+          onMouseDown={handleMouseDown}
+          onMouseLeave={handleMouseLeave}
+          onMouseUp={handleMouseUp}
+          onMouseMove={handleMouseMove}
+          onClickCapture={(e) => {
+            if (hasDragged) {
+              e.stopPropagation()
+              e.preventDefault()
+            }
+          }}
+        >
+          <div className="min-w-[900px]">
+            {/* Header: Days */}
+            <div className="grid grid-cols-[60px_repeat(7,minmax(0,1fr))] border-b border-theme-border bg-surface-container-low/30 sticky top-0 z-10">
+              <div className="p-3 border-r border-theme-border"></div>
+              {daysOfWeek.map(day => (
+                <div key={day.dateString} className={`p-3 border-r border-theme-border last:border-r-0 text-center flex flex-col items-center justify-center gap-1 ${day.isToday ? 'bg-primary/5' : ''}`}>
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${day.isToday ? 'text-primary' : 'text-on-surface-variant'}`}>{day.shortName}</span>
+                  <span className={`text-xl font-black ${day.isToday ? 'text-primary' : 'text-on-surface'}`}>{day.dateNumber}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Body: Hours */}
+            <div className="flex flex-col relative">
+              {hours.map(hour => (
+                <div key={hour} className="grid grid-cols-[60px_repeat(7,minmax(0,1fr))] border-b border-theme-border last:border-b-0 group">
+                  {/* Hour Label */}
+                  <div className="p-2 flex justify-end items-start border-r border-theme-border bg-surface-container-low/10 sticky left-0 z-10">
+                    <span className="text-[10px] font-bold text-on-surface-variant/60 -mt-2 group-hover:text-primary transition-colors bg-surface-container-lowest px-1 rounded">
+                      {hour.toString().padStart(2, '0')}:00
+                    </span>
+                  </div>
+                  {/* Day Cells */}
+                  {daysOfWeek.map(day => {
+                    const tasks = sorted.filter(v => {
+                      if (v.date !== day.dateString) return false;
+                      const h = v.time ? parseInt(v.time.split(':')[0], 10) : 8; // default to 08:00
+                      return h === hour;
+                    });
+
+                    return (
+                      <div
+                        key={day.dateString}
+                        onClick={() => {
+                          setInitialSlot({ date: day.dateString, time: hour.toString().padStart(2, '0') + ':00' })
+                          setShowModal(true)
+                        }}
+                        className={`px-1.5 pt-1.5 pb-8 min-h-[90px] border-r border-theme-border last:border-r-0 flex flex-col gap-1.5 cursor-pointer ${day.isToday ? 'bg-primary/[0.02]' : 'hover:bg-surface-container-low/30'} transition-colors`}
+                      >
+                        {tasks.map(visit => (
+                          <VisitCardCompact key={visit.id} visit={visit} onClick={() => setSelected(visit)} />
+                        ))}
+                      </div>
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }

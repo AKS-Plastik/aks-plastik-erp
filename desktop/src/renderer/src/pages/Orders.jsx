@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useLocation } from 'react-router-dom'
 import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -345,7 +346,13 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange, machine
         {/* Totals */}
         <div className="flex flex-col items-end gap-1 mb-4">
           <span className="font-bold text-on-surface text-[14px] md:text-base border-t border-theme-border pt-1 mt-0.5">
-            {t('orders.total')}: {currency} {parseFloat(order.totalAmount).toFixed(2)}
+            {t('orders.total')}: 
+            {(() => {
+              const tg = getOrderTotals(order.items);
+              const tk = Object.keys(tg);
+              if (!tk.length) return " 0.00";
+              return " " + tk.map(k => `${k} ${tg[k].toFixed(2)}`).join(" / ");
+            })()}
           </span>
         </div>
 
@@ -469,13 +476,8 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
     }
   }
 
-  const total = form.items.reduce((s, it) => {
-    const qty = parseInt(it.quantity) || 0
-    const price = parseFloat(it.unitPrice) || 0
-    const vatRate = parseFloat(it.vat) || 0
-    return s + qty * price * (1 + vatRate / 100)
-  }, 0)
-  const displayCurrency = form.items.find((it) => it.currency)?.currency || 'TRY'
+  const orderTotals = getOrderTotals(form.items);
+    const totalsKeys = Object.keys(orderTotals);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 md:p-6">
@@ -599,14 +601,23 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
                       <div className="w-[calc(50%-4px)] md:w-28 flex flex-col">
                         <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.unitPrice')}</span>
                         <div className={`flex items-center border rounded overflow-hidden bg-surface-container-lowest ${itemErr && !item.unitPrice ? 'border-error' : 'border-theme-border'}`}>
-                          <span className="px-1.5 text-[10px] text-text-muted border-r border-theme-border bg-surface-container-high">{item.currency || 'TRY'}</span>
-                          <input
-                            type="number" min="0" step="0.01"
-                            className="w-full px-2 py-1.5 text-xs md:text-sm text-on-surface outline-none bg-transparent"
-                            placeholder="0.00"
-                            value={item.unitPrice}
-                            onChange={(e) => setItem(idx, 'unitPrice', e.target.value)}
-                          />
+                          <select 
+                              className="px-1 py-1.5 md:py-0 h-full text-[10px] text-text-muted border-r border-theme-border bg-surface-container-high outline-none cursor-pointer"
+                              value={item.currency || 'TRY'}
+                              onChange={(e) => setItem(idx, 'currency', e.target.value)}
+                            >
+                              <option value="TRY">TRY</option>
+                              <option value="USD">USD</option>
+                              <option value="EUR">EUR</option>
+                              <option value="GBP">GBP</option>
+                            </select>
+                            <input
+                              type="number" min="0" step="0.01"
+                              className="w-full px-2 py-1.5 text-xs md:text-sm text-on-surface outline-none bg-transparent"
+                              placeholder="0.00"
+                              value={item.unitPrice}
+                              onChange={(e) => setItem(idx, 'unitPrice', e.target.value)}
+                            />
                         </div>
                       </div>
                       <div className="w-[calc(50%-4px)] md:w-16 flex flex-col">
@@ -642,9 +653,18 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
               })}
             </div>
             <div className="mt-3 flex justify-end">
-              <span className="font-bold text-on-surface border-t border-theme-border pt-1">
-                {t('orders.total')}: {displayCurrency} {total.toFixed(2)}
-              </span>
+              <div className="flex flex-col items-end border-t border-theme-border pt-1">
+                <span className="text-[10px] uppercase font-bold text-text-muted mb-0.5">{t('orders.total')}:</span>
+                {totalsKeys.length === 0 ? (
+                  <span className="font-bold text-on-surface">0.00</span>
+                ) : (
+                  totalsKeys.map(k => (
+                    <span key={k} className="font-bold text-on-surface">
+                      {k} {orderTotals[k].toFixed(2)}
+                    </span>
+                  ))
+                )}
+              </div>
             </div>
           </div>
 
@@ -732,6 +752,18 @@ function loadImageAsBase64(url) {
 }
 
 // ─── Main Component ───────────────────────────────────────────────────────────
+
+function getOrderTotals(items) {
+  const totals = {};
+  if (!items || !items.length) return totals;
+  items.forEach(it => {
+    const cur = it.currency || 'TRY';
+    const itemTotal = (parseFloat(it.unitPrice) || 0) * (parseInt(it.quantity) || 0) * (1 + (parseFloat(it.vat) || 0) / 100);
+    totals[cur] = (totals[cur] || 0) + itemTotal;
+  });
+  return totals;
+}
+
 export default function Orders() {
   const { t } = useTranslation()
   const { orders, addOrder, updateOrder, deleteOrder, syncAndRefreshOrders, customers, employees, products, machines, addProductionTask, isAdmin, permissions } = useData()
@@ -743,6 +775,33 @@ export default function Orders() {
     || currentUser?.department === 'Sales Representative'
     || (permissions[currentUser?.department] || []).includes('orders-create')
   const canEditProcessing = isAdmin || canCreate
+
+  const location = useLocation()
+  useEffect(() => {
+    if (location.state?.newOrderForCustomer) {
+      const base = emptyForm()
+      const isAdminOrManager = isAdmin || currentUser?.department === 'Sales Manager'
+      if (!isAdminOrManager) {
+        base.salesRepId = currentUser?.id
+      }
+      base.customerId = location.state.newOrderForCustomer
+      if (location.state.visitId) base.visitId = location.state.visitId
+      setForm(base)
+      setErrors({})
+      setShowAdd(true)
+      window.history.replaceState({}, document.title)
+    }
+
+    if (location.state?.openOrderId || location.state?.openOrderCode) {
+      const targetOrder = location.state.openOrderId ? orders.find(o => o.id === location.state.openOrderId) : orders.find(o => o.code === location.state.openOrderCode)
+      if (targetOrder) {
+        setDetailOrder(targetOrder)
+        window.history.replaceState({}, document.title)
+      }
+    }
+
+  }, [location, isAdmin, currentUser, orders])
+
 
   useEffect(() => {
     if (!token) return
@@ -862,7 +921,7 @@ export default function Orders() {
           o.customer?.name || '—',
           o.salesRep?.name || o.employee?.name || '—',
           o.items?.length ?? 0,
-          `${cur} ${parseFloat(o.totalAmount).toFixed(2)}`,
+          Object.entries(getOrderTotals(o.items)).map(([k, v]) => `${k} ${v.toFixed(2)}`).join('\n') || '0.00',
           o.status,
         ]
       }),
@@ -924,16 +983,20 @@ export default function Orders() {
           5: { halign: 'right', cellWidth: 14 },
           6: { halign: 'right', cellWidth: 26 },
         },
-        foot: [
-          ...(o.vat > 0 ? [[
-            { content: `VAT (${o.vat}%)`, colSpan: 4, styles: { halign: 'right', fontSize: 8, font: tf } },
-            { content: `+${cur} ${(parseFloat(o.totalAmount) - parseFloat(o.totalAmount) / (1 + o.vat / 100)).toFixed(2)}`, styles: { halign: 'right', fontSize: 8, font: tf } },
-          ]] : []),
-          [
-            { content: 'Order Total', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold', fontSize: 8, font: tf } },
-            { content: `${cur} ${parseFloat(o.totalAmount).toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', fontSize: 8, font: tf } },
-          ],
-        ],
+        foot: (() => {
+            const tg = getOrderTotals(o.items);
+            const tk = Object.keys(tg);
+            if (!tk.length) {
+              return [[
+                { content: 'Order Total', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold', fontSize: 8, font: tf } },
+                { content: `0.00`, styles: { halign: 'right', fontStyle: 'bold', fontSize: 8, font: tf } },
+              ]];
+            }
+            return tk.map((k, index) => [
+              { content: index === 0 ? 'Order Total' : '', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold', fontSize: 8, font: tf } },
+              { content: `${k} ${tg[k].toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', fontSize: 8, font: tf } }
+            ]);
+          })(),
         footStyles: { fillColor: [241, 245, 249], textColor: [30, 30, 30] },
       })
 
@@ -1265,10 +1328,19 @@ export default function Orders() {
                     <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
                       <div className="flex items-center justify-between xl:justify-end">
                         <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.total')}</span>
-                        <span className="font-semibold text-xs lg:text-sm text-on-surface">
-                          <span className="text-xs text-text-muted mr-1">{currency}</span>
-                          {(parseFloat(o.totalAmount) || 0).toFixed(2)}
-                        </span>
+                        <div className="flex flex-col items-end">
+                            {(() => {
+                              const tg = getOrderTotals(o.items);
+                              const tk = Object.keys(tg);
+                              if (!tk.length) return <span className="font-semibold text-xs lg:text-sm text-on-surface">0.00</span>;
+                              return tk.map(k => (
+                                <span key={k} className="font-semibold text-xs lg:text-sm text-on-surface">
+                                  <span className="text-xs text-text-muted mr-1">{k}</span>
+                                  {tg[k].toFixed(2)}
+                                </span>
+                              ));
+                            })()}
+                          </div>
                       </div>
                     </td>
                     <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">

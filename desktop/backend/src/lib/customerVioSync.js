@@ -314,6 +314,7 @@ async function pullCustomersFromVio() {
           const newValue = value === null ? '' : value;
           
           if (existingValue !== newValue) {
+            if ((newValue === "" || newValue === null) && (existingValue !== "" && existingValue !== null)) { continue; }
             diff[key] = value;
             hasChanges = true;
           }
@@ -431,7 +432,7 @@ function mapVioRowToErpData(row, code) {
     creditLimit: row.risklimiti ? parseFloat(row.risklimiti) : null,
     eInvoiceStatus: row.efaturakullanirmi === '*' || row.efaturakullanirmi === '1',
     invoiceScenario: row.efatsenaryotipi === 'M' ? 'Commercial' : 'Basic',
-  };
+};
 }
 
 async function fetchSingleVioCustomer(code) {

@@ -158,7 +158,7 @@ function buildActivity(customers, employees, reports, siteVisits) {
     items.push({
       ...activityConfig.siteVisit,
       title: `Visit: ${v.title}`,
-      desc: `${v.code} — ${v.location || 'No location'}${v.employeeName ? ` • ${v.employeeName}` : ''}`,
+      desc: `${v.code} — ${v.location || 'No location'}${v.assignees?.length > 0 ? ` • ${v.assignees.map(a => a.name).join(', ')}` : (v.employeeName ? ` • ${v.employeeName}` : '')}`,
       date: v.updatedAt || v.createdAt,
     })
   })
