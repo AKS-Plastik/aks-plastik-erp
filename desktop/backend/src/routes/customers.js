@@ -20,6 +20,7 @@ router.get('/', async (req, res) => {
         ]
       },
       orderBy: { code: 'asc' },
+      include: { tags: true }
     })
     res.json(customers)
   } catch (err) {
@@ -32,7 +33,7 @@ router.get('/:id', async (req, res) => {
   try {
     const customer = await prisma.customer.findUnique({
       where: { id: req.params.id },
-      include: { reports: true, siteVisits: true },
+      include: { reports: true, siteVisits: true, tags: true },
     })
     if (!customer) return res.status(404).json({ error: 'Customer not found' })
     res.json(customer)
@@ -134,6 +135,12 @@ function buildCustomerData(body) {
     data.isCustomer = isCustomer === true || isCustomer === 'true';
   }
 
+  if (body.tags) {
+    data.tags = {
+      set: body.tags.map(tagId => ({ id: typeof tagId === 'object' ? tagId.id : tagId }))
+    };
+  }
+
   return data;
 }
 
@@ -144,6 +151,7 @@ router.post('/', async (req, res) => {
     
     const customer = await prisma.customer.create({
       data: { code, ...buildCustomerData(req.body) },
+      include: { tags: true }
     })
     // Asenkron olarak Vio'ya gönder
     vioSync.syncCustomer(customer).catch(console.error);
@@ -186,6 +194,7 @@ router.put('/:id', async (req, res) => {
     const customer = await prisma.customer.update({
       where: { id: req.params.id },
       data: dataToSave,
+      include: { tags: true }
     })
 
     // Asenkron olarak Vio'ya gönder (Birleştirilmiş yeni haliyle)

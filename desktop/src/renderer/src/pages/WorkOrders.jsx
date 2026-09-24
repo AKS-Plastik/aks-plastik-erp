@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
@@ -58,10 +58,10 @@ function FieldErr({ label, icon, error, children, span2 = false }) {
   )
 }
 
-function AddVisitModal({ customers, employees, onClose, onSave }) {
+function AddVisitModal({ customers, employees, onClose, onSave, initialDate, initialTime }) {
   const { t } = useTranslation()
   const today = new Date().toISOString().split('T')[0]
-  const [form, setForm] = useState({ title: '', customerId: '', location: '', employeeId: '', date: today, time: '09:00', notes: '' })
+  const [form, setForm] = useState({ title: '', customerId: '', location: '', employeeId: '', date: initialDate || today, time: initialTime || '09:00', notes: '' })
   const [errors, setErrors] = useState({})
   const set = (f) => (e) => {
     const val = e.target.value
@@ -562,15 +562,92 @@ function VisitCard({ visit, onClick }) {
   )
 }
 
+function VisitCardCompact({ visit, onClick }) {
+  const style = STATUS_STYLES[visit.status] || STATUS_STYLES['Scheduled']
+  return (
+    <div 
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className={`p-2 rounded-lg cursor-pointer transition-all hover:opacity-80 active:scale-95 shadow-sm border flex flex-col overflow-hidden ${style.cardBg} ${style.accent.replace('bg-', 'border-')}`}
+    >
+      <div className="flex items-center gap-1.5 mb-1 min-w-0">
+        <div className={`w-1.5 h-1.5 flex-shrink-0 rounded-full ${style.dot}`} />
+        <span className="text-[9px] font-extrabold uppercase tracking-wide truncate text-on-surface-variant flex-1">{visit.customerName || 'Bilinmeyen'}</span>
+      </div>
+      <h3 className="text-[11px] font-bold text-on-surface leading-tight line-clamp-2 break-words">{visit.title}</h3>
+      <div className="flex items-center justify-between mt-1.5 min-w-0 gap-1">
+        <span className="text-[9px] font-bold text-on-surface-variant truncate flex-1">{visit.employeeName}</span>
+        {visit.time && (
+          <span className="text-[9px] font-bold text-on-surface-variant bg-surface-container-high/50 px-1 rounded flex-shrink-0">{visit.time}</span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function SiteVisits() {
   const { t } = useTranslation()
   const { customers, employees, siteVisits, addSiteVisit, updateSiteVisit, deleteSiteVisit } = useData()
   const [showModal, setShowModal]     = useState(false)
+  const [initialSlot, setInitialSlot] = useState(null)
   const [selected, setSelected]       = useState(null)
   const [search, setSearch]           = useState('')
   const [statusFilter, setStatusFilter] = useState('')
+  const [currentDate, setCurrentDate] = useState(new Date())
 
-  const today = new Date().toISOString().split('T')[0]
+  const dateInputRef = useRef(null)
+  
+  // --- Drag to Scroll Logic ---
+  const scrollRef = useRef(null)
+  const [isDragging, setIsDragging] = useState(false)
+  const [startX, setStartX] = useState(0)
+  const [scrollLeftPos, setScrollLeftPos] = useState(0)
+  const [hasDragged, setHasDragged] = useState(false)
+
+  const handleMouseDown = (e) => {
+    if (!scrollRef.current) return
+    setIsDragging(true)
+    setHasDragged(false)
+    setStartX(e.pageX - scrollRef.current.offsetLeft)
+    setScrollLeftPos(scrollRef.current.scrollLeft)
+  }
+
+  const handleMouseLeave = () => setIsDragging(false)
+  const handleMouseUp = () => setIsDragging(false)
+
+  const handleMouseMove = (e) => {
+    if (!isDragging || !scrollRef.current) return
+    e.preventDefault()
+    const x = e.pageX - scrollRef.current.offsetLeft
+    const walk = (x - startX) * 2
+    if (Math.abs(walk) > 5) setHasDragged(true)
+    scrollRef.current.scrollLeft = scrollLeftPos - walk
+  }
+
+  // --- Calendar Logic ---
+  const startOfWeek = new Date(currentDate)
+  const day = startOfWeek.getDay()
+  const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1)
+  startOfWeek.setDate(diff)
+  startOfWeek.setHours(0, 0, 0, 0)
+
+  const daysOfWeek = Array.from({ length: 7 }).map((_, i) => {
+    const d = new Date(startOfWeek)
+    d.setDate(d.getDate() + i)
+    const y = d.getFullYear()
+    const m = String(d.getMonth() + 1).padStart(2, '0')
+    const dayStr = String(d.getDate()).padStart(2, '0')
+    
+    return {
+      date: d,
+      dateString: `${y}-${m}-${dayStr}`,
+      dateNumber: d.getDate(),
+      shortName: d.toLocaleDateString(undefined, { weekday: 'short' }),
+      isToday: d.toDateString() === new Date().toDateString()
+    }
+  })
+
+  // We can render hours from 08:00 to 19:00 (12 rows).
+  const hours = Array.from({ length: 12 }).map((_, i) => i + 8)
 
   function handleExport() {
     const rows = siteVisits.map((v) => ({
@@ -626,8 +703,10 @@ export default function SiteVisits() {
         <AddVisitModal
           customers={customers}
           employees={employees}
-          onClose={() => setShowModal(false)}
-          onSave={(form) => { addSiteVisit(form); setShowModal(false) }}
+          initialDate={initialSlot?.date}
+          initialTime={initialSlot?.time}
+          onClose={() => { setShowModal(false); setInitialSlot(null); }}
+          onSave={(form) => { addSiteVisit(form); setShowModal(false); setInitialSlot(null); }}
         />
       )}
       {selected && (
@@ -675,63 +754,151 @@ export default function SiteVisits() {
       </div>
 
       {/* Filters Section */}
-      <div className="flex flex-col gap-3 lg:gap-4 mb-6 lg:mb-8">
-        {/* Top Row: Search and Export */}
-        <div className="flex items-center justify-between gap-2 lg:gap-3">
-          {/* Search */}
-          <div className="flex items-center gap-1.5 lg:gap-2 bg-surface-container-low px-3 lg:px-4 py-2 lg:py-2.5 rounded-lg lg:rounded-xl flex-1 max-w-sm">
-            <span className="material-symbols-outlined text-on-surface-variant text-base lg:text-lg">search</span>
-            <input
-              type="text"
-              placeholder={t('workOrders.searchPlaceholder')}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="bg-transparent border-none outline-none text-xs lg:text-sm w-full placeholder-slate-400"
-            />
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-3 lg:mb-4">
+        {/* Filters */}
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full">
+          <div className="flex items-center gap-1.5 lg:gap-2 overflow-x-auto overflow-y-hidden w-full sm:w-auto pb-1 sm:pb-0">
+            {['', ...STATUSES].map((s) => (
+              <button
+                key={s || 'all'}
+                onClick={() => setStatusFilter(s)}
+                className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 rounded-lg text-[10px] lg:text-xs font-bold border-2 transition-all ${
+                  statusFilter === s
+                    ? 'primary-gradient border-transparent text-white'
+                    : 'border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary'
+                }`}
+              >
+                {s ? t('workOrders.' + STATUS_KEYS[s]) : t('common.all')}
+              </button>
+            ))}
           </div>
 
-          {/* Export Button */}
-          <button
-            onClick={handleExport}
-            className="primary-gradient text-white px-4 lg:px-6 py-2 lg:py-2.5 rounded-lg lg:rounded-xl font-bold text-xs lg:text-sm shadow-xl shadow-primary/20 flex items-center gap-1.5 lg:gap-2 hover:opacity-90 hover:scale-[1.02] transition-all flex-shrink-0"
-          >
-            <span className="material-symbols-outlined text-[18px] lg:text-[24px]">download</span>
-            <span className="hidden sm:inline">{t('common.export')}</span>
-          </button>
-        </div>
-
-        {/* Bottom Row: Status Filters */}
-        <div className="flex items-center gap-1.5 lg:gap-2 overflow-x-auto overflow-y-hidden w-full pb-1">
-          {['', ...STATUSES].map((s) => (
+          <div className="flex items-center gap-2 w-full sm:w-auto ml-auto">
+            <div className="flex items-center gap-2 bg-surface-container-low px-3 py-2 rounded-xl flex-1 sm:w-48 lg:w-64">
+              <span className="material-symbols-outlined text-on-surface-variant text-base">search</span>
+              <input
+                type="text"
+                placeholder={t('workOrders.searchPlaceholder')}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="bg-transparent border-none outline-none text-xs lg:text-sm w-full placeholder-slate-400"
+              />
+            </div>
             <button
-              key={s || 'all'}
-              onClick={() => setStatusFilter(s)}
-              className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 lg:px-4 lg:py-2 rounded-lg lg:rounded-xl text-[10px] lg:text-xs font-bold border-2 transition-all ${
-                statusFilter === s
-                  ? 'primary-gradient border-transparent text-white'
-                  : 'border-outline-variant text-on-surface-variant hover:border-primary hover:text-primary'
-              }`}
+              onClick={handleExport}
+              className="bg-surface-container-lowest border border-surface-container text-on-surface px-3 py-2 rounded-xl font-bold text-xs lg:text-sm shadow-sm flex items-center gap-1.5 hover:bg-surface-container transition-all flex-shrink-0"
             >
-              {s ? t('workOrders.' + STATUS_KEYS[s]) : t('common.all')}
+              <span className="material-symbols-outlined text-[18px]">download</span>
+              <span className="hidden md:inline">{t('common.export')}</span>
             </button>
-          ))}
+          </div>
         </div>
       </div>
 
-      {/* Cards grid */}
-      {sorted.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 md:py-24 text-on-surface-variant/40 text-center px-4">
-          <span className="material-symbols-outlined text-4xl md:text-5xl mb-3">location_off</span>
-          <p className="text-base md:text-lg font-bold">{t('workOrders.noVisits')}</p>
-          <p className="text-xs md:text-sm mt-1">{t('workOrders.scheduleFirst')}</p>
+      {/* Calendar Navigation */}
+      <div className="flex items-center gap-2 bg-surface-container-lowest p-2 rounded-xl border border-surface-container shadow-sm w-full mb-4 md:mb-6">
+        <button 
+          onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 7))}
+          className="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant transition-colors flex-shrink-0"
+        >
+          <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+        </button>
+        
+        <div 
+          className="relative flex items-center justify-center flex-1 min-w-0 cursor-pointer hover:opacity-80 transition-opacity"
+          onClick={() => dateInputRef.current?.showPicker()}
+        >
+          <div className="font-extrabold text-sm md:text-base text-on-surface flex items-center justify-center gap-2 pointer-events-none whitespace-nowrap">
+            <span className="material-symbols-outlined text-[18px] md:text-[20px] text-primary">calendar_month</span>
+            {daysOfWeek[0].dateNumber} {daysOfWeek[0].date.toLocaleDateString(undefined, { month: 'short' })} - {daysOfWeek[6].dateNumber} {daysOfWeek[6].date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })}
+          </div>
+          <input 
+            ref={dateInputRef}
+            type="date" 
+            className="absolute opacity-0 w-0 h-0 pointer-events-none"
+            value={currentDate.toISOString().split('T')[0]}
+            onChange={(e) => {
+              if (e.target.value) setCurrentDate(new Date(e.target.value))
+            }}
+          />
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-5">
-          {sorted.map((visit) => (
-            <VisitCard key={visit.id} visit={visit} onClick={() => setSelected(visit)} />
-          ))}
+
+        <button 
+          onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + 7))}
+          className="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant transition-colors flex-shrink-0"
+        >
+          <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+        </button>
+      </div>
+
+      {/* Calendar Grid */}
+      <div className="bg-surface-container-lowest border border-theme-border rounded-2xl overflow-hidden shadow-sm flex flex-col">
+        {/* Mobile View: Horizontal Scroll */}
+        <div 
+          ref={scrollRef}
+          className="overflow-auto hide-scrollbar select-none max-h-[calc(100vh-220px)]"
+          onMouseDown={handleMouseDown}
+          onMouseLeave={handleMouseLeave}
+          onMouseUp={handleMouseUp}
+          onMouseMove={handleMouseMove}
+          onClickCapture={(e) => {
+            if (hasDragged) {
+              e.stopPropagation()
+              e.preventDefault()
+            }
+          }}
+        >
+          <div className="min-w-[900px]">
+            {/* Header: Days */}
+            <div className="grid grid-cols-[60px_repeat(7,minmax(0,1fr))] border-b border-theme-border bg-surface-container-low/30 sticky top-0 z-10">
+              <div className="p-3 border-r border-theme-border"></div>
+              {daysOfWeek.map(day => (
+                <div key={day.dateString} className={`p-3 border-r border-theme-border last:border-r-0 text-center flex flex-col items-center justify-center gap-1 ${day.isToday ? 'bg-primary/5' : ''}`}>
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${day.isToday ? 'text-primary' : 'text-on-surface-variant'}`}>{day.shortName}</span>
+                  <span className={`text-xl font-black ${day.isToday ? 'text-primary' : 'text-on-surface'}`}>{day.dateNumber}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Body: Hours */}
+            <div className="flex flex-col relative">
+              {hours.map(hour => (
+                <div key={hour} className="grid grid-cols-[60px_repeat(7,minmax(0,1fr))] border-b border-theme-border last:border-b-0 group">
+                  {/* Hour Label */}
+                  <div className="p-2 flex justify-end items-start border-r border-theme-border bg-surface-container-low/10 sticky left-0 z-10">
+                    <span className="text-[10px] font-bold text-on-surface-variant/60 -mt-2 group-hover:text-primary transition-colors bg-surface-container-lowest px-1 rounded">
+                      {hour.toString().padStart(2, '0')}:00
+                    </span>
+                  </div>
+                  {/* Day Cells */}
+                  {daysOfWeek.map(day => {
+                    const tasks = sorted.filter(v => {
+                      if (v.date !== day.dateString) return false;
+                      const h = v.time ? parseInt(v.time.split(':')[0], 10) : 8; // default to 08:00
+                      return h === hour;
+                    });
+                    
+                    return (
+                      <div 
+                        key={day.dateString} 
+                        onClick={() => {
+                          setInitialSlot({ date: day.dateString, time: hour.toString().padStart(2, '0') + ':00' })
+                          setShowModal(true)
+                        }}
+                        className={`px-1.5 pt-1.5 pb-8 min-h-[90px] border-r border-theme-border last:border-r-0 flex flex-col gap-1.5 cursor-pointer ${day.isToday ? 'bg-primary/[0.02]' : 'hover:bg-surface-container-low/30'} transition-colors`}
+                      >
+                        {tasks.map(visit => (
+                          <VisitCardCompact key={visit.id} visit={visit} onClick={() => setSelected(visit)} />
+                        ))}
+                      </div>
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }

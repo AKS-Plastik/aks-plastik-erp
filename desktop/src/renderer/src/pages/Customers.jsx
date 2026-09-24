@@ -122,15 +122,15 @@ const emptyForm = {
 
 function getTabDefs(t) {
   return [
-    { id: 'identity',  label: t('customers.form.tabIdentity'),  icon: 'badge'                   },
-    { id: 'address',   label: t('customers.form.tabAddress'),   icon: 'location_on'             },
-    { id: 'tax',       label: t('customers.form.tabTax'),       icon: 'receipt_long'            },
-    { id: 'financial', label: t('customers.form.tabFinancial'), icon: 'account_balance_wallet'  },
-    { id: 'contact',   label: t('customers.form.tabContact'),   icon: 'contact_phone'           },
+    { id: 'identity', label: t('customers.form.tabIdentity'), icon: 'badge' },
+    { id: 'address', label: t('customers.form.tabAddress'), icon: 'location_on' },
+    { id: 'tax', label: t('customers.form.tabTax'), icon: 'receipt_long' },
+    { id: 'financial', label: t('customers.form.tabFinancial'), icon: 'account_balance_wallet' },
+    { id: 'contact', label: t('customers.form.tabContact'), icon: 'contact_phone' },
   ]
 }
 
-function getTabFields(tabId, form, t) {
+function getTabFields(tabId, form, t, customerTags = []) {
   const f = (key) => t(`customers.form.${key}`)
   switch (tabId) {
     case 'identity':
@@ -144,6 +144,7 @@ function getTabFields(tabId, form, t) {
           : [{ id: 'companyName', label: f('companyName'), icon: 'business', type: 'text', col: 2, placeholder: f('companyNamePh') }]
         ),
         { id: 'isCustomer', label: t('customers.isCustomer', 'Müşteri (Sipariş Alınmış)'), icon: 'verified_user', type: 'toggle', col: 2 },
+        { id: 'tags', label: 'Etiketler', icon: 'sell', type: 'multiselect', col: 2, options: customerTags.map(t => ({ value: t.id, label: t.name, color: t.color })) },
         {
           id: 'mukellefTipi', label: f('mukellefTipi'), icon: 'gavel', type: 'radio', col: 2,
           options: [
@@ -265,6 +266,46 @@ function FieldInput({ field, value, onChange, error }) {
     )
   }
 
+
+  if (type === 'multiselect') {
+    return (
+      <div>
+        <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">
+          {label}
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {options.map((o) => {
+            const isSelected = (value || []).some(v => (v.id || v) === o.value);
+            return (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => {
+                  const current = value || [];
+                  if (isSelected) {
+                    onChange(current.filter(v => (v.id || v) !== o.value));
+                  } else {
+                    onChange([...current, o.value]);
+                  }
+                }}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${!o.color ? (isSelected ? 'border-primary text-primary bg-primary/10' : 'border-surface-container-high text-on-surface-variant bg-surface-container-high hover:bg-surface-container') : ''
+                  } ${o.color && !isSelected ? 'hover:bg-surface-container-high' : ''}`}
+                style={o.color ? {
+                  backgroundColor: isSelected ? `${o.color}20` : 'transparent',
+                  borderColor: isSelected ? o.color : `${o.color}40`,
+                  color: isSelected ? o.color : `${o.color}b3`,
+                } : {}}
+              >
+                {o.label}
+              </button>
+            )
+          })}
+        </div>
+        {error && <p className="text-[10px] text-error font-medium mt-1">{error}</p>}
+      </div>
+    )
+  }
+
   if (type === 'radio') {
     return (
       <div>
@@ -277,11 +318,10 @@ function FieldInput({ field, value, onChange, error }) {
               key={o.value}
               type="button"
               onClick={() => onChange(o.value)}
-              className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-2 py-2 sm:px-3 sm:py-2.5 rounded-lg transition-all ${
-                value === o.value
+              className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 px-2 py-2 sm:px-3 sm:py-2.5 rounded-lg transition-all ${value === o.value
                   ? 'bg-primary/10 ring-2 ring-primary text-primary'
                   : 'bg-surface-container-high text-on-surface-variant hover:bg-surface-container'
-              }`}
+                }`}
             >
               <span className="material-symbols-outlined text-[16px] sm:text-[18px] flex-shrink-0">
                 {value === o.value ? 'radio_button_checked' : 'radio_button_unchecked'}
@@ -304,9 +344,8 @@ function FieldInput({ field, value, onChange, error }) {
         <button
           type="button"
           onClick={() => onChange(!value)}
-          className={`flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 px-2 py-2 sm:px-3 sm:py-2.5 rounded-lg transition-all w-full ${
-            value ? 'bg-primary/10 ring-2 ring-primary' : 'bg-surface-container-high'
-          }`}
+          className={`flex items-center justify-center sm:justify-start gap-1.5 sm:gap-2 px-2 py-2 sm:px-3 sm:py-2.5 rounded-lg transition-all w-full ${value ? 'bg-primary/10 ring-2 ring-primary' : 'bg-surface-container-high'
+            }`}
         >
           <span className={`material-symbols-outlined text-[18px] sm:text-[20px] flex-shrink-0 ${value ? 'text-primary' : 'text-on-surface-variant'}`}>
             {value ? 'toggle_on' : 'toggle_off'}
@@ -325,9 +364,8 @@ function FieldInput({ field, value, onChange, error }) {
         <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">
           {label}
         </label>
-        <div className={`flex items-center gap-1.5 sm:gap-2 bg-surface-container-high rounded-lg px-2.5 py-2 sm:px-3 sm:py-2.5 transition-all ${
-          error ? 'ring-2 ring-error' : 'focus-within:ring-2 focus-within:ring-primary'
-        }`}>
+        <div className={`flex items-center gap-1.5 sm:gap-2 bg-surface-container-high rounded-lg px-2.5 py-2 sm:px-3 sm:py-2.5 transition-all ${error ? 'ring-2 ring-error' : 'focus-within:ring-2 focus-within:ring-primary'
+          }`}>
           <span className="material-symbols-outlined text-on-surface-variant text-[16px] sm:text-[18px] flex-shrink-0">{icon}</span>
           <select
             value={value}
@@ -350,9 +388,8 @@ function FieldInput({ field, value, onChange, error }) {
         <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">
           {label}
         </label>
-        <div className={`flex items-start gap-1.5 sm:gap-2 bg-surface-container-high rounded-lg px-2.5 py-2 sm:px-3 sm:py-2.5 transition-all ${
-          error ? 'ring-2 ring-error' : 'focus-within:ring-2 focus-within:ring-primary'
-        }`}>
+        <div className={`flex items-start gap-1.5 sm:gap-2 bg-surface-container-high rounded-lg px-2.5 py-2 sm:px-3 sm:py-2.5 transition-all ${error ? 'ring-2 ring-error' : 'focus-within:ring-2 focus-within:ring-primary'
+          }`}>
           <span className="material-symbols-outlined text-on-surface-variant text-[16px] sm:text-[18px] flex-shrink-0 mt-0.5">{icon}</span>
           <textarea
             placeholder={placeholder}
@@ -372,9 +409,8 @@ function FieldInput({ field, value, onChange, error }) {
       <label className="block text-[10px] font-bold uppercase tracking-widest text-on-surface-variant mb-1.5">
         {label}
       </label>
-      <div className={`flex items-center gap-1.5 sm:gap-2 bg-surface-container-high rounded-lg px-2.5 py-2 sm:px-3 sm:py-2.5 transition-all ${
-        error ? 'ring-2 ring-error' : 'focus-within:ring-2 focus-within:ring-primary'
-      }`}>
+      <div className={`flex items-center gap-1.5 sm:gap-2 bg-surface-container-high rounded-lg px-2.5 py-2 sm:px-3 sm:py-2.5 transition-all ${error ? 'ring-2 ring-error' : 'focus-within:ring-2 focus-within:ring-primary'
+        }`}>
         <span className="material-symbols-outlined text-on-surface-variant text-[16px] sm:text-[18px] flex-shrink-0">{icon}</span>
         <input
           type={type}
@@ -390,7 +426,7 @@ function FieldInput({ field, value, onChange, error }) {
   )
 }
 
-function AddCustomerModal({ onClose, onSave }) {
+function AddCustomerModal({ onClose, onSave, customerTags = [] }) {
   const { t } = useTranslation()
   const tabDefs = getTabDefs(t)
   const [activeTab, setActiveTab] = useState(0)
@@ -427,7 +463,7 @@ function AddCustomerModal({ onClose, onSave }) {
       // jump to first tab containing an error
       const errorIds = new Set(Object.keys(e))
       for (let i = 0; i < tabDefs.length; i++) {
-        const fields = getTabFields(tabDefs[i].id, form, t)
+        const fields = getTabFields(tabDefs[i].id, form, t, customerTags)
         if (fields.some((f) => errorIds.has(f.id))) { setActiveTab(i); break }
       }
       return
@@ -435,7 +471,7 @@ function AddCustomerModal({ onClose, onSave }) {
     onSave(form)
   }
 
-  const fields = getTabFields(tabDefs[activeTab].id, form, t)
+  const fields = getTabFields(tabDefs[activeTab].id, form, t, customerTags)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -464,11 +500,10 @@ function AddCustomerModal({ onClose, onSave }) {
             <button
               key={tab.id}
               onClick={() => setActiveTab(i)}
-              className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-t-lg text-[11px] lg:text-xs font-bold transition-all flex-shrink-0 whitespace-nowrap ${
-                activeTab === i
+              className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-t-lg text-[11px] lg:text-xs font-bold transition-all flex-shrink-0 whitespace-nowrap ${activeTab === i
                   ? 'bg-primary text-white shadow-sm'
                   : 'text-on-surface-variant hover:bg-surface-container-low'
-              }`}
+                }`}
             >
               <span className="material-symbols-outlined text-[16px]">{tab.icon}</span>
               {tab.label}
@@ -582,7 +617,7 @@ function OrdersTab({ customerOrders }) {
   }
 
   const total = customerOrders.reduce((s, o) => s + (o.totalAmount || 0), 0)
-  const open  = customerOrders.filter((o) => o.status !== 'Delivered').length
+  const open = customerOrders.filter((o) => o.status !== 'Delivered').length
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
@@ -689,52 +724,52 @@ function OrdersTab({ customerOrders }) {
                       <td colSpan={7} className="block sm:table-cell px-3 sm:px-6 pb-4 pt-4 sm:pt-1">
                         <div className="overflow-hidden sm:overflow-x-auto overflow-y-hidden rounded-xl sm:rounded-none bg-surface-container-lowest sm:bg-transparent border border-theme-border sm:border-0 p-2 sm:p-0">
                           <table className="w-full text-xs block sm:table min-w-0 sm:min-w-[500px]">
-                          <thead className="hidden sm:table-header-group">
-                            <tr className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant border-b border-surface-container">
-                              <th className="text-left py-1.5 pr-4">{t('orders.product')}</th>
-                              <th className="text-right py-1.5 pr-4">{t('orders.qty')}</th>
-                              <th className="text-left py-1.5 pr-4">{t('common.unit')}</th>
-                              <th className="text-right py-1.5 pr-4">{t('orders.unitPrice')}</th>
-                              <th className="text-right py-1.5 pr-4">{t('orders.vat')}</th>
-                              <th className="text-right py-1.5">Subtotal</th>
-                            </tr>
-                          </thead>
-                          <tbody className="block sm:table-row-group">
-                            {o.items.map((item) => (
-                              <tr key={item.id} className="block sm:table-row border-b border-surface-container last:border-0 p-2 sm:p-0">
-                                <td className="block sm:table-cell py-1 sm:py-1.5 pr-0 sm:pr-4 flex justify-between items-center sm:table-cell">
-                                  <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('orders.product')}</span>
-                                  <span className="font-medium text-on-surface text-right sm:text-left">{item.product?.name || '—'}</span>
-                                </td>
-                                <td className="block sm:table-cell py-1 sm:py-1.5 pr-0 sm:pr-4 flex justify-between items-center sm:table-cell text-right text-on-surface tabular-nums">
-                                  <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('orders.qty')}</span>
-                                  {item.qty}
-                                </td>
-                                <td className="block sm:table-cell py-1 sm:py-1.5 pr-0 sm:pr-4 flex justify-between items-center sm:table-cell text-on-surface-variant">
-                                  <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('common.unit')}</span>
-                                  {item.product?.unit || '—'}
-                                </td>
-                                <td className="block sm:table-cell py-1 sm:py-1.5 pr-0 sm:pr-4 flex justify-between items-center sm:table-cell text-right tabular-nums text-on-surface">
-                                  <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('orders.unitPrice')}</span>
-                                  <div>
-                                    {fmtNum(item.price)}
-                                    {item.product?.currency && (
-                                      <span className="text-on-surface-variant ml-1">{item.product.currency}</span>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="block sm:table-cell py-1 sm:py-1.5 pr-0 sm:pr-4 flex justify-between items-center sm:table-cell text-right text-on-surface-variant">
-                                  <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('orders.vat')}</span>
-                                  {item.vat ? `${item.vat}%` : '—'}
-                                </td>
-                                <td className="block sm:table-cell py-1 sm:py-1.5 flex justify-between items-center sm:table-cell text-right font-semibold tabular-nums text-on-surface mt-2 sm:mt-0 pt-2 sm:pt-0 border-t border-surface-container sm:border-0">
-                                  <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Subtotal</span>
-                                  {fmtNum(item.qty * item.price)}
-                                </td>
+                            <thead className="hidden sm:table-header-group">
+                              <tr className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant border-b border-surface-container">
+                                <th className="text-left py-1.5 pr-4">{t('orders.product')}</th>
+                                <th className="text-right py-1.5 pr-4">{t('orders.qty')}</th>
+                                <th className="text-left py-1.5 pr-4">{t('common.unit')}</th>
+                                <th className="text-right py-1.5 pr-4">{t('orders.unitPrice')}</th>
+                                <th className="text-right py-1.5 pr-4">{t('orders.vat')}</th>
+                                <th className="text-right py-1.5">Subtotal</th>
                               </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                            </thead>
+                            <tbody className="block sm:table-row-group">
+                              {o.items.map((item) => (
+                                <tr key={item.id} className="block sm:table-row border-b border-surface-container last:border-0 p-2 sm:p-0">
+                                  <td className="block sm:table-cell py-1 sm:py-1.5 pr-0 sm:pr-4 flex justify-between items-center sm:table-cell">
+                                    <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('orders.product')}</span>
+                                    <span className="font-medium text-on-surface text-right sm:text-left">{item.product?.name || '—'}</span>
+                                  </td>
+                                  <td className="block sm:table-cell py-1 sm:py-1.5 pr-0 sm:pr-4 flex justify-between items-center sm:table-cell text-right text-on-surface tabular-nums">
+                                    <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('orders.qty')}</span>
+                                    {item.qty}
+                                  </td>
+                                  <td className="block sm:table-cell py-1 sm:py-1.5 pr-0 sm:pr-4 flex justify-between items-center sm:table-cell text-on-surface-variant">
+                                    <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('common.unit')}</span>
+                                    {item.product?.unit || '—'}
+                                  </td>
+                                  <td className="block sm:table-cell py-1 sm:py-1.5 pr-0 sm:pr-4 flex justify-between items-center sm:table-cell text-right tabular-nums text-on-surface">
+                                    <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('orders.unitPrice')}</span>
+                                    <div>
+                                      {fmtNum(item.price)}
+                                      {item.product?.currency && (
+                                        <span className="text-on-surface-variant ml-1">{item.product.currency}</span>
+                                      )}
+                                    </div>
+                                  </td>
+                                  <td className="block sm:table-cell py-1 sm:py-1.5 pr-0 sm:pr-4 flex justify-between items-center sm:table-cell text-right text-on-surface-variant">
+                                    <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('orders.vat')}</span>
+                                    {item.vat ? `${item.vat}%` : '—'}
+                                  </td>
+                                  <td className="block sm:table-cell py-1 sm:py-1.5 flex justify-between items-center sm:table-cell text-right font-semibold tabular-nums text-on-surface mt-2 sm:mt-0 pt-2 sm:pt-0 border-t border-surface-container sm:border-0">
+                                    <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Subtotal</span>
+                                    {fmtNum(item.qty * item.price)}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
                         </div>
                       </td>
                     </tr>
@@ -750,18 +785,18 @@ function OrdersTab({ customerOrders }) {
 }
 
 const ORDER_STATUS_CLS = {
-  'Draft':                'bg-surface-container text-on-surface-variant',
-  'Processing':           'bg-tertiary-fixed text-on-tertiary-fixed-variant',
-  'Confirmed':            'bg-primary-fixed text-on-primary-fixed-variant',
-  'In-Production':        'bg-secondary-container text-on-secondary-container',
+  'Draft': 'bg-surface-container text-on-surface-variant',
+  'Processing': 'bg-tertiary-fixed text-on-tertiary-fixed-variant',
+  'Confirmed': 'bg-primary-fixed text-on-primary-fixed-variant',
+  'In-Production': 'bg-secondary-container text-on-secondary-container',
   'Production Completed': 'bg-secondary-container text-on-secondary-container',
-  'E-WayBill':            'bg-tertiary-fixed text-on-tertiary-fixed-variant',
-  'In Delivery':          'bg-primary/10 text-primary',
-  'E-Invoice':            'bg-primary/10 text-primary',
-  'Delivered':            'bg-primary-fixed text-on-primary-fixed-variant',
+  'E-WayBill': 'bg-tertiary-fixed text-on-tertiary-fixed-variant',
+  'In Delivery': 'bg-primary/10 text-primary',
+  'E-Invoice': 'bg-primary/10 text-primary',
+  'Delivered': 'bg-primary-fixed text-on-primary-fixed-variant',
 }
 
-function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
+function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete, customerTags = [] }) {
   const { t } = useTranslation()
   const tabDefs = getTabDefs(t)
   const { isAdmin, orders, financeRecords } = useData()
@@ -776,108 +811,111 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
   let customerFinance = financeRecords.filter((f) => f.orderId && customerOrderIds.has(f.orderId))
 
   const [form, setForm] = useState({
-    customerType:    customer.customerType    || 'Company',
-    fullName:        customer.fullName        || '',
-    companyName:     customer.name            || '',
-    taxId:           customer.taxId           || '',
-    taxOffice:       customer.taxOffice       || '',
-    country:         customer.country         || '',
-    ticaretSicil:    customer.ticaretSicil    || '',
-    mersisNo:        customer.mersisNo        || '',
-    bolge:           customer.bolge           || '',
-    cariTip:         customer.cariTip         || '',
-    istatistikGrup:  customer.istatistikGrup  || '',
-    mukellefTipi:    customer.mukellefTipi    || 'Vergi Mükellefi',
-    address:         customer.address         || '',
-    city:            customer.city            || '',
-    district:        customer.district        || '',
-    postalCode:      customer.postalCode      || '',
-    phone:           customer.phone           || '',
-    email:           customer.email           || '',
-    eInvoiceStatus:  customer.eInvoiceStatus  || false,
-    eArchiveStatus:  customer.eArchiveStatus  || false,
+    customerType: customer.customerType || 'Company',
+    fullName: customer.fullName || '',
+    companyName: customer.name || '',
+    taxId: customer.taxId || '',
+    taxOffice: customer.taxOffice || '',
+    country: customer.country || '',
+    ticaretSicil: customer.ticaretSicil || '',
+    mersisNo: customer.mersisNo || '',
+    bolge: customer.bolge || '',
+    cariTip: customer.cariTip || '',
+    istatistikGrup: customer.istatistikGrup || '',
+    mukellefTipi: customer.mukellefTipi || 'Vergi Mükellefi',
+    address: customer.address || '',
+    city: customer.city || '',
+    district: customer.district || '',
+    postalCode: customer.postalCode || '',
+    phone: customer.phone || '',
+    email: customer.email || '',
+    eInvoiceStatus: customer.eInvoiceStatus || false,
+    eArchiveStatus: customer.eArchiveStatus || false,
     eDispatchStatus: customer.eDispatchStatus || false,
     invoiceScenario: customer.invoiceScenario || 'Basic',
-    accountCode:     customer.accountCode     || '',
-    accountType:     customer.accountType     || 'Customer',
-    currency:        customer.currency        || 'TRY',
-    paymentTerm:     customer.paymentTerm     || '',
-    creditLimit:     customer.creditLimit != null ? String(customer.creditLimit) : '',
-    bankName:        customer.bankName        || '',
-    iban:            customer.iban            || '',
-    branchCode:      customer.branchCode      || '',
-    accountHolder:   customer.accountHolder   || '',
-    invoiceType:     customer.invoiceType     || '',
-    paymentMethod:   customer.paymentMethod   || '',
-    paymentTerms:    customer.paymentTerms    || '',
-    contactName:                  customer.contactName                  || '',
-    contactPersonPhone:           customer.contactPersonPhone           || '',
-    contactPersonEmail:           customer.contactPersonEmail           || '',
-    contactNamePurchasing:        customer.contactNamePurchasing        || '',
+    accountCode: customer.accountCode || '',
+    accountType: customer.accountType || 'Customer',
+    currency: customer.currency || 'TRY',
+    paymentTerm: customer.paymentTerm || '',
+    creditLimit: customer.creditLimit != null ? String(customer.creditLimit) : '',
+    bankName: customer.bankName || '',
+    iban: customer.iban || '',
+    branchCode: customer.branchCode || '',
+    accountHolder: customer.accountHolder || '',
+    invoiceType: customer.invoiceType || '',
+    paymentMethod: customer.paymentMethod || '',
+    paymentTerms: customer.paymentTerms || '',
+    contactName: customer.contactName || '',
+    contactPersonPhone: customer.contactPersonPhone || '',
+    contactPersonEmail: customer.contactPersonEmail || '',
+    contactNamePurchasing: customer.contactNamePurchasing || '',
     contactPersonPhonePurchasing: customer.contactPersonPhonePurchasing || '',
     contactPersonEmailPurchasing: customer.contactPersonEmailPurchasing || '',
-    contactPhone:                 customer.contactPhone                 || '',
-    contactEmail:        customer.contactEmail        || '',
-    contactPosition:     customer.contactPosition     || '',
-    industry:        customer.industry        || '',
+    contactPhone: customer.contactPhone || '',
+    contactEmail: customer.contactEmail || '',
+    contactPosition: customer.contactPosition || '',
+    industry: customer.industry || '',
     customerCategory: customer.customerCategory || '',
-    salesRepName:    customer.salesRepName    || '',
-    notes:           customer.notes           || '',
-    gdprConsent:     customer.gdprConsent     || false,
-    isCustomer:      customer.isCustomer      || false,
+    salesRepName: customer.salesRepName || '',
+    notes: customer.notes || '',
+    gdprConsent: customer.gdprConsent || false,
+    isCustomer: customer.isCustomer || false,
+    tags: customer.tags || [],
   })
 
   useEffect(() => {
     if (!editing) {
       setForm({
-        customerType:    customer.customerType    || 'Company',
-        fullName:        customer.fullName        || '',
-        companyName:     customer.name            || '',
-        taxId:           customer.taxId           || '',
-        taxOffice:       customer.taxOffice       || '',
-        country:         customer.country         || '',
-        ticaretSicil:    customer.ticaretSicil    || '',
-        mersisNo:        customer.mersisNo        || '',
-        bolge:           customer.bolge           || '',
-        cariTip:         customer.cariTip         || '',
-        istatistikGrup:  customer.istatistikGrup  || '',
-        mukellefTipi:    customer.mukellefTipi    || 'Vergi Mükellefi',
-        address:         customer.address         || '',
-        city:            customer.city            || '',
-        district:        customer.district        || '',
-        postalCode:      customer.postalCode      || '',
-        phone:           customer.phone           || '',
-        email:           customer.email           || '',
-        eInvoiceStatus:  customer.eInvoiceStatus  || false,
-        eArchiveStatus:  customer.eArchiveStatus  || false,
+        customerType: customer.customerType || 'Company',
+        fullName: customer.fullName || '',
+        companyName: customer.name || '',
+        taxId: customer.taxId || '',
+        taxOffice: customer.taxOffice || '',
+        country: customer.country || '',
+        ticaretSicil: customer.ticaretSicil || '',
+        mersisNo: customer.mersisNo || '',
+        bolge: customer.bolge || '',
+        cariTip: customer.cariTip || '',
+        istatistikGrup: customer.istatistikGrup || '',
+        mukellefTipi: customer.mukellefTipi || 'Vergi Mükellefi',
+        address: customer.address || '',
+        city: customer.city || '',
+        district: customer.district || '',
+        postalCode: customer.postalCode || '',
+        phone: customer.phone || '',
+        email: customer.email || '',
+        eInvoiceStatus: customer.eInvoiceStatus || false,
+        eArchiveStatus: customer.eArchiveStatus || false,
         eDispatchStatus: customer.eDispatchStatus || false,
         invoiceScenario: customer.invoiceScenario || 'Basic',
-        accountCode:     customer.accountCode     || '',
-        accountType:     customer.accountType     || 'Customer',
-        currency:        customer.currency        || 'TRY',
-        paymentTerm:     customer.paymentTerm     || '',
-        creditLimit:     customer.creditLimit != null ? String(customer.creditLimit) : '',
-        bankName:        customer.bankName        || '',
-        iban:            customer.iban            || '',
-        branchCode:      customer.branchCode      || '',
-        accountHolder:   customer.accountHolder   || '',
-        invoiceType:     customer.invoiceType     || '',
-        paymentMethod:   customer.paymentMethod   || '',
-        paymentTerms:    customer.paymentTerms    || '',
-        contactName:                  customer.contactName                  || '',
-        contactPersonPhone:           customer.contactPersonPhone           || '',
-        contactPersonEmail:           customer.contactPersonEmail           || '',
-        contactNamePurchasing:        customer.contactNamePurchasing        || '',
+        accountCode: customer.accountCode || '',
+        accountType: customer.accountType || 'Customer',
+        currency: customer.currency || 'TRY',
+        paymentTerm: customer.paymentTerm || '',
+        creditLimit: customer.creditLimit != null ? String(customer.creditLimit) : '',
+        bankName: customer.bankName || '',
+        iban: customer.iban || '',
+        branchCode: customer.branchCode || '',
+        accountHolder: customer.accountHolder || '',
+        invoiceType: customer.invoiceType || '',
+        paymentMethod: customer.paymentMethod || '',
+        paymentTerms: customer.paymentTerms || '',
+        contactName: customer.contactName || '',
+        contactPersonPhone: customer.contactPersonPhone || '',
+        contactPersonEmail: customer.contactPersonEmail || '',
+        contactNamePurchasing: customer.contactNamePurchasing || '',
         contactPersonPhonePurchasing: customer.contactPersonPhonePurchasing || '',
         contactPersonEmailPurchasing: customer.contactPersonEmailPurchasing || '',
-        contactPhone:                 customer.contactPhone                 || '',
-        contactEmail:        customer.contactEmail        || '',
-        contactPosition:     customer.contactPosition     || '',
-        industry:        customer.industry        || '',
+        contactPhone: customer.contactPhone || '',
+        contactEmail: customer.contactEmail || '',
+        contactPosition: customer.contactPosition || '',
+        industry: customer.industry || '',
         customerCategory: customer.customerCategory || '',
-        salesRepName:    customer.salesRepName    || '',
-        notes:           customer.notes           || '',
-        gdprConsent:     customer.gdprConsent     || false,
+        salesRepName: customer.salesRepName || '',
+        notes: customer.notes || '',
+        gdprConsent: customer.gdprConsent || false,
+        isCustomer: customer.isCustomer || false,
+        tags: customer.tags || [],
       })
     }
   }, [customer, editing])
@@ -912,56 +950,58 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
   function handleCancel() {
     setViewTab('info')
     setForm({
-      customerType:    customer.customerType    || 'Company',
-      fullName:        customer.fullName        || '',
-      companyName:     customer.name            || '',
-      taxId:           customer.taxId           || '',
-      taxOffice:       customer.taxOffice       || '',
-      country:         customer.country         || '',
-      ticaretSicil:    customer.ticaretSicil    || '',
-      mersisNo:        customer.mersisNo        || '',
-      bolge:           customer.bolge           || '',
-      cariTip:         customer.cariTip         || '',
-      istatistikGrup:  customer.istatistikGrup  || '',
-      mukellefTipi:    customer.mukellefTipi    || 'Vergi Mükellefi',
-      address:         customer.address         || '',
-      city:            customer.city            || '',
-      district:        customer.district        || '',
-      postalCode:      customer.postalCode      || '',
-      phone:           customer.phone           || '',
-      email:           customer.email           || '',
-      eInvoiceStatus:  customer.eInvoiceStatus  || false,
-      eArchiveStatus:  customer.eArchiveStatus  || false,
+      customerType: customer.customerType || 'Company',
+      fullName: customer.fullName || '',
+      companyName: customer.name || '',
+      taxId: customer.taxId || '',
+      taxOffice: customer.taxOffice || '',
+      country: customer.country || '',
+      ticaretSicil: customer.ticaretSicil || '',
+      mersisNo: customer.mersisNo || '',
+      bolge: customer.bolge || '',
+      cariTip: customer.cariTip || '',
+      istatistikGrup: customer.istatistikGrup || '',
+      mukellefTipi: customer.mukellefTipi || 'Vergi Mükellefi',
+      address: customer.address || '',
+      city: customer.city || '',
+      district: customer.district || '',
+      postalCode: customer.postalCode || '',
+      phone: customer.phone || '',
+      email: customer.email || '',
+      eInvoiceStatus: customer.eInvoiceStatus || false,
+      eArchiveStatus: customer.eArchiveStatus || false,
       eDispatchStatus: customer.eDispatchStatus || false,
       invoiceScenario: customer.invoiceScenario || 'Basic',
-      accountCode:     customer.accountCode     || '',
-      accountType:     customer.accountType     || 'Customer',
-      currency:        customer.currency        || 'TRY',
-      paymentTerm:     customer.paymentTerm     || '',
-      creditLimit:     customer.creditLimit != null ? String(customer.creditLimit) : '',
-      bankName:        customer.bankName        || '',
-      iban:            customer.iban            || '',
-      branchCode:      customer.branchCode      || '',
-      accountHolder:   customer.accountHolder   || '',
-      invoiceType:     customer.invoiceType     || '',
-      paymentMethod:   customer.paymentMethod   || '',
-      paymentTerms:    customer.paymentTerms    || '',
-      contactName:     customer.contactName     || '',
-      contactPhone:    customer.contactPhone    || '',
-      contactEmail:    customer.contactEmail    || '',
+      accountCode: customer.accountCode || '',
+      accountType: customer.accountType || 'Customer',
+      currency: customer.currency || 'TRY',
+      paymentTerm: customer.paymentTerm || '',
+      creditLimit: customer.creditLimit != null ? String(customer.creditLimit) : '',
+      bankName: customer.bankName || '',
+      iban: customer.iban || '',
+      branchCode: customer.branchCode || '',
+      accountHolder: customer.accountHolder || '',
+      invoiceType: customer.invoiceType || '',
+      paymentMethod: customer.paymentMethod || '',
+      paymentTerms: customer.paymentTerms || '',
+      contactName: customer.contactName || '',
+      contactPhone: customer.contactPhone || '',
+      contactEmail: customer.contactEmail || '',
       contactPosition: customer.contactPosition || '',
-      industry:        customer.industry        || '',
+      industry: customer.industry || '',
       customerCategory: customer.customerCategory || '',
-      salesRepName:    customer.salesRepName    || '',
-      notes:           customer.notes           || '',
-      gdprConsent:     customer.gdprConsent     || false,
+      salesRepName: customer.salesRepName || '',
+      notes: customer.notes || '',
+      gdprConsent: customer.gdprConsent || false,
+      isCustomer: customer.isCustomer || false,
+      tags: customer.tags || [],
     })
     setErrors({})
     setEditing(false)
     setEditTab(0)
   }
 
-  const editFields = getTabFields(tabDefs[editTab].id, form, t)
+  const editFields = getTabFields(tabDefs[editTab].id, form, t, customerTags)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
@@ -1032,18 +1072,17 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
             {/* Sub-tab bar */}
             <div className="flex w-full justify-between sm:justify-start items-center px-2 sm:px-5 pt-2 pb-0 border-b border-surface-container-low flex-shrink-0 overflow-x-auto overflow-y-hidden scrollbar-thin">
               {[
-                { key: 'info',    label: t('customers.tabInfo'),    icon: 'person' },
-                { key: 'orders',  label: t('customers.tabOrders'),  icon: 'shopping_bag',           count: customerOrders.length },
+                { key: 'info', label: t('customers.tabInfo'), icon: 'person' },
+                { key: 'orders', label: t('customers.tabOrders'), icon: 'shopping_bag', count: customerOrders.length },
                 { key: 'finance', label: t('customers.tabFinance'), icon: 'account_balance_wallet', count: customerFinance.length },
               ].map((t) => (
                 <button
                   key={t.key}
                   onClick={() => setViewTab(t.key)}
-                  className={`flex flex-col sm:flex-row flex-1 sm:flex-none items-center justify-center gap-1 px-1 sm:px-3 py-1.5 sm:py-2 rounded-t-lg text-[10px] sm:text-xs font-bold transition-all relative ${
-                    viewTab === t.key
+                  className={`flex flex-col sm:flex-row flex-1 sm:flex-none items-center justify-center gap-1 px-1 sm:px-3 py-1.5 sm:py-2 rounded-t-lg text-[10px] sm:text-xs font-bold transition-all relative ${viewTab === t.key
                       ? 'text-primary bg-primary/5'
                       : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low'
-                  }`}
+                    }`}
                 >
                   <span className="material-symbols-outlined text-base sm:text-base">{t.icon}</span>
                   <div className="flex items-center justify-center gap-1">
@@ -1064,18 +1103,47 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
             {/* Info tab */}
             {viewTab === 'info' && (
               <div className="px-4 md:px-8 py-4 overflow-y-auto flex-1 space-y-0">
-                <DetailRow icon="category"    label="Customer Type"     value={customer.customerType} />
+                <DetailRow icon="category" label="Customer Type" value={customer.customerType} />
                 {customer.customerType === 'Individual' && (
-                  <DetailRow icon="person"    label="Full Name"         value={customer.fullName} />
+                  <DetailRow icon="person" label="Full Name" value={customer.fullName} />
                 )}
                 <DetailRow icon="fingerprint" label="Tax ID (TIN/TCKN)" value={customer.taxId} />
-                <DetailRow icon="gavel"          label="Mükellef Tipi" value={customer.mukellefTipi || 'Vergi Mükellefi'} />
-                <DetailRow icon="account_balance" label="Tax Office"    value={customer.taxOffice} />
-                <DetailRow icon="receipt"        label="Ticaret Sicil No" value={customer.ticaretSicil} />
-                <DetailRow icon="pin"            label="Mersis No"        value={customer.mersisNo} />
-                <DetailRow icon="travel_explore" label="Bölge"            value={customer.bolge} />
-                <DetailRow icon="person_search"  label="Cari Tip"         value={customer.cariTip} />
-                <DetailRow icon="bar_chart"      label="İstatistik Grup"  value={customer.istatistikGrup} />
+                <DetailRow icon="gavel" label="Mükellef Tipi" value={customer.mukellefTipi || 'Vergi Mükellefi'} />
+                <DetailRow icon="account_balance" label="Tax Office" value={customer.taxOffice} />
+                <DetailRow icon="receipt" label="Ticaret Sicil No" value={customer.ticaretSicil} />
+                <DetailRow icon="pin" label="Mersis No" value={customer.mersisNo} />
+                <DetailRow icon="travel_explore" label="Bölge" value={customer.bolge} />
+                <DetailRow icon="person_search" label="Cari Tip" value={customer.cariTip} />
+                <DetailRow icon="bar_chart" label="İstatistik Grup" value={customer.istatistikGrup} />
+
+                {customer.tags && customer.tags.length > 0 && (
+                  <div className="flex flex-col gap-1.5 py-1.5 px-3 -mx-3 hover:bg-surface-container-high/50 rounded-xl transition-colors">
+                    <span className="text-[10px] font-bold text-on-surface-variant flex items-center gap-1.5">
+                      <span className="material-symbols-outlined text-[14px]">sell</span>
+                      Etiketler
+                    </span>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {customer.tags.map(tagItem => {
+                        const tagId = tagItem?.id || tagItem;
+                        const tag = customerTags?.find(t => t.id === tagId);
+                        if (!tag) return null;
+                        return (
+                          <div
+                            key={tagId}
+                            className="text-[10px] font-bold px-2 py-0.5 rounded-md border"
+                            style={{
+                              backgroundColor: `${tag.color}20`,
+                              borderColor: `${tag.color}40`,
+                              color: tag.color
+                            }}
+                          >
+                            {tag.name}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 <div className="flex items-center gap-3 py-2">
                   <div className="flex-1 h-px bg-surface-container-high" />
                   <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant flex items-center gap-1.5">
@@ -1084,15 +1152,15 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
                   </span>
                   <div className="flex-1 h-px bg-surface-container-high" />
                 </div>
-                <DetailRow icon="home"               label="Address"      value={customer.address} />
-                <DetailRow icon="apartment"          label="City"         value={customer.city} />
-                <DetailRow icon="map"                label="District"     value={customer.district} />
-                <DetailRow icon="markunread_mailbox" label="Postal Code"  value={customer.postalCode} />
-                <DetailRow icon="public"             label="Country"      value={customer.country} />
-                <DetailRow icon="phone"              label="Phone"                  value={customer.phone} />
-                <DetailRow icon="mail"               label="Email"                  value={customer.email} />
-                <DetailRow icon="smartphone"         label="Customer Phone Number"  value={customer.contactPhone} />
-                <DetailRow icon="alternate_email"    label="Customer Email Address" value={customer.contactEmail} />
+                <DetailRow icon="home" label="Address" value={customer.address} />
+                <DetailRow icon="apartment" label="City" value={customer.city} />
+                <DetailRow icon="map" label="District" value={customer.district} />
+                <DetailRow icon="markunread_mailbox" label="Postal Code" value={customer.postalCode} />
+                <DetailRow icon="public" label="Country" value={customer.country} />
+                <DetailRow icon="phone" label="Phone" value={customer.phone} />
+                <DetailRow icon="mail" label="Email" value={customer.email} />
+                <DetailRow icon="smartphone" label="Customer Phone Number" value={customer.contactPhone} />
+                <DetailRow icon="alternate_email" label="Customer Email Address" value={customer.contactEmail} />
                 <div className="flex items-center gap-3 py-2">
                   <div className="flex-1 h-px bg-surface-container-high" />
                   <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant flex items-center gap-1.5">
@@ -1101,10 +1169,10 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
                   </span>
                   <div className="flex-1 h-px bg-surface-container-high" />
                 </div>
-                <DetailRow icon="receipt"      label="e-Invoice"         value={customer.eInvoiceStatus ? t('common.active') : t('common.inactive')} />
-                <DetailRow icon="archive"      label="e-Archive Invoice" value={customer.eArchiveStatus ? t('common.active') : t('common.inactive')} />
-                <DetailRow icon="local_shipping" label="e-Dispatch"      value={customer.eDispatchStatus ? t('common.active') : t('common.inactive')} />
-                <DetailRow icon="description"  label="Invoice Scenario"  value={customer.invoiceScenario} />
+                <DetailRow icon="receipt" label="e-Invoice" value={customer.eInvoiceStatus ? t('common.active') : t('common.inactive')} />
+                <DetailRow icon="archive" label="e-Archive Invoice" value={customer.eArchiveStatus ? t('common.active') : t('common.inactive')} />
+                <DetailRow icon="local_shipping" label="e-Dispatch" value={customer.eDispatchStatus ? t('common.active') : t('common.inactive')} />
+                <DetailRow icon="description" label="Invoice Scenario" value={customer.invoiceScenario} />
                 <div className="flex items-center gap-3 py-2">
                   <div className="flex-1 h-px bg-surface-container-high" />
                   <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant flex items-center gap-1.5">
@@ -1113,18 +1181,18 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
                   </span>
                   <div className="flex-1 h-px bg-surface-container-high" />
                 </div>
-                <DetailRow icon="tag"              label="Account Code"    value={customer.accountCode || customer.code} />
-                <DetailRow icon="manage_accounts"  label="Account Type"    value={customer.accountType} />
-                <DetailRow icon="currency_exchange" label="Currency"       value={customer.currency} />
-                <DetailRow icon="schedule"         label="Payment Term"    value={customer.paymentTerm} />
-                <DetailRow icon="credit_score"     label="Credit Limit"    value={customer.creditLimit != null ? customer.creditLimit.toLocaleString() : null} />
-                <DetailRow icon="account_balance"  label="Bank Name"       value={customer.bankName} />
-                <DetailRow icon="credit_card"      label="IBAN"            value={customer.iban} />
-                <DetailRow icon="store"            label="Branch Code"     value={customer.branchCode} />
-                <DetailRow icon="person"           label="Account Holder"  value={customer.accountHolder} />
-                <DetailRow icon="description"      label="Invoice Type"    value={customer.invoiceType} />
-                <DetailRow icon="payments"         label="Payment Method"  value={customer.paymentMethod} />
-                <DetailRow icon="schedule_send"    label="Payment Terms"   value={customer.paymentTerms} />
+                <DetailRow icon="tag" label="Account Code" value={customer.accountCode || customer.code} />
+                <DetailRow icon="manage_accounts" label="Account Type" value={customer.accountType} />
+                <DetailRow icon="currency_exchange" label="Currency" value={customer.currency} />
+                <DetailRow icon="schedule" label="Payment Term" value={customer.paymentTerm} />
+                <DetailRow icon="credit_score" label="Credit Limit" value={customer.creditLimit != null ? customer.creditLimit.toLocaleString() : null} />
+                <DetailRow icon="account_balance" label="Bank Name" value={customer.bankName} />
+                <DetailRow icon="credit_card" label="IBAN" value={customer.iban} />
+                <DetailRow icon="store" label="Branch Code" value={customer.branchCode} />
+                <DetailRow icon="person" label="Account Holder" value={customer.accountHolder} />
+                <DetailRow icon="description" label="Invoice Type" value={customer.invoiceType} />
+                <DetailRow icon="payments" label="Payment Method" value={customer.paymentMethod} />
+                <DetailRow icon="schedule_send" label="Payment Terms" value={customer.paymentTerms} />
                 <div className="flex items-center gap-3 py-2">
                   <div className="flex-1 h-px bg-surface-container-high" />
                   <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant flex items-center gap-1.5">
@@ -1133,11 +1201,11 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
                   </span>
                   <div className="flex-1 h-px bg-surface-container-high" />
                 </div>
-                <DetailRow icon="person"           label="Contact Person Name (Finance)" value={customer.contactName} />
-                <DetailRow icon="phone_in_talk"    label="Contact Person Phone (Finance)"        value={customer.contactPersonPhone} />
-                <DetailRow icon="forward_to_inbox" label="Contact Person Email (Finance)"        value={customer.contactPersonEmail} />
-                <DetailRow icon="person"           label="Contact Person Name (Purchasing)" value={customer.contactNamePurchasing} />
-                <DetailRow icon="phone_in_talk"    label="Contact Person Phone (Purchasing)" value={customer.contactPersonPhonePurchasing} />
+                <DetailRow icon="person" label="Contact Person Name (Finance)" value={customer.contactName} />
+                <DetailRow icon="phone_in_talk" label="Contact Person Phone (Finance)" value={customer.contactPersonPhone} />
+                <DetailRow icon="forward_to_inbox" label="Contact Person Email (Finance)" value={customer.contactPersonEmail} />
+                <DetailRow icon="person" label="Contact Person Name (Purchasing)" value={customer.contactNamePurchasing} />
+                <DetailRow icon="phone_in_talk" label="Contact Person Phone (Purchasing)" value={customer.contactPersonPhonePurchasing} />
                 <DetailRow icon="forward_to_inbox" label="Contact Person Email (Purchasing)" value={customer.contactPersonEmailPurchasing} />
                 <div className="flex items-center gap-3 py-2">
                   <div className="flex-1 h-px bg-surface-container-high" />
@@ -1147,10 +1215,10 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
                   </span>
                   <div className="flex-1 h-px bg-surface-container-high" />
                 </div>
-                <DetailRow icon="factory"      label="Industry / Sector"    value={customer.industry} />
-                <DetailRow icon="grade"        label="Customer Category"    value={customer.customerCategory} />
-                <DetailRow icon="badge"        label="Sales Representative" value={customer.salesRepName} />
-                <DetailRow icon="edit_note"    label="Notes"                value={customer.notes} />
+                <DetailRow icon="factory" label="Industry / Sector" value={customer.industry} />
+                <DetailRow icon="grade" label="Customer Category" value={customer.customerCategory} />
+                <DetailRow icon="badge" label="Sales Representative" value={customer.salesRepName} />
+                <DetailRow icon="edit_note" label="Notes" value={customer.notes} />
                 <DetailRow icon="verified_user" label="GDPR / KVKK Consent" value={customer.gdprConsent ? 'Consented' : 'Not Consented'} />
               </div>
             )}
@@ -1166,7 +1234,7 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
                 {/* Summary bar + export buttons */}
                 {(() => {
 
-                  const income  = customerFinance.filter((f) => f.type === 'income').reduce((s, f) => s + (f.amount || 0), 0)
+                  const income = customerFinance.filter((f) => f.type === 'income').reduce((s, f) => s + (f.amount || 0), 0)
                   const expense = customerFinance.filter((f) => f.type === 'expense').reduce((s, f) => s + (f.amount || 0), 0)
                   const net = income - expense
                   const fmt2 = (n) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
@@ -1311,11 +1379,10 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
                               <td className="block sm:table-cell p-0 sm:px-4 sm:py-3 mb-2 sm:mb-0">
                                 <div className="flex justify-between items-center sm:block">
                                   <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('common.type')}</span>
-                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${
-                                    f.type === 'income'
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold capitalize ${f.type === 'income'
                                       ? 'bg-primary-fixed text-on-primary-fixed-variant'
                                       : 'bg-error/10 text-error'
-                                  }`}>
+                                    }`}>
                                     <span className="material-symbols-outlined text-[12px]">
                                       {f.type === 'income' ? 'arrow_downward' : 'arrow_upward'}
                                     </span>
@@ -1372,11 +1439,10 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
                 <button
                   key={tab.id}
                   onClick={() => setEditTab(i)}
-                  className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-t-lg text-xs font-bold transition-all flex-shrink-0 whitespace-nowrap ${
-                    editTab === i
+                  className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-t-lg text-xs font-bold transition-all flex-shrink-0 whitespace-nowrap ${editTab === i
                       ? 'bg-primary text-white shadow-sm'
                       : 'text-on-surface-variant hover:bg-surface-container-low'
-                  }`}
+                    }`}
                 >
                   <span className="material-symbols-outlined text-[16px]">{tab.icon}</span>
                   <span className="text-center">{tab.label}</span>
@@ -1445,11 +1511,10 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
                 {isAdmin && (
                   <button
                     onClick={() => setConfirming((v) => !v)}
-                    className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-1.5 rounded-lg border text-[11px] md:text-xs font-bold transition-all flex items-center justify-center gap-1 ${
-                      confirming
+                    className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-1.5 rounded-lg border text-[11px] md:text-xs font-bold transition-all flex items-center justify-center gap-1 ${confirming
                         ? 'border-error bg-error text-white'
                         : 'border-error text-error hover:bg-error hover:text-white'
-                    }`}
+                      }`}
                   >
                     <span className="material-symbols-outlined text-[14px] md:text-[16px]">delete</span>
                     {t('common.delete')}
@@ -1485,15 +1550,79 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete }) {
   )
 }
 
+
+function ManageTagsModal({ onClose }) {
+  const { t } = useTranslation()
+  const { customerTags, addCustomerTag, updateCustomerTag, deleteCustomerTag } = useData()
+  const [form, setForm] = useState({ name: '', color: '#e2e8f0' })
+  const [editingId, setEditingId] = useState(null)
+
+  const handleSave = async () => {
+    if (!form.name.trim()) return
+    if (editingId) {
+      await updateCustomerTag(editingId, form)
+      setEditingId(null)
+    } else {
+      await addCustomerTag(form)
+    }
+    setForm({ name: '', color: '#e2e8f0' })
+  }
+
+  const handleEdit = (tag) => {
+    setForm({ name: tag.name, color: tag.color })
+    setEditingId(tag.id)
+  }
+
+  const handleDelete = async (id) => {
+    if (confirm(t('common.confirmDelete', 'Emin misiniz?'))) {
+      await deleteCustomerTag(id)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl p-6 w-[95%] md:w-[500px] flex flex-col gap-4">
+        <h2 className="text-lg font-bold">Etiketleri Yönet</h2>
+
+        <div className="flex gap-2 items-center">
+          <input type="text" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Etiket Adı" className="border px-3 py-2 rounded-lg flex-1 bg-surface-container-high" />
+          <input type="color" value={form.color} onChange={e => setForm(p => ({ ...p, color: e.target.value }))} className="w-10 h-10 rounded-lg p-0 border-0" />
+          <button onClick={handleSave} className="bg-primary text-white px-4 py-2 rounded-lg font-bold">{editingId ? 'Güncelle' : 'Ekle'}</button>
+          {editingId && <button onClick={() => { setEditingId(null); setForm({ name: '', color: '#e2e8f0' }) }} className="text-on-surface-variant font-bold px-2 py-2">İptal</button>}
+        </div>
+
+        <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto">
+          {customerTags?.map(tag => (
+            <div key={tag.id} className="flex justify-between items-center bg-surface-container p-3 rounded-xl border border-surface-container-highest">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded-full" style={{ backgroundColor: tag.color }}></div>
+                <span className="font-semibold">{tag.name}</span>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => handleEdit(tag)} className="text-primary"><span className="material-symbols-outlined text-sm">edit</span></button>
+                <button onClick={() => handleDelete(tag.id)} className="text-error"><span className="material-symbols-outlined text-sm">delete</span></button>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button onClick={onClose} className="bg-surface-container-high text-on-surface py-2 rounded-xl font-bold mt-2 hover:bg-surface-container-highest">Kapat</button>
+      </div>
+    </div>
+  )
+}
+
 export default function Customers() {
   const { t } = useTranslation()
-  const { customers, addCustomer, updateCustomer, deleteCustomer, syncAndRefreshCustomers, reports, user } = useData()
+  const { customers, addCustomer, updateCustomer, deleteCustomer, syncAndRefreshCustomers, reports, user, customerTags } = useData()
   const [search, setSearch] = useState('')
   const [activeTab, setActiveTab] = useState('active')
   const [page, setPage] = useState(1)
   const [showModal, setShowModal] = useState(false)
+  const [showTagsModal, setShowTagsModal] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState(null)
-  
+
   const { token } = useAuth()
   const isAdmin = user?.role === 'admin'
 
@@ -1540,8 +1669,9 @@ export default function Customers() {
 
   return (
     <div className="p-2 sm:p-4 lg:p-8 min-h-screen bg-page-bg">
+      {showTagsModal && <ManageTagsModal onClose={() => setShowTagsModal(false)} />}
       {showModal && (
-        <AddCustomerModal onClose={() => setShowModal(false)} onSave={handleSave} />
+        <AddCustomerModal onClose={() => setShowModal(false)} onSave={handleSave} customerTags={customerTags} />
       )}
       {selectedCustomer && (
         <CustomerDetailModal
@@ -1552,6 +1682,7 @@ export default function Customers() {
             const updated = await updateCustomer(id, form)
             if (updated) setSelectedCustomer(updated)
           }}
+          customerTags={customerTags}
           onDelete={async (id) => {
             await deleteCustomer(id)
             setSelectedCustomer(null)
@@ -1575,6 +1706,13 @@ export default function Customers() {
             <span className="hidden lg:inline">{t('common.refresh', 'Yenile/Senkronize Et')}</span>
           </button>
           <button
+            onClick={() => setShowTagsModal(true)}
+            className="px-3 py-2 lg:px-4 lg:py-2.5 rounded-xl bg-surface-container-high text-on-surface font-bold text-[11px] lg:text-sm flex items-center justify-center gap-1.5 hover:bg-surface-container-highest transition-colors whitespace-nowrap flex-shrink-0"
+          >
+            <span className="material-symbols-outlined text-[14px] lg:text-base">sell</span>
+            Etiketleri Yönet
+          </button>
+          <button
             onClick={() => setShowModal(true)}
             className="px-3 py-2 lg:px-4 lg:py-2.5 rounded-xl primary-gradient text-white font-bold text-[11px] lg:text-sm flex items-center justify-center gap-1.5 shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity whitespace-nowrap flex-shrink-0"
           >
@@ -1587,13 +1725,13 @@ export default function Customers() {
       {/* Summary Cards */}
       {(() => {
         const uniqueCountries = new Set(customers.map((c) => c.country).filter(Boolean)).size
-        const uniqueCities    = new Set(customers.map((c) => c.city).filter(Boolean)).size
+        const uniqueCities = new Set(customers.map((c) => c.city).filter(Boolean)).size
         return (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-8">
             {[
-              { label: t('nav.customers'),            value: customers.length, icon: 'groups',        color: 'bg-surface-tint'      },
-              { label: t('customers.serviceCountries'), value: uniqueCountries,  icon: 'public',        color: 'bg-primary-container' },
-              { label: t('customers.serviceCities'),    value: uniqueCities,     icon: 'location_city', color: 'bg-secondary'         },
+              { label: t('nav.customers'), value: customers.length, icon: 'groups', color: 'bg-surface-tint' },
+              { label: t('customers.serviceCountries'), value: uniqueCountries, icon: 'public', color: 'bg-primary-container' },
+              { label: t('customers.serviceCities'), value: uniqueCities, icon: 'location_city', color: 'bg-secondary' },
             ].map(({ label, value, icon, color }) => (
               <div key={label} className="bg-surface-container-lowest rounded-xl sm:rounded-2xl p-3 sm:p-5 flex flex-row sm:flex-col xl:flex-row items-center gap-3 sm:gap-3 xl:gap-4 relative overflow-hidden">
                 <div className={`absolute top-0 left-0 w-1 h-full ${color}`} />
@@ -1717,10 +1855,10 @@ export default function Customers() {
                   {(() => {
                     const ct = (reports || []).filter((r) => r.customerId === customer.id)
                     const counts = [
-                      { label: t('customers.open'),    col: 'open',        cls: 'status-cancelled-badge' },
-                      { label: t('customers.inProg'),  col: 'in-progress', cls: 'status-progress-badge'  },
-                      { label: t('customers.review'),  col: 'review',      cls: 'status-scheduled-badge' },
-                      { label: t('customers.done'),    col: 'completed',   cls: 'status-completed-badge' },
+                      { label: t('customers.open'), col: 'open', cls: 'status-cancelled-badge' },
+                      { label: t('customers.inProg'), col: 'in-progress', cls: 'status-progress-badge' },
+                      { label: t('customers.review'), col: 'review', cls: 'status-scheduled-badge' },
+                      { label: t('customers.done'), col: 'completed', cls: 'status-completed-badge' },
                     ]
                     return (
                       <div className="flex flex-wrap xl:flex-nowrap items-center gap-1 min-w-[200px]">

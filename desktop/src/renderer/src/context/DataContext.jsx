@@ -7,6 +7,7 @@ const DataContext = createContext(null)
 export function DataProvider({ children }) {
   const { token, isAdmin } = useAuth()
   const [customers, setCustomers] = useState([])
+  const [customerTags, setCustomerTags] = useState([])
   const [reports, setReports] = useState([])
   const [siteVisits, setSiteVisits] = useState([])
   const [products, setProducts] = useState([])
@@ -26,6 +27,15 @@ export function DataProvider({ children }) {
 
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
   const authHeaders = { Authorization: `Bearer ${token}` }
+
+  const refreshCustomerTags = useCallback(() => {
+    fetch(`${API_URL}/customer-tags`, { headers: authHeaders })
+      .then(r => r.json())
+      .then(data => setCustomerTags(data))
+      .catch(() => {})
+  }, [token])
+
+  useEffect(() => { refreshCustomerTags() }, [token])
 
   const refreshCustomers = useCallback(() => {
     fetch(`${API_URL}/customers`, { headers: authHeaders })
@@ -235,6 +245,24 @@ export function DataProvider({ children }) {
   async function deleteCustomer(id) {
     await fetch(`${API_URL}/customers/${id}`, { method: 'DELETE', headers: authHeaders })
     setCustomers((prev) => prev.filter((c) => c.id !== id))
+  }
+
+  // ── Customer Tags ──
+  async function addCustomerTag(data) {
+    const res = await fetch(`${API_URL}/customer-tags`, { method: 'POST', headers, body: JSON.stringify(data) })
+    const record = await res.json()
+    setCustomerTags((prev) => [record, ...prev])
+  }
+
+  async function updateCustomerTag(id, data) {
+    const res = await fetch(`${API_URL}/customer-tags/${id}`, { method: 'PUT', headers, body: JSON.stringify(data) })
+    const updated = await res.json()
+    setCustomerTags((prev) => prev.map((r) => (r.id === id ? updated : r)))
+  }
+
+  async function deleteCustomerTag(id) {
+    await fetch(`${API_URL}/customer-tags/${id}`, { method: 'DELETE', headers: authHeaders })
+    setCustomerTags((prev) => prev.filter((r) => r.id !== id))
   }
 
   // ── Reports ──
@@ -617,6 +645,7 @@ export function DataProvider({ children }) {
   return (
     <DataContext.Provider value={{
       customers, addCustomer, updateCustomer, deleteCustomer, refreshCustomers, syncAndRefreshCustomers,
+      customerTags, addCustomerTag, updateCustomerTag, deleteCustomerTag, refreshCustomerTags,
       reports, addReport, updateReport, deleteReport, moveReport,
       siteVisits, addSiteVisit, updateSiteVisit, deleteSiteVisit,
       products, addProduct, updateProduct, deleteProduct, refreshProducts, syncAndRefreshProducts,

@@ -15,6 +15,7 @@ if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true })
 
 const authRoutes = require('./routes/auth')
 const customerRoutes = require('./routes/customers')
+const customerTagRoutes = require('./routes/customerTags')
 const reportRoutes = require('./routes/reports')
 const siteVisitRoutes = require('./routes/siteVisits')
 const productRoutes = require('./routes/products')
@@ -58,6 +59,7 @@ app.use('/api/auth', authRoutes)
 
 // Protected routes
 app.use('/api/customers', authenticate, customerRoutes)
+app.use('/api/customer-tags', authenticate, customerTagRoutes)
 app.use('/api/reports', authenticate, reportRoutes)
 app.use('/api/site-visits', authenticate, siteVisitRoutes)
 app.use('/api/products', authenticate, productRoutes)
