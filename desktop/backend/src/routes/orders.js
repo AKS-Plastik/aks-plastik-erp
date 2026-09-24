@@ -64,7 +64,7 @@ router.get('/:id', async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { customerId, employeeId, salesRepId, status, notes, items, shipmentType, paymentMethod } = req.body
+    const { customerId, employeeId, salesRepId, status, notes, items, shipmentType, paymentMethod, visitId } = req.body
     const code = `WEB-TEMP-${String(Date.now()).slice(-5)}` // Geçici kod artık WEB-TEMP- ile başlıyor
 
     const totalAmount = (items || []).reduce((sum, item) => {
@@ -109,8 +109,8 @@ router.post('/', async (req, res) => {
     })
     // Set new fields via raw SQL until Prisma client is regenerated
     await prisma.$executeRawUnsafe(
-      `UPDATE "Order" SET "shipmentType" = $1, "paymentMethod" = $2 WHERE id = $3`,
-      shipmentType || '', paymentMethod || '', order.id
+      `UPDATE "Order" SET "shipmentType" = $1, "paymentMethod" = $2, "visitId" = $3 WHERE id = $4`,
+      shipmentType || '', paymentMethod || '', visitId || null, order.id
     )
     order.shipmentType = shipmentType || ''
     order.paymentMethod = paymentMethod || ''
@@ -121,6 +121,18 @@ router.post('/', async (req, res) => {
         data: { isCustomer: true }
       }).catch(err => console.error('Failed to update customer isCustomer flag:', err))
     }
+    if (visitId) {
+      try {
+                await prisma.$executeRawUnsafe(
+          `INSERT INTO "SiteVisitNote" (id, "visitId", "customerId", "fromStatus", "toStatus", note, "createdById", "createdAt") 
+           VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())`,
+           'cuid_' + Date.now() + Math.random().toString(36).substring(2,6), visitId, customerId || null, 'Auto', 'Sipariş', `Sipariş oluşturuldu: #${order.code}`, req.user.id
+        )
+      } catch (err) {
+        console.error('Failed to create site visit auto note:', err)
+      }
+    }
+
 
     // Sipariş oluşur oluşmaz Vio'ya yolla ve stok tutarlılığı için ürünleri tekrar çek
     pushOrderToVio(order.id).then(success => {
@@ -138,7 +150,7 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { customerId, employeeId, salesRepId, status, notes, items, shipmentType, paymentMethod } = req.body
+    const { customerId, employeeId, salesRepId, status, notes, items, shipmentType, paymentMethod, visitId } = req.body
 
     const current = await prisma.order.findUnique({ where: { id: req.params.id }, select: { status: true } })
 
@@ -216,8 +228,8 @@ router.put('/:id', async (req, res) => {
     })
     // Set new fields via raw SQL until Prisma client is regenerated
     await prisma.$executeRawUnsafe(
-      `UPDATE "Order" SET "shipmentType" = $1, "paymentMethod" = $2 WHERE id = $3`,
-      shipmentType || '', paymentMethod || '', order.id
+      `UPDATE "Order" SET "shipmentType" = $1, "paymentMethod" = $2, "visitId" = $3 WHERE id = $4`,
+      shipmentType || '', paymentMethod || '', visitId || null, order.id
     )
     order.shipmentType = shipmentType || ''
     order.paymentMethod = paymentMethod || ''

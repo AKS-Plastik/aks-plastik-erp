@@ -122,10 +122,11 @@ model Customer {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  reports    Report[]
-  siteVisits SiteVisit[]
-  orders     Order[]
-  tags       CustomerTag[]
+  reports        Report[]
+  siteVisits     SiteVisit[]
+  orders         Order[]
+  tags           CustomerTag[]
+  siteVisitNotes SiteVisitNote[]
 }
 
 model CustomerTag {
@@ -162,15 +163,19 @@ model SiteVisit {
   location  String   @default("")
   date      String
   time      String
+  isVisit   Boolean  @default(true)
   status    String   @default("Scheduled")
   notes     String   @default("")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  customer   Customer? @relation(fields: [customerId], references: [id])
-  customerId String?
-  employee   Employee? @relation(fields: [employeeId], references: [id])
-  employeeId String?
+  customer    Customer?       @relation(fields: [customerId], references: [id])
+  customerId  String?
+  employee    Employee?       @relation("SiteVisitCreator", fields: [employeeId], references: [id])
+  employeeId  String?
+  assignees   Employee[]      @relation("SiteVisitAssignees")
+  statusNotes SiteVisitNote[]
+  orders      Order[]
 }
 
 model Product {
@@ -216,11 +221,13 @@ model Employee {
 
   orders          Order[]
   reports         Report[]
-  siteVisits      SiteVisit[]
+  siteVisits      SiteVisit[]      @relation("SiteVisitCreator")
+  assignedVisits  SiteVisit[]      @relation("SiteVisitAssignees")
   attendances     Attendance[]
   leaveRequests   LeaveRequest[]
   productionTasks ProductionTask[]
   user            User?
+  siteVisitNotes  SiteVisitNote[]
 }
 
 model Order {
@@ -243,6 +250,8 @@ model Order {
   employeeId String?
   salesRep   User?     @relation(fields: [salesRepId], references: [id])
   salesRepId String?
+  visit      SiteVisit? @relation(fields: [visitId], references: [id])
+  visitId    String?
 
   items          OrderItem[]
   financeRecords FinanceRecord[]
@@ -577,4 +586,18 @@ model EmployeeStatusPermission {
   status     String
 
   @@unique([employeeId, status])
+}
+
+model SiteVisitNote {
+  id          String    @id @default(cuid())
+  visitId     String
+  visit       SiteVisit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  customerId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  fromStatus  String
+  toStatus    String
+  note        String
+  createdById String?
+  createdBy   Employee? @relation(fields: [createdById], references: [id])
+  createdAt   DateTime  @default(now())
 }

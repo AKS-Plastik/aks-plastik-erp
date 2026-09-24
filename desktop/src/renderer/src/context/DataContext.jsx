@@ -234,7 +234,7 @@ export function DataProvider({ children }) {
 
   async function updateCustomer(id, form) {
     const res = await fetch(`${API_URL}/customers/${id}`, { method: 'PUT', headers, body: JSON.stringify(form) })
-    const updated = await res.json()
+    const updated = await res.json(); if (!res.ok) { alert('Hata: ' + updated.error); return; }
     setCustomers((prev) => prev.map((c) => (c.id === id ? updated : c)))
     setReports((prev) => prev.map((r) => r.customerId !== id ? r : { ...r, customer: { ...(r.customer || {}), name: updated.name } }))
     setSiteVisits((prev) => prev.map((v) => v.customerId !== id ? v : { ...v, customerName: updated.name, customer: { ...(v.customer || {}), name: updated.name } }))
@@ -256,7 +256,7 @@ export function DataProvider({ children }) {
 
   async function updateCustomerTag(id, data) {
     const res = await fetch(`${API_URL}/customer-tags/${id}`, { method: 'PUT', headers, body: JSON.stringify(data) })
-    const updated = await res.json()
+    const updated = await res.json(); if (!res.ok) { alert('Hata: ' + updated.error); return; }
     setCustomerTags((prev) => prev.map((r) => (r.id === id ? updated : r)))
   }
 
@@ -274,7 +274,7 @@ export function DataProvider({ children }) {
 
   async function updateReport(id, form) {
     const res = await fetch(`${API_URL}/reports/${id}`, { method: 'PUT', headers, body: JSON.stringify(form) })
-    const updated = await res.json()
+    const updated = await res.json(); if (!res.ok) { alert('Hata: ' + updated.error); return; }
     setReports((prev) => prev.map((r) => (r.id === id ? updated : r)))
   }
 
@@ -285,7 +285,7 @@ export function DataProvider({ children }) {
 
   async function moveReport(id, column) {
     const res = await fetch(`${API_URL}/reports/${id}/move`, { method: 'PATCH', headers, body: JSON.stringify({ column }) })
-    const updated = await res.json()
+    const updated = await res.json(); if (!res.ok) { alert('Hata: ' + updated.error); return; }
     setReports((prev) => prev.map((r) => (r.id === id ? updated : r)))
   }
 
@@ -296,9 +296,14 @@ export function DataProvider({ children }) {
     setSiteVisits((prev) => [{ ...visit, customerName: visit.customer?.name || form.customerName || '', employeeName: visit.employee?.name || form.employeeName || '' }, ...prev])
   }
 
-  async function updateSiteVisit(id, form) {
+    async function updateSiteVisit(id, form) {
     const res = await fetch(`${API_URL}/site-visits/${id}`, { method: 'PUT', headers, body: JSON.stringify(form) })
     const updated = await res.json()
+    if (!res.ok) {
+      console.error('API Error:', updated)
+      alert('Hata: ' + (updated.error || 'Bilinmeyen bir hata oluştu.'))
+      return
+    }
     setSiteVisits((prev) => prev.map((v) => (v.id === id ? { ...updated, customerName: updated.customer?.name || form.customerName || '', employeeName: updated.employee?.name || form.employeeName || '' } : v)))
   }
 
@@ -316,7 +321,7 @@ export function DataProvider({ children }) {
 
   async function updateProduct(id, form) {
     const res = await fetch(`${API_URL}/products/${id}`, { method: 'PUT', headers, body: JSON.stringify(form) })
-    const updated = await res.json()
+    const updated = await res.json(); if (!res.ok) { alert('Hata: ' + updated.error); return; }
     setProducts((prev) => prev.map((p) => (p.id === id ? updated : p)))
   }
 
@@ -347,7 +352,7 @@ export function DataProvider({ children }) {
       const err = await res.json().catch(() => ({}))
       throw new Error(err.error || 'Failed to update employee')
     }
-    const updated = await res.json()
+    const updated = await res.json(); if (!res.ok) { alert('Hata: ' + updated.error); return; }
     setEmployees((prev) => prev.map((e) => (e.id === id ? updated : e)))
   }
 
@@ -368,7 +373,7 @@ export function DataProvider({ children }) {
       const err = await res.json().catch(() => ({}))
       throw new Error(err.error || 'Failed to upload photo')
     }
-    const updated = await res.json()
+    const updated = await res.json(); if (!res.ok) { alert('Hata: ' + updated.error); return; }
     setEmployees((prev) => prev.map((e) => (e.id === id ? updated : e)))
     return updated
   }
@@ -379,6 +384,7 @@ export function DataProvider({ children }) {
     const data = await res.json()
     if (!res.ok) throw new Error(data.error || 'Failed to create order')
     setOrders((prev) => [data, ...prev])
+    refreshSiteVisits()
 
     // Arka planda sipariş Vio'ya gidip kalıcı kodunu (WEB-16 vb.) alacağı için,
     // arayüzü 2 saniye sonra tazeleyerek o güncel kodu ekrana yansıtıyoruz.
@@ -419,7 +425,7 @@ export function DataProvider({ children }) {
   async function renameRole(id, name) {
     const res = await fetch(`${API_URL}/roles/${id}`, { method: 'PUT', headers, body: JSON.stringify({ name }) })
     if (!res.ok) throw new Error((await res.json()).error || 'Failed')
-    const updated = await res.json()
+    const updated = await res.json(); if (!res.ok) { alert('Hata: ' + updated.error); return; }
     setRoles((prev) => prev.map((r) => r.id === id ? updated : r).sort((a, b) => a.name.localeCompare(b.name)))
     refreshEmployees()
   }
@@ -596,7 +602,7 @@ export function DataProvider({ children }) {
   async function updateProductionTask(id, form) {
     const res = await fetch(`${API_URL}/production-tasks/${id}`, { method: 'PUT', headers, body: JSON.stringify(form) })
     if (!res.ok) throw new Error((await res.json()).error || 'Failed')
-    const updated = await res.json()
+    const updated = await res.json(); if (!res.ok) { alert('Hata: ' + updated.error); return; }
     setProductionTasks((prev) => prev.map((t) => (t.id === id ? updated : t)))
     refreshOrders()
   }
@@ -604,7 +610,7 @@ export function DataProvider({ children }) {
   async function moveProductionTask(id, status, extraData = {}) {
     const res = await fetch(`${API_URL}/production-tasks/${id}/move`, { method: 'PATCH', headers, body: JSON.stringify({ status, ...extraData }) })
     if (!res.ok) throw new Error((await res.json()).error || 'Failed')
-    const updated = await res.json()
+    const updated = await res.json(); if (!res.ok) { alert('Hata: ' + updated.error); return; }
     setProductionTasks((prev) => prev.map((t) => (t.id === id ? updated : t)))
     refreshOrders()
   }
@@ -633,7 +639,7 @@ export function DataProvider({ children }) {
 
   async function updateFinanceRecord(id, form) {
     const res = await fetch(`${API_URL}/finance/${id}`, { method: 'PUT', headers, body: JSON.stringify(form) })
-    const updated = await res.json()
+    const updated = await res.json(); if (!res.ok) { alert('Hata: ' + updated.error); return; }
     setFinanceRecords((prev) => prev.map((r) => (r.id === id ? updated : r)))
   }
 
@@ -647,7 +653,7 @@ export function DataProvider({ children }) {
       customers, addCustomer, updateCustomer, deleteCustomer, refreshCustomers, syncAndRefreshCustomers,
       customerTags, addCustomerTag, updateCustomerTag, deleteCustomerTag, refreshCustomerTags,
       reports, addReport, updateReport, deleteReport, moveReport,
-      siteVisits, addSiteVisit, updateSiteVisit, deleteSiteVisit,
+      siteVisits, addSiteVisit, updateSiteVisit, deleteSiteVisit, refreshSiteVisits,
       products, addProduct, updateProduct, deleteProduct, refreshProducts, syncAndRefreshProducts,
       employees, addEmployee, updateEmployee, deleteEmployee, uploadEmployeePhoto,
       orders, addOrder, updateOrder, deleteOrder, refreshOrders, syncAndRefreshOrders,

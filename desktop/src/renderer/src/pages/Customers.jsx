@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import { useData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
 import InitialsAvatar from '../components/InitialsAvatar'
@@ -616,7 +617,18 @@ function OrdersTab({ customerOrders }) {
     )
   }
 
-  const total = customerOrders.reduce((s, o) => s + (o.totalAmount || 0), 0)
+  const total = (() => {
+      const totals = {};
+      customerOrders.forEach(o => {
+        if (!o.items) return;
+        o.items.forEach(it => {
+          const cur = it.currency || 'TRY';
+          const itemTotal = (parseFloat(it.unitPrice) || 0) * (parseInt(it.quantity) || 0) * (1 + (parseFloat(it.vat) || 0) / 100);
+          totals[cur] = (totals[cur] || 0) + itemTotal;
+        });
+      });
+      return Object.keys(totals).map(k => `${k} ${totals[k].toFixed(2)}`).join(' / ') || '0.00';
+    })();
   const open = customerOrders.filter((o) => o.status !== 'Delivered').length
 
   return (
@@ -633,7 +645,7 @@ function OrdersTab({ customerOrders }) {
         </div>
         <div className="text-on-surface-variant whitespace-nowrap ml-auto">
           <span className="hidden sm:inline">{t('customers.totalValue')}</span>
-          <span className="sm:hidden">Değer</span>: <span className="font-bold text-on-surface">{fmtNum(total)}</span>
+          <span className="sm:hidden">Değer</span>: <span className="font-bold text-on-surface">{total}</span>
         </div>
       </div>
 
@@ -706,7 +718,7 @@ function OrdersTab({ customerOrders }) {
                     <td className="block sm:table-cell p-0 sm:px-6 sm:py-3 mt-3 sm:mt-0 pt-3 sm:pt-0 border-t border-theme-border sm:border-0">
                       <div className="flex items-center justify-between sm:block">
                         <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('orders.total')}</span>
-                        <span className="text-right font-bold text-sm text-on-surface">{fmtNum(o.totalAmount)}</span>
+                        <span className="text-right font-bold text-sm text-on-surface">{getOrderTotals(o.items)}</span>
                       </div>
                     </td>
                     {hasItems && (
@@ -784,6 +796,133 @@ function OrdersTab({ customerOrders }) {
   )
 }
 
+
+function AgendaTab({ customerId, siteVisits, t }) {
+  const navigate = useNavigate();
+  const [page, setPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const ITEMS_PER_PAGE = 10;
+  
+  const customerVisits = siteVisits.filter(v => v.customerId === customerId);
+  const allNotes = [];
+  customerVisits.forEach(v => {
+    if (v.statusNotes) {
+      v.statusNotes.forEach(n => {
+        allNotes.push({ ...n, visitCode: v.code, visitTitle: v.title });
+      });
+    }
+  });
+  
+  allNotes.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+  
+  const filteredNotes = allNotes.filter(n => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (n.note || '').toLowerCase().includes(q) ||
+      (n.visitCode || '').toLowerCase().includes(q) ||
+      (n.visitTitle || '').toLowerCase().includes(q) ||
+      (n.createdBy?.name || '').toLowerCase().includes(q)
+    );
+  });
+  
+  const totalPages = Math.ceil(filteredNotes.length / ITEMS_PER_PAGE) || 1;
+  const paginatedNotes = filteredNotes.slice((page - 1) * ITEMS_PER_PAGE, page * ITEMS_PER_PAGE);
+
+  return (
+    <div className="flex flex-col flex-1 overflow-hidden">
+      <div className="px-4 sm:px-6 py-3 bg-surface-container-low border-b border-surface-container flex-shrink-0 flex gap-4 items-center">
+        <div className="relative flex-1 max-w-sm">
+          <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+          <input
+            type="text"
+            placeholder="Notlarda ara..."
+            value={searchQuery}
+            onChange={(e) => { setSearchQuery(e.target.value); setPage(1); }}
+            className="w-full pl-9 pr-3 py-1.5 bg-surface-container-lowest border border-outline-variant/30 focus:border-primary rounded-lg text-sm outline-none transition-all"
+          />
+        </div>
+        <span className="text-xs font-bold text-on-surface-variant ml-auto">{filteredNotes.length} Kayıt</span>
+      </div>
+      
+      <div className="overflow-y-auto flex-1 px-4 sm:px-6 py-4 space-y-4">
+        {paginatedNotes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 text-on-surface-variant">
+            <span className="material-symbols-outlined text-4xl mb-3 opacity-30">event_note</span>
+            <p className="text-sm font-semibold">Ajanda kaydı bulunamadı</p>
+          </div>
+        ) : (
+          paginatedNotes.map((note) => (
+            <div key={note.id} className="bg-surface-container-low rounded-xl p-4 border border-outline-variant/20 hover:border-outline-variant/40 transition-colors">
+              <div className="flex items-center justify-between gap-2 mb-3 pb-3 border-b border-outline-variant/10">
+                <div className="flex items-center gap-3 text-xs font-bold text-on-surface">
+                  <span className="text-primary">{note.visitCode}</span>
+                  <span className="w-1 h-1 rounded-full bg-on-surface-variant/50" />
+                  <span>{note.visitTitle}</span>
+                </div>
+                <span className="text-[11px] text-on-surface-variant font-medium">
+                  {new Date(note.createdAt).toLocaleString()}
+                </span>
+              </div>
+              <p className="text-on-surface text-sm leading-relaxed whitespace-pre-wrap">
+                {note.note && note.note.match(/Sipari\u015F olu\u015Fturuldu:\s*#([A-Za-z0-9\-]+)/) ? (
+                  <>
+                    Sipariş oluşturuldu:{' '}
+                    <span
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate('/orders', { state: { openOrderCode: note.note.match(/#([A-Za-z0-9\-]+)/)[1] } });
+                      }}
+                      className="text-primary hover:underline cursor-pointer font-bold bg-primary/10 px-1.5 py-0.5 rounded"
+                    >
+                      #{note.note.match(/#([A-Za-z0-9\-]+)/)[1]}
+                    </span>
+                  </>
+                ) : (
+                  note.note
+                )}
+              </p>
+              
+              <div className="mt-3 pt-3 border-t border-outline-variant/5 flex items-center justify-between">
+                <div className="flex items-center gap-2 text-xs font-bold text-on-surface">
+                  <span className="px-2 py-0.5 rounded bg-surface-container-highest/50">{note.fromStatus}</span>
+                  <span className="material-symbols-outlined text-[14px] text-on-surface-variant">arrow_forward</span>
+                  <span className="px-2 py-0.5 rounded bg-surface-container-highest/50">{note.toStatus}</span>
+                </div>
+                {note.createdBy && (
+                  <span className="text-[11px] font-semibold text-on-surface-variant bg-surface-container-high px-2 py-1 rounded-lg">
+                    {note.createdBy.name}
+                  </span>
+                )}
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-t border-surface-container flex-shrink-0 bg-surface-container-lowest">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="px-3 py-1.5 rounded-lg border border-surface-container text-xs font-bold text-on-surface hover:bg-surface-container-low transition-colors disabled:opacity-40"
+          >
+            Önceki
+          </button>
+          <span className="text-xs font-bold text-on-surface-variant">Sayfa {page} / {totalPages}</span>
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="px-3 py-1.5 rounded-lg border border-surface-container text-xs font-bold text-on-surface hover:bg-surface-container-low transition-colors disabled:opacity-40"
+          >
+            Sonraki
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 const ORDER_STATUS_CLS = {
   'Draft': 'bg-surface-container text-on-surface-variant',
   'Processing': 'bg-tertiary-fixed text-on-tertiary-fixed-variant',
@@ -799,7 +938,7 @@ const ORDER_STATUS_CLS = {
 function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete, customerTags = [] }) {
   const { t } = useTranslation()
   const tabDefs = getTabDefs(t)
-  const { isAdmin, orders, financeRecords } = useData()
+  const { isAdmin, orders, financeRecords, siteVisits } = useData()
   const [viewTab, setViewTab] = useState('info')
   const [editing, setEditing] = useState(false)
   const [editTab, setEditTab] = useState(0)
@@ -1075,6 +1214,7 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete, cus
                 { key: 'info', label: t('customers.tabInfo'), icon: 'person' },
                 { key: 'orders', label: t('customers.tabOrders'), icon: 'shopping_bag', count: customerOrders.length },
                 { key: 'finance', label: t('customers.tabFinance'), icon: 'account_balance_wallet', count: customerFinance.length },
+                { key: 'agenda', label: 'Ajanda', icon: 'event_note' },
               ].map((t) => (
                 <button
                   key={t.key}
@@ -1226,6 +1366,11 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete, cus
             {/* Orders tab */}
             {viewTab === 'orders' && (
               <OrdersTab customerOrders={customerOrders} />
+            )}
+
+            {/* Agenda tab */}
+            {viewTab === 'agenda' && (
+              <AgendaTab customerId={customer.id} siteVisits={siteVisits} t={t} />
             )}
 
             {/* Finance tab */}
@@ -1611,6 +1756,18 @@ function ManageTagsModal({ onClose }) {
       </div>
     </div>
   )
+}
+
+
+function getOrderTotals(items) {
+  const totals = {};
+  if (!items || !items.length) return totals;
+  items.forEach(it => {
+    const cur = it.currency || 'TRY';
+    const itemTotal = (parseFloat(it.unitPrice) || 0) * (parseInt(it.quantity) || 0) * (1 + (parseFloat(it.vat) || 0) / 100);
+    totals[cur] = (totals[cur] || 0) + itemTotal;
+  });
+  return Object.keys(totals).map(k => `${k} ${totals[k].toFixed(2)}`).join(' / ') || '0.00';
 }
 
 export default function Customers() {
