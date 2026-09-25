@@ -219,7 +219,8 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
   const { t } = useTranslation()
   const { isAdmin } = useData()
   const { user } = useAuth()
-  const canChangeStatus = isAdmin || user?.department === 'Sales'
+  const isAssigned = visit.employeeId === user?.employeeId || visit.assignees?.some(a => a.id === user?.employeeId) || visit.assignees?.includes(user?.employeeId)
+  const canChangeStatus = isAdmin || user?.department === 'Sales' || isAssigned
 
   const [editing, setEditing] = useState(false)
   const [confirming, setConfirming] = useState(false)
@@ -574,7 +575,7 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
         <div className="px-4 md:px-6 pb-4 pt-3 md:pb-6 md:pt-4 flex flex-col-reverse sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0 border-t border-surface-container-low">
           {!editing ? (
             <>
-              <div className="flex items-center gap-1.5 md:gap-2 w-full sm:w-auto overflow-x-auto overflow-y-hidden pb-1 sm:pb-0 ">
+              <div className="flex flex-wrap items-center gap-1.5 md:gap-2 w-full sm:w-auto pb-1 sm:pb-0">
                 <button
                   onClick={() => {
                     onClose()
