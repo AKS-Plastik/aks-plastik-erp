@@ -193,7 +193,8 @@ async function deleteCustomerFromVio(customerCode) {
       queries: [
         {
           tip: 'delete',
-          table: 'carmst', keys: ['*'],
+          table: 'carmst',
+          keys: ['*'],
           filters: [`must = '${mustCode}'`]
         }
       ]
@@ -211,8 +212,24 @@ async function deleteCustomerFromVio(customerCode) {
 
     if (!response.ok) {
       console.error(`[VIO SYNC ERROR] Failed to delete customer ${customerCode}: HTTP ${response.status}`);
+      console.log("VIO SYNC ERROR CUSTOMER DELETE:", response, JSON.stringify(response, null, 4));
       const text = await getDecodedText(response);
-      console.error(`[VIO SYNC RESPONSE] ${text}`);
+      const errorDetails = {
+        request: {
+          url: url,
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: payload
+        },
+        response: {
+          url: response.url,
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries()),
+          body: text
+        }
+      };
+      console.error(`[VIO SYNC ERROR CUSTOMER DELETE] Detayli Log:`, JSON.stringify(errorDetails, null, 4));
       return false;
     }
 
