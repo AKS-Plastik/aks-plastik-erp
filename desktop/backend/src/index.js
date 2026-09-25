@@ -8,7 +8,7 @@ const { authenticate } = require('./middleware/auth')
 const { pullProductsFromVio } = require('./lib/productVioSync')
 const { pullCustomersFromVio } = require('./lib/customerVioSync')
 const { pullOrdersFromVio } = require('./lib/orderVioSync')
-
+const requestLogger = require('./middleware/requestLogger')
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, '..', 'uploads')
 if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true })
@@ -46,6 +46,7 @@ app.use(cors({
   credentials: true,
 }))
 app.use(express.json())
+app.use(requestLogger)
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')))
 
 // Public routes
