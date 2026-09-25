@@ -259,13 +259,13 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
 
   function handleSave() {
     const e = {}
-    if (!visit.isVisit && !form.title.trim()) e.title = 'Required'
-    if (visit.isVisit && !form.customerId) e.customerId = 'Required'
+    if (!form.isVisit && !form.title.trim()) e.title = 'Required'
+    if (form.isVisit && !form.customerId) e.customerId = 'Required'
     if (!form.date) e.date = 'Required'
     if (Object.keys(e).length) { setErrors(e); return }
     const customerName = customers.find((c) => c.id === form.customerId)?.name || visit.customerName || ''
     const employeeName = employees.find((e) => e.id === form.employeeId)?.name || visit.employeeName || ''
-    onSave(visit.id, { ...form, customerName, employeeName, isVisit: visit.isVisit })
+    onSave(visit.id, { ...form, customerName, employeeName, isVisit: form.isVisit })
   }
 
   function handleCancel() {
@@ -827,8 +827,8 @@ export default function SiteVisits() {
       isToday: d.toDateString() === new Date().toDateString()
     }
   })
-  // We can render hours from 06:00 to 22:00 (17 rows).
-  const hours = Array.from({ length: 17 }).map((_, i) => i + 6)
+  // We can render hours from 09:00 to 17:00 (9 rows).
+  const hours = Array.from({ length: 9 }).map((_, i) => i + 9)
 
   function handleExport() {
     const rows = siteVisits.map((v) => ({
@@ -1110,7 +1110,7 @@ export default function SiteVisits() {
                   {daysOfWeek.map(day => {
                     const tasks = sorted.filter(v => {
                       if (v.date !== day.dateString) return false;
-                      const h = v.time ? parseInt(v.time.split(':')[0], 10) : 8; // default to 08:00
+                      const h = v.time ? parseInt(v.time.split(':')[0], 10) : 9; // default to 09:00
                       return h === hour;
                     });
 

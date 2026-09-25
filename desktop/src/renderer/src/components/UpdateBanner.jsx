@@ -57,7 +57,10 @@ export default function UpdateBanner() {
           {t('updater.newVersionAvailable', 'Yeni bir sürüm yayınlandı! Güncellemek için lütfen yenileyin.')}
         </span>
         <button
-          onClick={() => updateServiceWorker(true)}
+          onClick={() => {
+            updateServiceWorker(true)
+            setTimeout(() => window.location.reload(), 1000)
+          }}
           className="px-3 py-1 text-xs font-bold bg-primary text-on-primary rounded-lg hover:opacity-90 transition-opacity"
         >
           {t('updater.refresh', 'Yenile')}
