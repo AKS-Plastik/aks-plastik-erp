@@ -135,7 +135,7 @@ function AddVisitModal({ customers, employees, onClose, onSave, initialDate, ini
           )}
           <FieldErr label={t('common.customer')} icon="business" error={errors.customerId} span2>
             <SearchableSelect
-              options={customers.map(c => ({ value: c.id, label: c.code ? `${c.code} - ${c.name}` : c.name }))}
+              options={customers.map(c => { const cCode = c.accountCode || c.code; return { value: c.id, label: cCode ? `${cCode} - ${c.name}` : c.name }})}
               value={form.customerId}
               onChange={(val) => set('customerId')({ target: { value: val } })}
               placeholder={t('common.noCustomer')}
@@ -240,6 +240,8 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
     time: visit.time,
     status: visit.status,
     notes: visit.notes || '',
+    isVisit: visit.isVisit ?? true,
+    statusNote: ''
   })
   const [errors, setErrors] = useState({})
   const set = (f) => (e) => {
@@ -262,10 +264,20 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
     if (!form.isVisit && !form.title.trim()) e.title = 'Required'
     if (form.isVisit && !form.customerId) e.customerId = 'Required'
     if (!form.date) e.date = 'Required'
+    if (form.status === 'Cancelled' && form.status !== visit.status && !form.statusNote?.trim()) e.statusNote = 'Required'
     if (Object.keys(e).length) { setErrors(e); return }
     const customerName = customers.find((c) => c.id === form.customerId)?.name || visit.customerName || ''
     const employeeName = employees.find((e) => e.id === form.employeeId)?.name || visit.employeeName || ''
-    onSave(visit.id, { ...form, customerName, employeeName, isVisit: form.isVisit })
+    
+    const payload = { ...form, customerName, employeeName, isVisit: form.isVisit }
+    if (form.status !== visit.status) {
+      if (form.status === 'Cancelled') {
+        payload.cancelledReason = form.statusNote?.trim()
+      }
+      payload.statusNote = form.statusNote?.trim() || ''
+    }
+    
+    onSave(visit.id, payload)
   }
 
   function handleCancel() {
@@ -448,7 +460,7 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
             )}
             <FieldErr label={t('common.customer')} icon="business" error={errors.customerId} span2>
               <SearchableSelect
-                options={customers.map(c => ({ value: c.id, label: c.code ? `${c.code} - ${c.name}` : c.name }))}
+                options={customers.map(c => { const cCode = c.accountCode || c.code; return { value: c.id, label: cCode ? `${cCode} - ${c.name}` : c.name }})}
                 value={form.customerId}
                 onChange={(val) => set('customerId')({ target: { value: val } })}
                 placeholder={t('common.noCustomer')}
@@ -473,10 +485,26 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
                 </div>
               )}
             </Field>
-            <Field label={t('common.status')} icon="flag">
-              <select value={form.status} onChange={set('status')} className={inputCls}>
+            <Field label={t('common.status')} icon="flag" className={form.status !== visit.status ? 'col-span-1 md:col-span-2' : ''}>
+              <select value={form.status} onChange={(e) => { set('status')(e); setForm(p => ({...p, statusNote: ''})) }} className={inputCls}>
                 {STATUSES.map((s) => <option key={s} value={s}>{t('workOrders.' + STATUS_KEYS[s])}</option>)}
               </select>
+              
+              {form.status !== visit.status && (
+                <div className="mt-3">
+                  <label className="block text-[10px] font-bold uppercase tracking-wider text-on-surface-variant mb-1.5">
+                    Not Ekle {form.status === 'Cancelled' && <span className="text-error">*</span>}
+                  </label>
+                  <textarea
+                    className={`w-full bg-surface-container-highest border ${errors.statusNote ? 'border-error' : 'border-outline-variant/30 focus:border-primary'} rounded-xl px-3 py-2 text-xs text-on-surface outline-none resize-none transition-colors`}
+                    rows={2}
+                    placeholder="Durum değişikliği için not girebilirsiniz..."
+                    value={form.statusNote}
+                    onChange={(e) => { setForm(p => ({...p, statusNote: e.target.value})); setErrors(p => ({...p, statusNote: null})) }}
+                  />
+                  {errors.statusNote && <p className="text-error text-[10px] mt-1">İptal durumu için not girmek zorunludur.</p>}
+                </div>
+              )}
             </Field>
             <FieldErr label={t('common.date')} icon="calendar_today" error={errors.date}>
               <input type="date" value={form.date} onChange={set('date')} className={inputCls} />
@@ -773,7 +801,7 @@ export default function SiteVisits() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [currentDate, setCurrentDate] = useState(new Date())
-  const [promptNewCustomer, setPromptNewCustomer] = useState(null)
+  const [promptNewVisitData, setPromptNewVisitData] = useState(null)
   const [viewMode, setViewMode] = useState('calendar')
 
   const dateInputRef = useRef(null)
@@ -903,9 +931,9 @@ export default function SiteVisits() {
             await updateSiteVisit(id, form);
             setSelected(null)
 
-            if (form.status === 'Completed' && !wasCompleted && (form.isVisit || selected.isVisit)) {
+            if (form.status === 'Completed' && !wasCompleted) {
               setTimeout(() => {
-                setPromptNewCustomer(form.customerId || selected.customerId)
+                setPromptNewVisitData({ customerId: form.customerId || selected.customerId || null })
               }, 200)
             }
           }}
@@ -914,23 +942,23 @@ export default function SiteVisits() {
       )}
 
 
-      {promptNewCustomer && (
+      {promptNewVisitData && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center">
-          <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={() => setPromptNewCustomer(null)} />
+          <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={() => setPromptNewVisitData(null)} />
           <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl p-6 w-[90%] max-w-sm text-center flex flex-col gap-4">
             <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-2">
               <span className="material-symbols-outlined text-blue-500 text-3xl">event_available</span>
             </div>
             <h3 className="text-lg font-extrabold text-on-surface">Yeni Ziyaret?</h3>
             <p className="text-sm text-on-surface-variant">
-              Bu ziyareti tamamladınız. Aynı müşteri için ileri tarihli yeni bir ziyaret planlamak ister misiniz?
+              Bu ziyareti tamamladınız. {promptNewVisitData.customerId ? "Aynı müşteri için i" : "İ"}leri tarihli yeni bir ziyaret planlamak ister misiniz?
             </p>
             <div className="flex items-center gap-3 mt-2">
-              <button onClick={() => setPromptNewCustomer(null)} className="flex-1 py-2 rounded-xl text-on-surface-variant bg-surface-container-high hover:bg-surface-container-highest transition-colors font-bold text-sm">Hayır, İstemiyorum</button>
+              <button onClick={() => setPromptNewVisitData(null)} className="flex-1 py-2 rounded-xl text-on-surface-variant bg-surface-container-high hover:bg-surface-container-highest transition-colors font-bold text-sm">Hayır, İstemiyorum</button>
               <button onClick={() => {
-                setInitialSlot({ customerId: promptNewCustomer })
+                setInitialSlot(promptNewVisitData.customerId ? { customerId: promptNewVisitData.customerId } : {})
                 setShowModal(true)
-                setPromptNewCustomer(null)
+                setPromptNewVisitData(null)
               }} className="flex-1 py-2 rounded-xl text-white primary-gradient hover:opacity-90 transition-opacity font-bold text-sm shadow-lg shadow-primary/20">Evet, Planla</button>
             </div>
           </div>
