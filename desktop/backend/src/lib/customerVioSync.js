@@ -134,7 +134,9 @@ async function syncCustomer(customer) {
       queries: [
         {
           tip: 'insertOrUpdate',
-          table: 'carmst', keys: ['*'],
+          table: 'carmst',
+          keys: ['*'],
+          keyFields: ['must'],
           data: [carmstData]
         }
       ]

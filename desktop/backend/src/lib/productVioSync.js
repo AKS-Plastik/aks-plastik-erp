@@ -57,15 +57,15 @@ async function fetchProductsFromVio() {
 
     let rows = [];
     if (Array.isArray(data)) {
-       if (data[0] && Array.isArray(data[0])) {
-           rows = data[0];
-       } else if (data[0] && data[0].rows && Array.isArray(data[0].rows)) {
-           rows = data[0].rows;
-       } else {
-           rows = data;
-       }
+      if (data[0] && Array.isArray(data[0])) {
+        rows = data[0];
+      } else if (data[0] && data[0].rows && Array.isArray(data[0].rows)) {
+        rows = data[0].rows;
+      } else {
+        rows = data;
+      }
     } else if (data && data.rows && Array.isArray(data.rows)) {
-       rows = data.rows;
+      rows = data.rows;
     }
 
     return rows;
@@ -113,15 +113,15 @@ async function fetchStockFromVio() {
 
     let rows = [];
     if (Array.isArray(data)) {
-       if (data[0] && Array.isArray(data[0])) {
-           rows = data[0];
-       } else if (data[0] && data[0].rows && Array.isArray(data[0].rows)) {
-           rows = data[0].rows;
-       } else {
-           rows = data;
-       }
+      if (data[0] && Array.isArray(data[0])) {
+        rows = data[0];
+      } else if (data[0] && data[0].rows && Array.isArray(data[0].rows)) {
+        rows = data[0].rows;
+      } else {
+        rows = data;
+      }
     } else if (data && data.rows && Array.isArray(data.rows)) {
-       rows = data.rows;
+      rows = data.rows;
     }
 
     return rows;
@@ -167,15 +167,15 @@ async function fetchSingleVioProduct(stockNo) {
 
     let rows = [];
     if (Array.isArray(data)) {
-       if (data[0] && Array.isArray(data[0])) {
-           rows = data[0];
-       } else if (data[0] && data[0].rows && Array.isArray(data[0].rows)) {
-           rows = data[0].rows;
-       } else {
-           rows = data;
-       }
+      if (data[0] && Array.isArray(data[0])) {
+        rows = data[0];
+      } else if (data[0] && data[0].rows && Array.isArray(data[0].rows)) {
+        rows = data[0].rows;
+      } else {
+        rows = data;
+      }
     } else if (data && data.rows && Array.isArray(data.rows)) {
-       rows = data.rows;
+      rows = data.rows;
     }
 
     if (rows && rows.length > 0) {
@@ -205,7 +205,7 @@ function mapVioStokToErpData(row) {
 
   // Kategori (grupkod üzerinden) - 'General' yerine '' (boş) kullanıyoruz ki FK hatası vermesin
   const category = (row.grupkod || '').trim();
-  
+
   // Stok miktarı varsa al, yoksa 0 (fetchStockFromVio'dan eklenecek)
   const stock = row.topMiktar ? parseFloat(row.topMiktar) : 0;
 
@@ -277,18 +277,18 @@ async function pullProductsFromVio() {
 
     if (!existingProduct) {
       // Ürün DB'de YENİ => Kaydet
-        try {
-          await prisma.product.create({
-            data: mappedData,
-          });
-          createdCount++;
-        } catch (e) {
-          if (e.code === 'P2002') {
-            console.log(`[VIO SYNC] Race condition avoided for product ${productCode}. Created by another sync.`);
-          } else {
-            throw e;
-          }
+      try {
+        await prisma.product.create({
+          data: mappedData,
+        });
+        createdCount++;
+      } catch (e) {
+        if (e.code === 'P2002') {
+          console.log(`[VIO SYNC] Race condition avoided for product ${productCode}. Created by another sync.`);
+        } else {
+          throw e;
         }
+      }
     } else {
       // Ürün DB'de VAR => Değişen alan var mı kontrol et
       const diff = {};
@@ -367,7 +367,9 @@ async function syncProductToVio(product, changedFields = null) {
       queries: [
         {
           tip: 'insertOrUpdate',
-          table: 'stkmst', keys: ['*'],
+          table: 'stkmst',
+          keys: ['*'],
+          keyFields: ['must'],
           data: [stkmstData]
         }
       ]
@@ -397,7 +399,7 @@ async function syncProductToVio(product, changedFields = null) {
     } catch (e) {
       data = responseText;
     }
-    
+
     console.log(`[VIO SYNC SUCCESS] Product ${product.code} synced successfully.`);
     return true;
 
@@ -451,7 +453,7 @@ async function deleteProductFromVio(productCode) {
     } catch (e) {
       data = responseText;
     }
-    
+
     console.log(`[VIO SYNC SUCCESS] Product ${productCode} deleted successfully from Vio.`);
     return true;
 
