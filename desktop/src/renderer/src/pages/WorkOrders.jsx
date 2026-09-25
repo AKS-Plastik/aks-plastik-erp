@@ -289,6 +289,7 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
       status: pendingStatus,
       cancelledReason: pendingStatus === 'Cancelled' ? statusNote.trim() : (visit.cancelledReason || ''),
       statusNote: statusNote.trim(),
+      isVisit: visit.isVisit
     })
   }
 
@@ -720,7 +721,7 @@ function VisitCard({ visit, onClick }) {
   )
 }
 
-function VisitCardCompact({ visit, onClick }) {
+function VisitCardCompact({ visit, onClick, showDate }) {
   const style = STATUS_STYLES[visit.status] || STATUS_STYLES['Scheduled']
   return (
     <div
@@ -734,9 +735,14 @@ function VisitCardCompact({ visit, onClick }) {
       <h3 className="text-[11px] font-bold text-on-surface leading-tight line-clamp-2 break-words">{visit.title}</h3>
       <div className="flex items-center justify-between mt-1.5 min-w-0 gap-1">
         <span className="text-[9px] font-bold text-on-surface-variant truncate flex-1">{visit.assignees?.length > 0 ? visit.assignees.map(a => a.name).join(', ') : visit.employeeName}</span>
-        {visit.time && (
-          <span className="text-[9px] font-bold text-on-surface-variant bg-surface-container-high/50 px-1 rounded flex-shrink-0">{visit.time}</span>
-        )}
+        <div className="flex items-center gap-1">
+          {showDate && visit.date && (
+            <span className="text-[9px] font-bold text-on-surface-variant bg-surface-container-high/50 px-1 rounded flex-shrink-0">{new Date(visit.date).toLocaleDateString()}</span>
+          )}
+          {visit.time && (
+            <span className="text-[9px] font-bold text-on-surface-variant bg-surface-container-high/50 px-1 rounded flex-shrink-0">{visit.time}</span>
+          )}
+        </div>
       </div>
     </div>
   )
@@ -752,6 +758,7 @@ export default function SiteVisits() {
   const [statusFilter, setStatusFilter] = useState('')
   const [currentDate, setCurrentDate] = useState(new Date())
   const [promptNewCustomer, setPromptNewCustomer] = useState(null)
+  const [viewMode, setViewMode] = useState('calendar')
 
   const dateInputRef = useRef(null)
 
@@ -804,9 +811,8 @@ export default function SiteVisits() {
       isToday: d.toDateString() === new Date().toDateString()
     }
   })
-
-  // We can render hours from 08:00 to 19:00 (12 rows).
-  const hours = Array.from({ length: 12 }).map((_, i) => i + 8)
+  // We can render hours from 06:00 to 22:00 (17 rows).
+  const hours = Array.from({ length: 17 }).map((_, i) => i + 6)
 
   function handleExport() {
     const rows = siteVisits.map((v) => ({
@@ -881,10 +887,10 @@ export default function SiteVisits() {
             await updateSiteVisit(id, form);
             setSelected(null)
 
-            if (form.status === 'Completed' && !wasCompleted) {
+            if (form.status === 'Completed' && !wasCompleted && (form.isVisit || selected.isVisit)) {
               setTimeout(() => {
                 setPromptNewCustomer(form.customerId || selected.customerId)
-              }, 1000)
+              }, 200)
             }
           }}
           onDelete={(id) => { deleteSiteVisit(id); setSelected(null) }}
@@ -978,6 +984,24 @@ export default function SiteVisits() {
                 className="bg-transparent border-none outline-none text-xs lg:text-sm w-full placeholder-slate-400"
               />
             </div>
+
+            <div className="flex items-center bg-surface-container-lowest p-1 rounded-xl border border-surface-container shadow-sm flex-shrink-0">
+              <button
+                onClick={() => setViewMode('calendar')}
+                className={`p-1.5 rounded-lg flex items-center justify-center transition-colors ${viewMode === 'calendar' ? 'bg-primary/10 text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+                title="Takvim Görünümü"
+              >
+                <span className="material-symbols-outlined text-[18px]">calendar_view_week</span>
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-1.5 rounded-lg flex items-center justify-center transition-colors ${viewMode === 'list' ? 'bg-primary/10 text-primary' : 'text-on-surface-variant hover:text-on-surface'}`}
+                title="Liste Görünümü"
+              >
+                <span className="material-symbols-outlined text-[18px]">view_list</span>
+              </button>
+            </div>
+
             <button
               onClick={handleExport}
               className="bg-surface-container-lowest border border-surface-container text-on-surface px-3 py-2 rounded-xl font-bold text-xs lg:text-sm shadow-sm flex items-center gap-1.5 hover:bg-surface-container transition-all flex-shrink-0"
@@ -989,8 +1013,10 @@ export default function SiteVisits() {
         </div>
       </div>
 
-      {/* Calendar Navigation */}
-      <div className="flex items-center gap-2 bg-surface-container-lowest p-2 rounded-xl border border-surface-container shadow-sm w-full mb-4 md:mb-6">
+      {viewMode === 'calendar' ? (
+        <>
+          {/* Calendar Navigation */}
+          <div className="flex items-center gap-2 bg-surface-container-lowest p-2 rounded-xl border border-surface-container shadow-sm w-full mb-4 md:mb-6">
         <button
           onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 7))}
           className="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant transition-colors flex-shrink-0"
@@ -1093,6 +1119,22 @@ export default function SiteVisits() {
           </div>
         </div>
       </div>
+      </>
+      ) : (
+        <div className="bg-surface-container-lowest border border-theme-border rounded-2xl shadow-sm p-4 md:p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            {sorted.length > 0 ? (
+              sorted.map(visit => (
+                <VisitCardCompact key={visit.id} visit={visit} showDate={true} onClick={() => setSelected(visit)} />
+              ))
+            ) : (
+              <div className="col-span-full py-10 text-center text-on-surface-variant font-medium">
+                Aradığınız kriterlere uygun kayıt bulunamadı.
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
