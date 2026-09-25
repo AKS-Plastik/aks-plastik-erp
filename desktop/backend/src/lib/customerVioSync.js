@@ -155,9 +155,14 @@ async function syncCustomer(customer) {
     });
 
     if (!response.ok) {
-      console.error(`[VIO SYNC ERROR] Failed to sync customer ${customer.code}: HTTP ${response.status}`);
       const text = await getDecodedText(response);
-      console.error(`[VIO SYNC RESPONSE] ${text}`);
+      console.error(`\n[VIO SYNC ERROR] Failed to sync customer ${customer.code}: HTTP ${response.status}`);
+      console.error(`[VIO RAW RESPONSE BODY]:\n${text}\n`);
+      const errorDetails = {
+        request: { url: url, method: 'POST', body: payload },
+        response: { status: response.status, headers: Object.fromEntries(response.headers.entries()) }
+      };
+      console.error(`[VIO SYNC HTTP DETAILS]:`, JSON.stringify(errorDetails, null, 2));
       return false;
     }
 
@@ -211,25 +216,14 @@ async function deleteCustomerFromVio(customerCode) {
     });
 
     if (!response.ok) {
-      console.error(`[VIO SYNC ERROR] Failed to delete customer ${customerCode}: HTTP ${response.status}`);
-      console.log("VIO SYNC ERROR CUSTOMER DELETE:", response, JSON.stringify(response, null, 4));
       const text = await getDecodedText(response);
+      console.error(`\n[VIO SYNC ERROR] Failed to delete customer ${customerCode}: HTTP ${response.status}`);
+      console.error(`[VIO RAW RESPONSE BODY]:\n${text}\n`);
       const errorDetails = {
-        request: {
-          url: url,
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: payload
-        },
-        response: {
-          url: response.url,
-          status: response.status,
-          statusText: response.statusText,
-          headers: Object.fromEntries(response.headers.entries()),
-          body: text
-        }
+        request: { url: url, method: 'POST', body: payload },
+        response: { status: response.status, headers: Object.fromEntries(response.headers.entries()) }
       };
-      console.error(`[VIO SYNC ERROR CUSTOMER DELETE] Detayli Log:`, JSON.stringify(errorDetails, null, 4));
+      console.error(`[VIO SYNC HTTP DETAILS]:`, JSON.stringify(errorDetails, null, 2));
       return false;
     }
 
@@ -477,7 +471,17 @@ async function fetchSingleVioCustomer(code) {
       body: JSON.stringify(payload)
     });
 
-    if (!response.ok) return null;
+    if (!response.ok) {
+      const text = await getDecodedText(response);
+      console.error(`\n[VIO SYNC ERROR] Failed to fetch customer ${code}: HTTP ${response.status}`);
+      console.error(`[VIO RAW RESPONSE BODY]:\n${text}\n`);
+      const errorDetails = {
+        request: { url: url, method: 'POST', body: payload },
+        response: { status: response.status, headers: Object.fromEntries(response.headers.entries()) }
+      };
+      console.error(`[VIO SYNC HTTP DETAILS]:`, JSON.stringify(errorDetails, null, 2));
+      return null;
+    }
 
     const responseText = await getDecodedText(response);
     let data;

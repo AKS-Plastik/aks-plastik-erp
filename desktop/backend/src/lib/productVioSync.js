@@ -44,7 +44,15 @@ async function fetchProductsFromVio() {
     });
 
     if (!response.ok) {
-      throw new Error(`Vio API Error: ${response.statusText}`);
+      const text = await getDecodedText(response);
+      console.error(`\n[VIO SYNC ERROR] Failed to fetch products: HTTP ${response.status}`);
+      console.error(`[VIO RAW RESPONSE BODY]:\n${text}\n`);
+      const errorDetails = {
+        request: { url: url, method: 'POST', body: payload },
+        response: { status: response.status, headers: Object.fromEntries(response.headers.entries()) }
+      };
+      console.error(`[VIO SYNC HTTP DETAILS]:`, JSON.stringify(errorDetails, null, 2));
+      throw new Error(`Vio API Error: ${response.status} - Body logged to console`);
     }
 
     const responseText = await getDecodedText(response);
@@ -100,7 +108,15 @@ async function fetchStockFromVio() {
     });
 
     if (!response.ok) {
-      throw new Error(`Vio API Error: ${response.statusText}`);
+      const text = await getDecodedText(response);
+      console.error(`\n[VIO SYNC ERROR] Failed to fetch stock amounts: HTTP ${response.status}`);
+      console.error(`[VIO RAW RESPONSE BODY]:\n${text}\n`);
+      const errorDetails = {
+        request: { url: url, method: 'POST', body: payload },
+        response: { status: response.status, headers: Object.fromEntries(response.headers.entries()) }
+      };
+      console.error(`[VIO SYNC HTTP DETAILS]:`, JSON.stringify(errorDetails, null, 2));
+      throw new Error(`Vio API Error: ${response.status} - Body logged to console`);
     }
 
     const responseText = await getDecodedText(response);
@@ -155,7 +171,17 @@ async function fetchSingleVioProduct(stockNo) {
       body: JSON.stringify(payload)
     });
 
-    if (!response.ok) return null;
+    if (!response.ok) {
+      const text = await getDecodedText(response);
+      console.error(`\n[VIO SYNC ERROR] Failed to fetch single product ${stockNo}: HTTP ${response.status}`);
+      console.error(`[VIO RAW RESPONSE BODY]:\n${text}\n`);
+      const errorDetails = {
+        request: { url: url, method: 'POST', body: payload },
+        response: { status: response.status, headers: Object.fromEntries(response.headers.entries()) }
+      };
+      console.error(`[VIO SYNC HTTP DETAILS]:`, JSON.stringify(errorDetails, null, 2));
+      return null;
+    }
 
     const responseText = await getDecodedText(response);
     let data;
@@ -386,9 +412,14 @@ async function syncProductToVio(product, changedFields = null) {
     });
 
     if (!response.ok) {
-      console.error(`[VIO SYNC ERROR] Failed to sync product ${product.code}: HTTP ${response.status}`);
       const text = await getDecodedText(response);
-      console.error(`[VIO SYNC RESPONSE] ${text}`);
+      console.error(`\n[VIO SYNC ERROR] Failed to sync product ${product.code}: HTTP ${response.status}`);
+      console.error(`[VIO RAW RESPONSE BODY]:\n${text}\n`);
+      const errorDetails = {
+        request: { url: url, method: 'POST', body: payload },
+        response: { status: response.status, headers: Object.fromEntries(response.headers.entries()) }
+      };
+      console.error(`[VIO SYNC HTTP DETAILS]:`, JSON.stringify(errorDetails, null, 2));
       return false;
     }
 
@@ -440,9 +471,14 @@ async function deleteProductFromVio(productCode) {
     });
 
     if (!response.ok) {
-      console.error(`[VIO SYNC ERROR] Failed to delete product ${productCode}: HTTP ${response.status}`);
       const text = await getDecodedText(response);
-      console.error(`[VIO SYNC RESPONSE] ${text}`);
+      console.error(`\n[VIO SYNC ERROR] Failed to delete product ${productCode}: HTTP ${response.status}`);
+      console.error(`[VIO RAW RESPONSE BODY]:\n${text}\n`);
+      const errorDetails = {
+        request: { url: url, method: 'POST', body: payload },
+        response: { status: response.status, headers: Object.fromEntries(response.headers.entries()) }
+      };
+      console.error(`[VIO SYNC HTTP DETAILS]:`, JSON.stringify(errorDetails, null, 2));
       throw new Error(text);
     }
 
