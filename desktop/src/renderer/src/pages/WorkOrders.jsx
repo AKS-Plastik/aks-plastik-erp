@@ -425,7 +425,23 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
         {/* Edit */}
         {editing && (
           <div className="px-4 md:px-6 py-4 md:py-6 grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 overflow-y-auto flex-1">
-            {!visit.isVisit && (
+            <div className="col-span-1 md:col-span-2 flex items-center justify-between p-3 md:p-4 bg-surface-container-low/50 rounded-xl border border-theme-border">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                  <span className="material-symbols-outlined text-lg">storefront</span>
+                </div>
+                <div>
+                  <p className="text-xs md:text-sm font-bold text-on-surface">Müşteri Ziyareti</p>
+                  <p className="text-[9px] md:text-[10px] text-on-surface-variant">Belirli bir müşteriye ziyarete gidilecekse işaretleyin.</p>
+                </div>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" className="sr-only peer" checked={form.isVisit} onChange={(e) => setForm(p => ({ ...p, isVisit: e.target.checked, title: '' }))} />
+                <div className="w-9 h-5 bg-surface-container-high rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+              </label>
+            </div>
+
+            {!form.isVisit && (
               <FieldErr label={t('workOrders.visitTitle')} icon="title" error={errors.title} span2>
                 <input type="text" value={form.title} onChange={set('title')} className={inputCls} />
               </FieldErr>
