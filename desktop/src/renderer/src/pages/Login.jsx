@@ -160,7 +160,7 @@ export default function Login() {
           </p>
         </div>
 
-        <p className="text-center text-xs text-text-muted mt-6">v1.0.1</p>
+        <p className="text-center text-xs text-text-muted mt-6">v2.0.0</p>
       </div>
     </div>
   )
