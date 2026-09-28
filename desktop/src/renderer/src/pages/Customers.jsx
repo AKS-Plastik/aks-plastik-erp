@@ -612,7 +612,7 @@ function OrdersTab({ customerOrders }) {
       <div className="flex flex-col items-center justify-center py-12 md:py-16 text-on-surface-variant flex-1 text-center px-4">
         <span className="material-symbols-outlined text-4xl md:text-5xl mb-3 opacity-30">shopping_bag</span>
         <p className="text-xs md:text-sm font-semibold">No orders yet</p>
-        <p className="text-[10px] md:text-xs mt-1 opacity-70">Orders for this customer will appear here</p>
+        <p className="text-[10px] md:text-xs mt-1 opacity-70">{t('customers.noOrders', 'Müşteriye ait sipariş bulunmuyor')}</p>
       </div>
     )
   }
@@ -637,15 +637,15 @@ function OrdersTab({ customerOrders }) {
       <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-2 sm:py-3 bg-surface-container-low border-b border-surface-container text-[10px] sm:text-xs flex-shrink-0 overflow-x-auto overflow-y-hidden ">
         <div className="text-on-surface-variant whitespace-nowrap">
           <span className="hidden sm:inline">{t('customers.totalOrders')}</span>
-          <span className="sm:hidden">Top. S.</span>: <span className="font-bold text-on-surface">{customerOrders.length}</span>
+          <span className="sm:hidden">{t('common.totalOrder', 'Top. S.')}</span>: <span className="font-bold text-on-surface">{customerOrders.length}</span>
         </div>
         <div className="text-on-surface-variant whitespace-nowrap">
           <span className="hidden sm:inline">{t('customers.openOrders')}</span>
-          <span className="sm:hidden">Açık</span>: <span className="font-bold text-on-surface">{open}</span>
+          <span className="sm:hidden">{t('common.open', 'Açık')}</span>: <span className="font-bold text-on-surface">{open}</span>
         </div>
         <div className="text-on-surface-variant whitespace-nowrap ml-auto">
           <span className="hidden sm:inline">{t('customers.totalValue')}</span>
-          <span className="sm:hidden">Değer</span>: <span className="font-bold text-on-surface">{total}</span>
+          <span className="sm:hidden">{t('common.value', 'Değer')}</span>: <span className="font-bold text-on-surface">{total}</span>
         </div>
       </div>
 
@@ -657,7 +657,7 @@ function OrdersTab({ customerOrders }) {
               <th className="text-left px-4 py-3">{t('orders.order')}</th>
               <th className="text-left px-4 py-3">{t('common.status')}</th>
               <th className="text-left px-4 py-3">{t('orders.payment')}</th>
-              <th className="text-right px-4 py-3">Items</th>
+              <th className="text-right px-4 py-3">{t('common.items', 'Ürünler')}</th>
               <th className="text-left px-4 py-3">{t('common.currency')}</th>
               <th className="text-right px-6 py-3">{t('orders.total')}</th>
             </tr>
@@ -705,7 +705,7 @@ function OrdersTab({ customerOrders }) {
                     </td>
                     <td className="block sm:table-cell p-0 sm:px-4 sm:py-3 mb-2 sm:mb-0">
                       <div className="flex items-center justify-between sm:block">
-                        <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Items</span>
+                        <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('common.items', 'Ürünler')}</span>
                         <span className="text-right text-xs font-semibold text-on-surface">{(o.items || []).length}</span>
                       </div>
                     </td>
@@ -743,7 +743,7 @@ function OrdersTab({ customerOrders }) {
                                 <th className="text-left py-1.5 pr-4">{t('common.unit')}</th>
                                 <th className="text-right py-1.5 pr-4">{t('orders.unitPrice')}</th>
                                 <th className="text-right py-1.5 pr-4">{t('orders.vat')}</th>
-                                <th className="text-right py-1.5">Subtotal</th>
+                                <th className="text-right py-1.5">{t('orders.subtotal')}</th>
                               </tr>
                             </thead>
                             <tbody className="block sm:table-row-group">
@@ -775,7 +775,7 @@ function OrdersTab({ customerOrders }) {
                                     {item.vat ? `${item.vat}%` : '—'}
                                   </td>
                                   <td className="block sm:table-cell py-1 sm:py-1.5 flex justify-between items-center sm:table-cell text-right font-semibold tabular-nums text-on-surface mt-2 sm:mt-0 pt-2 sm:pt-0 border-t border-surface-container sm:border-0">
-                                    <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Subtotal</span>
+                                    <span className="sm:hidden text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t('orders.subtotal')}</span>
                                     {fmtNum(item.qty * item.price)}
                                   </td>
                                 </tr>
@@ -1214,7 +1214,7 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete, cus
                 { key: 'info', label: t('customers.tabInfo'), icon: 'person' },
                 { key: 'orders', label: t('customers.tabOrders'), icon: 'shopping_bag', count: customerOrders.length },
                 { key: 'finance', label: t('customers.tabFinance'), icon: 'account_balance_wallet', count: customerFinance.length },
-                { key: 'agenda', label: 'Ajanda', icon: 'event_note' },
+                { key: 'agenda', label: t('customers.tabAgenda', 'Ajanda'), icon: 'event_note' },
               ].map((t) => (
                 <button
                   key={t.key}
@@ -1243,18 +1243,18 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete, cus
             {/* Info tab */}
             {viewTab === 'info' && (
               <div className="px-4 md:px-8 py-4 overflow-y-auto flex-1 space-y-0">
-                <DetailRow icon="category" label="Customer Type" value={customer.customerType} />
+                <DetailRow icon="category" label={t('customers.customerType', 'Müşteri Tipi')} value={t('customerType.' + customer.customerType, customer.customerType)} />
                 {customer.customerType === 'Individual' && (
-                  <DetailRow icon="person" label="Full Name" value={customer.fullName} />
+                  <DetailRow icon="person" label={t('users.fullName', 'Ad Soyad')} value={customer.fullName} />
                 )}
-                <DetailRow icon="fingerprint" label="Tax ID (TIN/TCKN)" value={customer.taxId} />
-                <DetailRow icon="gavel" label="Mükellef Tipi" value={customer.mukellefTipi || 'Vergi Mükellefi'} />
-                <DetailRow icon="account_balance" label="Tax Office" value={customer.taxOffice} />
-                <DetailRow icon="receipt" label="Ticaret Sicil No" value={customer.ticaretSicil} />
-                <DetailRow icon="pin" label="Mersis No" value={customer.mersisNo} />
-                <DetailRow icon="travel_explore" label="Bölge" value={customer.bolge} />
-                <DetailRow icon="person_search" label="Cari Tip" value={customer.cariTip} />
-                <DetailRow icon="bar_chart" label="İstatistik Grup" value={customer.istatistikGrup} />
+                <DetailRow icon="fingerprint" label={t('customers.taxId', 'Vergi No / TCKN')} value={customer.taxId} />
+                <DetailRow icon="gavel" label={t('customers.mukellefTipi', 'Mükellef Tipi')} value={t('mukellef.' + (customer.mukellefTipi || 'Vergi Mükellefi').replace(/\s/g,''), customer.mukellefTipi || 'Vergi Mükellefi')} />
+                <DetailRow icon="account_balance" label={t('customers.taxOffice', 'Vergi Dairesi')} value={customer.taxOffice} />
+                <DetailRow icon="receipt" label={t('customers.ticaretSicil', 'Ticaret Sicil No')} value={customer.ticaretSicil} />
+                <DetailRow icon="pin" label={t('customers.mersisNo', 'Mersis No')} value={customer.mersisNo} />
+                <DetailRow icon="travel_explore" label={t('customers.bolge', 'Bölge')} value={customer.bolge} />
+                <DetailRow icon="person_search" label={t('customers.cariTip', 'Cari Tip')} value={customer.cariTip} />
+                <DetailRow icon="bar_chart" label={t('customers.istatistikGrup', 'İstatistik Grup')} value={customer.istatistikGrup} />
 
                 {customer.tags && customer.tags.length > 0 && (
                   <div className="flex flex-col gap-1.5 py-1.5 px-3 -mx-3 hover:bg-surface-container-high/50 rounded-xl transition-colors">
@@ -1292,15 +1292,15 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete, cus
                   </span>
                   <div className="flex-1 h-px bg-surface-container-high" />
                 </div>
-                <DetailRow icon="home" label="Address" value={customer.address} />
-                <DetailRow icon="apartment" label="City" value={customer.city} />
-                <DetailRow icon="map" label="District" value={customer.district} />
-                <DetailRow icon="markunread_mailbox" label="Postal Code" value={customer.postalCode} />
-                <DetailRow icon="public" label="Country" value={customer.country} />
-                <DetailRow icon="phone" label="Phone" value={customer.phone} />
-                <DetailRow icon="mail" label="Email" value={customer.email} />
-                <DetailRow icon="smartphone" label="Customer Phone Number" value={customer.contactPhone} />
-                <DetailRow icon="alternate_email" label="Customer Email Address" value={customer.contactEmail} />
+                <DetailRow icon="home" label={t('customers.address', 'Adres')} value={customer.address} />
+                <DetailRow icon="apartment" label={t('customers.city', 'Şehir')} value={customer.city} />
+                <DetailRow icon="map" label={t('customers.district', 'İlçe')} value={customer.district} />
+                <DetailRow icon="markunread_mailbox" label={t('customers.postalCode', 'Posta Kodu')} value={customer.postalCode} />
+                <DetailRow icon="public" label={t('customers.country', 'Ülke')} value={customer.country} />
+                <DetailRow icon="phone" label={t('common.phone', 'Telefon')} value={customer.phone} />
+                <DetailRow icon="mail" label={t('common.email', 'E-posta')} value={customer.email} />
+                <DetailRow icon="smartphone" label={t('customers.customerPhone', 'Müşteri Telefon Numarası')} value={customer.contactPhone} />
+                <DetailRow icon="alternate_email" label={t('customers.customerEmail', 'Müşteri E-posta Adresi')} value={customer.contactEmail} />
                 <div className="flex items-center gap-3 py-2">
                   <div className="flex-1 h-px bg-surface-container-high" />
                   <span className="text-[10px] font-black uppercase tracking-widest text-on-surface-variant flex items-center gap-1.5">
@@ -1323,11 +1323,11 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete, cus
                 </div>
                 <DetailRow icon="tag" label="Account Code" value={customer.accountCode || customer.code} />
                 <DetailRow icon="manage_accounts" label="Account Type" value={customer.accountType} />
-                <DetailRow icon="currency_exchange" label="Currency" value={customer.currency} />
+                <DetailRow icon="currency_exchange" label={t('finance.currency', 'Para Birimi')} value={customer.currency} />
                 <DetailRow icon="schedule" label="Payment Term" value={customer.paymentTerm} />
-                <DetailRow icon="credit_score" label="Credit Limit" value={customer.creditLimit != null ? customer.creditLimit.toLocaleString() : null} />
-                <DetailRow icon="account_balance" label="Bank Name" value={customer.bankName} />
-                <DetailRow icon="credit_card" label="IBAN" value={customer.iban} />
+                <DetailRow icon="credit_score" label={t('finance.creditLimit', 'Kredi Limiti')} value={customer.creditLimit != null ? customer.creditLimit.toLocaleString() : null} />
+                <DetailRow icon="account_balance" label={t('finance.bankName', 'Banka Adı')} value={customer.bankName} />
+                <DetailRow icon="credit_card" label={t('finance.iban', 'IBAN')} value={customer.iban} />
                 <DetailRow icon="store" label="Branch Code" value={customer.branchCode} />
                 <DetailRow icon="person" label="Account Holder" value={customer.accountHolder} />
                 <DetailRow icon="description" label="Invoice Type" value={customer.invoiceType} />
@@ -1493,8 +1493,8 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete, cus
                   {customerFinance.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12 md:py-16 text-on-surface-variant text-center px-4">
                       <span className="material-symbols-outlined text-4xl md:text-5xl mb-3 opacity-30">account_balance_wallet</span>
-                      <p className="text-xs md:text-sm font-semibold">No finance records</p>
-                      <p className="text-[10px] md:text-xs mt-1 opacity-70">Finance records linked to this customer's orders appear here</p>
+                      <p className="text-xs md:text-sm font-semibold">{t('customers.noFinance', 'Finans kaydı yok')}</p>
+                      <p className="text-[10px] md:text-xs mt-1 opacity-70">{t('customers.financeRecordsMsg', 'Bu müşterinin siparişlerine bağlı finans kayıtları burada görünür')}</p>
                     </div>
                   ) : (
                     <div className="overflow-x-hidden overflow-y-auto flex-1 px-4 sm:px-0 pb-4">

@@ -149,7 +149,7 @@ function RequestModal({ initial, onClose, onSave }) {
               <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('purchasing.requestedBy')}</label>
               <select className={inp('requestedBy')} value={form.requestedBy} onChange={set('requestedBy')}>
                 <option value="">{t('common.select', 'Select...')}</option>
-                <option value="Admin">Admin</option>
+                <option value="Admin">{t('users.admin', 'Admin')}</option>
                 {employees?.filter(e => e.name !== 'Admin').map(e => <option key={e.id} value={e.name}>{e.name}</option>)}
               </select>
             </div>
@@ -658,7 +658,7 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
               </p>
               <div className="grid grid-cols-2 gap-1.5">
                 <div>
-                  <label className="block text-[8px] md:text-[9px] font-semibold text-text-muted mb-0.5">Invoice No</label>
+                  <label className="block text-[8px] md:text-[9px] font-semibold text-text-muted mb-0.5">{t('purchasing.invoiceNo', 'Fatura No')}</label>
                   <input
                     className="w-full bg-surface-container-lowest border border-theme-border rounded-lg px-2 py-0.5 text-[10px] md:text-[11px] text-on-surface outline-none"
                     value={r.invoiceNo || ''}
@@ -666,7 +666,7 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
                   />
                 </div>
                 <div>
-                  <label className="block text-[8px] md:text-[9px] font-semibold text-text-muted mb-0.5">Invoice Date</label>
+                  <label className="block text-[8px] md:text-[9px] font-semibold text-text-muted mb-0.5">{t('purchasing.invoiceDate', 'Fatura Tarihi')}</label>
                   <input
                     type="date"
                     className="w-full bg-surface-container-lowest border border-theme-border rounded-lg px-2 py-0.5 text-[10px] md:text-[11px] text-on-surface outline-none"
@@ -676,7 +676,7 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
                 </div>
               </div>
               <div>
-                <label className="block text-[8px] md:text-[9px] font-semibold text-text-muted mb-0.5">Invoice Amount</label>
+                <label className="block text-[8px] md:text-[9px] font-semibold text-text-muted mb-0.5">{t('purchasing.invoiceAmount', 'Fatura Tutarı')}</label>
                 <input
                   type="number" min="0" step="0.01"
                   className="w-full bg-surface-container-lowest border border-theme-border rounded-lg px-2 py-0.5 text-[10px] md:text-[11px] text-on-surface outline-none"
@@ -695,7 +695,7 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
               </p>
               <div className="grid grid-cols-2 gap-1.5">
                 <div>
-                  <label className="block text-[8px] md:text-[9px] font-semibold text-text-muted mb-0.5">Payment Due Date</label>
+                  <label className="block text-[8px] md:text-[9px] font-semibold text-text-muted mb-0.5">{t('purchasing.paymentDueDate', 'Ödeme Vadesi')}</label>
                   <input
                     type="date"
                     className="w-full bg-surface-container-lowest border border-theme-border rounded-lg px-2 py-0.5 text-[10px] md:text-[11px] text-on-surface outline-none"
@@ -704,7 +704,7 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
                   />
                 </div>
                 <div>
-                  <label className="block text-[8px] md:text-[9px] font-semibold text-text-muted mb-0.5">Payment Date</label>
+                  <label className="block text-[8px] md:text-[9px] font-semibold text-text-muted mb-0.5">{t('purchasing.paymentDate', 'Ödeme Tarihi')}</label>
                   <input
                     type="date"
                     className="w-full bg-surface-container-lowest border border-theme-border rounded-lg px-2 py-0.5 text-[10px] md:text-[11px] text-on-surface outline-none"
@@ -719,7 +719,7 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
           {/* Notes */}
           {r.notes && (
             <div className="bg-surface-container rounded-lg p-2 md:p-2.5">
-              <p className="text-[8px] md:text-[9px] font-semibold text-text-muted uppercase mb-0.5">Notes</p>
+              <p className="text-[8px] md:text-[9px] font-semibold text-text-muted uppercase mb-0.5">{t('common.notes')}</p>
               <p className="text-[10px] md:text-[11px] text-on-surface whitespace-pre-wrap">{r.notes}</p>
             </div>
           )}
@@ -727,7 +727,7 @@ function DetailDrawer({ request, suppliers, onClose, onEdit, onDelete, onUpdate,
           {/* Rejection reason */}
           {['Rejected', 'Budget Rejected', 'QC Rejected'].includes(r.status) && r.rejectionReason && (
             <div className="bg-error/5 border border-error/20 rounded-lg p-2 md:p-2.5">
-              <p className="text-[9px] md:text-[10px] font-bold text-error mb-0.5">Rejection Reason</p>
+              <p className="text-[9px] md:text-[10px] font-bold text-error mb-0.5">{t('purchasing.rejectionReason', 'Red Nedeni')}</p>
               <p className="text-[10px] md:text-[11px] text-on-surface">{r.rejectionReason}</p>
             </div>
           )}
@@ -1053,7 +1053,7 @@ function RequestTable({ requests, onOpen }) {
               <th className="px-4 py-3 font-semibold">{t('common.priority')}</th>
               <th className="px-4 py-3 font-semibold">{t('common.status')}</th>
               <th className="px-4 py-3 font-semibold">{t('purchasing.totalAmount')}</th>
-              <th className="px-4 py-3 font-semibold">Quotes</th>
+              <th className="px-4 py-3 font-semibold">{t('purchasing.quotes', 'Teklifler')}</th>
               <th className="px-4 py-3 font-semibold">{t('common.date')}</th>
             </tr>
           </thead>
@@ -1131,7 +1131,7 @@ function SupplierTable({ suppliers, onEdit, onDelete }) {
               <th className="px-6 py-3 font-semibold">{t('common.code')}</th>
               <th className="px-4 py-3 font-semibold">{t('common.name')}</th>
               <th className="px-4 py-3 font-semibold">{t('common.category')}</th>
-              <th className="px-4 py-3 font-semibold">Contact</th>
+              <th className="px-4 py-3 font-semibold">{t('common.contact', 'İletişim')}</th>
               <th className="px-4 py-3 font-semibold">{t('common.country')}</th>
               <th className="px-4 py-3 font-semibold">{t('common.currency')}</th>
               <th className="px-4 py-3 font-semibold">{t('common.status')}</th>

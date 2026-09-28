@@ -108,11 +108,11 @@ function timeAgo(dateStr, t) {
   const diffMs = now - date
   const mins = Math.floor(diffMs / 60000)
   if (mins < 1) return t('dashboard.justNow')
-  if (mins < 60) return `${mins}m ago`
+  if (mins < 60) return `${mins} ${t('common.mAgo', 'dk önce')}`
   const hrs = Math.floor(mins / 60)
-  if (hrs < 24) return `${hrs}h ago`
+  if (hrs < 24) return `${hrs} ${t('common.hAgo', 'saat önce')}`
   const days = Math.floor(hrs / 24)
-  if (days < 7) return `${days}d ago`
+  if (days < 7) return `${days} ${t('common.dAgo', 'gün önce')}`
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
 
@@ -123,13 +123,13 @@ const activityConfig = {
   siteVisit: { icon: 'location_on', iconBg: 'bg-surface-container-high', iconColor: 'text-error' },
 }
 
-function buildActivity(customers, employees, reports, siteVisits) {
+function buildActivity(customers, employees, reports, siteVisits, t) {
   const items = []
 
   customers.forEach((c) => {
     items.push({
       ...activityConfig.customer,
-      title: `Customer: ${c.name}`,
+      title: `${t('dashboard.activityCustomer', 'Müşteri:')} ${c.name}`,
       desc: `${c.code} — ${c.region || 'No region'}`,
       date: c.updatedAt || c.createdAt,
     })
@@ -138,7 +138,7 @@ function buildActivity(customers, employees, reports, siteVisits) {
   employees.forEach((e) => {
     items.push({
       ...activityConfig.employee,
-      title: `Employee: ${e.name}`,
+      title: `${t('dashboard.activityEmployee', 'Personel:')} ${e.name}`,
       desc: `${e.code} — ${e.department || 'General'}${e.position ? ` • ${e.position}` : ''}`,
       date: e.updatedAt || e.createdAt,
     })
@@ -148,8 +148,8 @@ function buildActivity(customers, employees, reports, siteVisits) {
     const status = r.column === 'completed' ? 'Completed' : r.column === 'in-progress' ? 'In Progress' : 'Open'
     items.push({
       ...activityConfig.report,
-      title: `Task: ${r.title}`,
-      desc: `${r.code} — ${r.priority} priority • ${status}`,
+      title: `${t('dashboard.activityTask', 'Görev:')} ${r.title}`,
+      desc: `${r.code} — ${r.priority} ${t('dashboard.priority', 'öncelik')} • ${status}`,
       date: r.updatedAt || r.createdAt,
     })
   })
@@ -157,8 +157,8 @@ function buildActivity(customers, employees, reports, siteVisits) {
   siteVisits.forEach((v) => {
     items.push({
       ...activityConfig.siteVisit,
-      title: `Visit: ${v.title}`,
-      desc: `${v.code} — ${v.location || 'No location'}${v.assignees?.length > 0 ? ` • ${v.assignees.map(a => a.name).join(', ')}` : (v.employeeName ? ` • ${v.employeeName}` : '')}`,
+      title: `${t('dashboard.activityVisit', 'Ziyaret:')} ${v.title}`,
+      desc: `${v.code} — ${v.location || t('dashboard.noLocation', 'Konum yok')}${v.assignees?.length > 0 ? ` • ${v.assignees.map(a => a.name).join(', ')}` : (v.employeeName ? ` • ${v.employeeName}` : '')}`,
       date: v.updatedAt || v.createdAt,
     })
   })
@@ -202,7 +202,7 @@ export default function Dashboard() {
     const filteredEmployees  = isAdmin               ? employees  : []
     const filteredReports    = canSee('reports')     ? reports    : []
     const filteredSiteVisits = canSee('work-orders') ? siteVisits : []
-    return buildActivity(filteredCustomers, filteredEmployees, filteredReports, filteredSiteVisits)
+    return buildActivity(filteredCustomers, filteredEmployees, filteredReports, filteredSiteVisits, t)
   }, [customers, employees, reports, siteVisits, permissions, isAdmin])
 
   const allMetrics = [
@@ -399,7 +399,7 @@ export default function Dashboard() {
                       <div key={seg.status} className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: seg.color }} />
                         <div className="min-w-0">
-                          <div className="text-[11px] font-bold text-on-surface truncate">{seg.status}</div>
+                          <div className="text-[11px] font-bold text-on-surface truncate">{t('status.' + seg.status.replace(/-/g, ''), seg.status)}</div>
                           <div className="text-[10px] text-on-surface-variant">
                             {seg.count} · {orders.length ? Math.round((seg.count / orders.length) * 100) : 0}%
                           </div>

@@ -67,7 +67,7 @@ function MonthDetailPopup({ machine, year, month, onClose }) {
         {/* Tasks list */}
         <div className="overflow-y-auto flex-1 px-4 py-3 md:px-6 md:py-4">
           {tasks.length === 0 ? (
-            <p className="text-xs md:text-sm text-text-muted text-center py-6 md:py-8">No tasks yet. Add one below.</p>
+            <p className="text-xs md:text-sm text-text-muted text-center py-6 md:py-8">{t('maintenance.noTasksAddBelow', 'Henüz görev yok. Aşağıdan ekleyin.')}</p>
           ) : (
             <div className="space-y-2">
               {tasks.map((t) => (
@@ -251,7 +251,7 @@ function MonthlyScheduleTab({ machine }) {
                   </button>
                 )}
                 {tasks.length === 0 && (
-                  <p className="text-[10px] md:text-xs text-text-muted italic">No tasks — click to add</p>
+                  <p className="text-[10px] md:text-xs text-text-muted italic">{t('maintenance.noTasksClick', 'Görev yok — eklemek için tıklayın')}</p>
                 )}
               </div>
 
@@ -366,7 +366,7 @@ function MaintenanceHistoryTab({ machine }) {
 
       {/* Records list */}
       {records.length === 0 ? (
-        <p className="text-sm text-text-muted text-center py-8">No maintenance records yet.</p>
+        <p className="text-sm text-text-muted text-center py-8">{t('maintenance.noRecords', 'Henüz bakım kaydı yok.')}</p>
       ) : (
         <div className="space-y-3">
           {records.map((r) => (
@@ -502,7 +502,7 @@ export default function Maintenance() {
           {!selected ? (
             <div className="hidden lg:flex flex-col items-center justify-center h-full min-h-[400px] text-text-muted">
               <span className="material-symbols-outlined text-6xl mb-3 opacity-60 transition-all">build</span>
-              <p className="text-lg font-semibold text-on-surface/80 transition-all">Select a machine</p>
+              <p className="text-lg font-semibold text-on-surface/80 transition-all">{t('maintenance.selectMachine', 'Makine seçin')}</p>
               <p className="text-sm mt-1.5 max-w-[240px] text-center leading-relaxed transition-all">Choose a machine from the list to view its maintenance details.</p>
             </div>
           ) : (
