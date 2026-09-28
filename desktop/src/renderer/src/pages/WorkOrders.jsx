@@ -118,8 +118,8 @@ function AddVisitModal({ customers, employees, onClose, onSave, initialDate, ini
                 <span className="material-symbols-outlined text-lg">storefront</span>
               </div>
               <div>
-                <p className="text-xs md:text-sm font-bold text-on-surface">Müşteri Ziyareti</p>
-                <p className="text-[9px] md:text-[10px] text-on-surface-variant">Belirli bir müşteriye ziyarete gidilecekse işaretleyin.</p>
+                <p className="text-xs md:text-sm font-bold text-on-surface">{t('workOrders.customerVisit', 'Müşteri Ziyareti')}</p>
+                <p className="text-[9px] md:text-[10px] text-on-surface-variant">{t('workOrders.customerVisitDesc', 'Belirli bir müşteriye ziyarete gidilecekse işaretleyin.')}</p>
               </div>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
@@ -143,7 +143,7 @@ function AddVisitModal({ customers, employees, onClose, onSave, initialDate, ini
             />
           </FieldErr>
           <Field label={t('common.location')} icon="location_on" span2>
-            <input type="text" placeholder="e.g. Building A" value={form.location} onChange={set('location')} className={inputCls} />
+            <input type="text" placeholder={t('workOrders.locationPh', 'e.g. Building A')} value={form.location} onChange={set('location')} className={inputCls} />
           </Field>
           <Field label="GÖREVLİLER" icon="group" span2>
             {isAdmin ? (
@@ -443,8 +443,8 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
                   <span className="material-symbols-outlined text-lg">storefront</span>
                 </div>
                 <div>
-                  <p className="text-xs md:text-sm font-bold text-on-surface">Müşteri Ziyareti</p>
-                  <p className="text-[9px] md:text-[10px] text-on-surface-variant">Belirli bir müşteriye ziyarete gidilecekse işaretleyin.</p>
+                  <p className="text-xs md:text-sm font-bold text-on-surface">{t('workOrders.customerVisit', 'Müşteri Ziyareti')}</p>
+                  <p className="text-[9px] md:text-[10px] text-on-surface-variant">{t('workOrders.customerVisitDesc', 'Belirli bir müşteriye ziyarete gidilecekse işaretleyin.')}</p>
                 </div>
               </div>
               <label className="relative inline-flex items-center cursor-pointer">

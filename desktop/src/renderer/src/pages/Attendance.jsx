@@ -91,8 +91,8 @@ function MyAttendanceTab({ employeeId, token }) {
     days.push({ date: dateStr, day: d, dayOfWeek, rec })
   }
 
-  const DAYS_LABEL = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
-  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+  const DAYS_LABEL = [t('attendance.sun', 'Paz'), t('attendance.mon', 'Pzt'), t('attendance.tue', 'Sal'), t('attendance.wed', 'Çar'), t('attendance.thu', 'Per'), t('attendance.fri', 'Cum'), t('attendance.sat', 'Cts')]
+  const MONTHS = [t('attendance.jan', 'Ocak'), t('attendance.feb', 'Şubat'), t('attendance.mar', 'Mart'), t('attendance.apr', 'Nisan'), t('attendance.may', 'Mayıs'), t('attendance.jun', 'Haziran'), t('attendance.jul', 'Temmuz'), t('attendance.aug', 'Ağustos'), t('attendance.sep', 'Eylül'), t('attendance.oct', 'Ekim'), t('attendance.nov', 'Kasım'), t('attendance.dec', 'Aralık')]
 
   function startEdit(dateStr, rec) {
     setEditDate(dateStr)
@@ -137,10 +137,10 @@ function MyAttendanceTab({ employeeId, token }) {
         </div>
         <div className="flex items-center gap-4 md:gap-6 text-xs md:text-sm">
           <div className="text-text-muted">
-            <span className="font-semibold text-on-surface">{workedDays}</span> days worked
+            <span className="font-semibold text-on-surface">{workedDays}</span> {t('attendance.daysWorked', 'çalışılan gün')}
           </div>
           <div className="text-text-muted">
-            <span className="font-semibold text-on-surface">{totalHrs}h {totalMins > 0 ? `${totalMins}m` : ''}</span> total
+            <span className="font-semibold text-on-surface">{totalHrs}h {totalMins > 0 ? `${totalMins}m` : ''}</span> {t('attendance.total', 'toplam')}
           </div>
         </div>
       </div>
@@ -183,7 +183,7 @@ function MyAttendanceTab({ employeeId, token }) {
               </div>
               {rec?.notes && (
                 <div className="mt-3 pt-2.5 border-t border-neutral-500/20 text-xs text-text-muted">
-                  <span className="font-medium">Note:</span> {rec.notes}
+                  <span className="font-medium">{t('common.note', 'Not:')}</span> {rec.notes}
                 </div>
               )}
             </div>
@@ -197,7 +197,7 @@ function MyAttendanceTab({ employeeId, token }) {
           <thead>
             <tr className="border-b border-theme-border text-text-muted text-xs uppercase tracking-wider">
               <th className="text-left px-5 py-3 font-semibold">{t('common.date')}</th>
-              <th className="text-left px-5 py-3 font-semibold">Day</th>
+              <th className="text-left px-5 py-3 font-semibold">{t('attendance.day', 'Gün')}</th>
               <th className="text-left px-5 py-3 font-semibold">{t('attendance.checkIn')}</th>
               <th className="text-left px-5 py-3 font-semibold">{t('attendance.checkOut')}</th>
               <th className="text-left px-5 py-3 font-semibold">{t('attendance.hours')}</th>
@@ -244,7 +244,7 @@ function MyAttendanceTab({ employeeId, token }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-surface-container-lowest rounded-xl md:rounded-2xl shadow-xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none p-4 md:p-6">
             <div className="flex items-center justify-between mb-3 md:mb-4">
-              <h3 className="text-sm md:text-base font-bold text-on-surface">Edit — {editDate}</h3>
+              <h3 className="text-sm md:text-base font-bold text-on-surface">{t('common.edit', 'Düzenle')} — {editDate}</h3>
               <button onClick={() => setEditDate(null)} className="text-text-muted hover:text-error">
                 <span className="material-symbols-outlined text-[20px] md:text-[24px]">close</span>
               </button>
@@ -341,7 +341,7 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
   }
 
   async function handleDelete(id) {
-    if (!confirm('Delete this leave request?')) return
+    if (!confirm('Bu izin talebi silinsin mi?')) return
     const res = await fetch(`${API_URL}/leave-requests/${id}`, { method: 'DELETE', headers })
     if (!res.ok) { const d = await res.json(); alert(d.error); return }
     load()
@@ -358,17 +358,17 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
       {isManager && (
         <div className="flex items-center gap-3 bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 rounded-xl px-4 py-3 mb-5 text-sm">
           <span className="material-symbols-outlined text-base shrink-0">admin_panel_settings</span>
-          <span>As a manager, your leave requests require <strong>admin approval</strong>.</span>
+          <span>Yönetici olarak izin talepleriniz <strong>admin onayı</strong> gerektirir.</span>
         </div>
       )}
 
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 lg:gap-0 mb-4 md:mb-6">
         <div className="flex items-center gap-4 md:gap-6 text-[11px] md:text-sm">
           <div className="text-text-muted">
-            <span className="font-semibold text-on-surface">{usedDays}</span> days used / requested
+            <span className="font-semibold text-on-surface">{usedDays}</span> {t('attendance.daysUsed', 'kullanılan/talep edilen gün')}
           </div>
           <div className="text-text-muted">
-            <span className="font-semibold text-on-surface">{requests.length}</span> total requests
+            <span className="font-semibold text-on-surface">{requests.length}</span> {t('attendance.totalRequestsText', 'toplam talep')}
           </div>
         </div>
         <button onClick={openAdd} className="flex items-center justify-center gap-1.5 md:gap-2 primary-gradient text-white px-3 md:px-4 py-1.5 md:py-2 rounded-lg text-[11px] md:text-xs font-semibold shadow-lg shadow-primary/10 hover:opacity-90 transition-opacity">
@@ -380,7 +380,7 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
       {/* Mobile Card Layout */}
       <div className="xl:hidden flex flex-col divide-y divide-neutral-500/20 bg-surface-container-lowest border border-neutral-500/20 rounded-2xl overflow-hidden mb-6">
         {requests.length === 0 ? (
-          <div className="text-center py-10 text-text-muted text-sm">No leave requests yet</div>
+          <div className="text-center py-10 text-text-muted text-sm">{t('attendance.noLeaveRequests', 'Henüz izin talebi yok')}</div>
         ) : requests.map((r) => (
           <div key={r.id} className="p-4 transition-colors hover:bg-hover-bg">
             <div className="flex items-center justify-between mb-3">
@@ -411,14 +411,14 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
                 <p className="font-semibold text-on-surface">{r.days} Days</p>
               </div>
               <div>
-                <p className="text-text-muted mb-0.5">Reviewed By</p>
+                <p className="text-text-muted mb-0.5">{t('attendance.reviewedBy', 'İnceleyen')}</p>
                 <p className="font-medium text-on-surface">{r.reviewedBy || '—'}</p>
               </div>
             </div>
             
             {r.reason && (
               <div className="mb-3 text-xs text-text-muted bg-surface-container/50 p-2 rounded">
-                <span className="font-medium">Reason:</span> {r.reason}
+                <span className="font-medium">{t('attendance.reason', 'Sebep')}:</span> {r.reason}
               </div>
             )}
             
@@ -445,15 +445,15 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
               <th className="text-left px-5 py-3 font-semibold">{t('attendance.startDate')}</th>
               <th className="text-left px-5 py-3 font-semibold">{t('attendance.endDate')}</th>
               <th className="text-center px-5 py-3 font-semibold">{t('attendance.days')}</th>
-              <th className="text-left px-5 py-3 font-semibold">Reason</th>
+              <th className="text-left px-5 py-3 font-semibold">{t('attendance.reason', 'Sebep')}</th>
               <th className="text-left px-5 py-3 font-semibold">{t('common.status')}</th>
-              <th className="text-left px-5 py-3 font-semibold">Reviewed By</th>
+              <th className="text-left px-5 py-3 font-semibold">{t('attendance.reviewedBy', 'İnceleyen')}</th>
               <th className="text-right px-5 py-3 font-semibold w-20"></th>
             </tr>
           </thead>
           <tbody>
             {requests.length === 0 ? (
-              <tr><td colSpan={8} className="text-center py-12 text-text-muted">No leave requests yet</td></tr>
+              <tr><td colSpan={8} className="text-center py-12 text-text-muted">{t('attendance.noLeaveRequests', 'Henüz izin talebi yok')}</td></tr>
             ) : requests.map((r) => (
               <tr key={r.id} className="border-b border-theme-border hover:bg-hover-bg transition-colors">
                 <td className="px-5 py-3 font-medium text-on-surface">{r.type}</td>
@@ -527,7 +527,7 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
                 </p>
               )}
               <div>
-                <label className="block text-[11px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">Reason</label>
+                <label className="block text-[11px] md:text-xs font-semibold text-text-muted mb-0.5 md:mb-1">{t('attendance.reason', 'Sebep')}</label>
                 <textarea rows={2} className={inputCls('reason')} value={form.reason} onChange={(e) => setForm((f) => ({ ...f, reason: e.target.value }))} />
               </div>
             </div>
@@ -649,7 +649,7 @@ function TeamRequestsTab({ employeeId, token, isAdmin }) {
         <div className="mb-6">
           <h3 className="text-sm font-bold text-on-surface mb-3 flex items-center gap-2">
             <span className="material-symbols-outlined text-base text-tertiary">pending_actions</span>
-            {isAdmin ? 'Employee Requests — Pending Approval' : 'Pending Approval'} ({pendingEmployeeRequests.length})
+            {isAdmin ? t('attendance.employeeRequests', 'Personel Talepleri — Onay Bekleyen') : t('attendance.pendingApproval', 'Onay Bekleyen')} ({pendingEmployeeRequests.length})
           </h3>
           <div className="space-y-3">
             {pendingEmployeeRequests.map((r) => <PendingCard key={r.id} r={r} />)}
@@ -660,23 +660,23 @@ function TeamRequestsTab({ employeeId, token, isAdmin }) {
       {pending.length === 0 && (
         <div className="flex flex-col items-center justify-center py-10 text-text-muted mb-6">
           <span className="material-symbols-outlined text-4xl mb-2 opacity-40">task_alt</span>
-          <p className="text-sm">No pending requests</p>
+          <p className="text-sm">{t('attendance.noPendingRequests', 'Onay bekleyen talep yok')}</p>
         </div>
       )}
 
       {/* All requests history table */}
-      <h3 className="text-sm font-bold text-on-surface mb-3">All Requests</h3>
+      <h3 className="text-sm font-bold text-on-surface mb-3">{t('attendance.allRequests', 'Tüm Talepler')}</h3>
       {/* Mobile Card Layout */}
       <div className="xl:hidden flex flex-col divide-y divide-neutral-500/20 bg-surface-container-lowest border border-neutral-500/20 rounded-2xl overflow-hidden mb-6">
         {requests.length === 0 ? (
-          <div className="text-center py-10 text-text-muted text-sm">No requests found</div>
+          <div className="text-center py-10 text-text-muted text-sm">{t('attendance.noRequestsFound', 'Talep bulunamadı')}</div>
         ) : requests.map((r) => (
           <div key={r.id} className="p-4 transition-colors hover:bg-hover-bg">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm text-on-surface">{r.employee?.name}</span>
                 {r.employee?.isManager && (
-                  <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">Mgr</span>
+                  <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">{t('users.mgr', 'Yön')}</span>
                 )}
               </div>
               <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${statusBadge[r.status] || ''}`}>
@@ -690,7 +690,7 @@ function TeamRequestsTab({ employeeId, token, isAdmin }) {
                 <p className="font-medium text-on-surface">{r.type}</p>
               </div>
               <div>
-                <p className="text-text-muted mb-0.5">Period</p>
+                <p className="text-text-muted mb-0.5">{t('attendance.period', 'Dönem')}</p>
                 <p className="font-mono font-medium text-on-surface">{r.startDate} — {r.endDate}</p>
               </div>
               <div>
@@ -698,14 +698,14 @@ function TeamRequestsTab({ employeeId, token, isAdmin }) {
                 <p className="font-semibold text-on-surface">{r.days} Days</p>
               </div>
               <div>
-                <p className="text-text-muted mb-0.5">Reviewed By</p>
+                <p className="text-text-muted mb-0.5">{t('attendance.reviewedBy', 'İnceleyen')}</p>
                 <p className="font-medium text-on-surface">{r.reviewedBy || '—'}</p>
               </div>
             </div>
             
             {r.reason && (
               <div className="text-xs text-text-muted bg-surface-container/50 p-2 rounded">
-                <span className="font-medium">Reason:</span> {r.reason}
+                <span className="font-medium">{t('attendance.reason', 'Sebep')}:</span> {r.reason}
               </div>
             )}
           </div>
@@ -719,23 +719,23 @@ function TeamRequestsTab({ employeeId, token, isAdmin }) {
             <tr className="border-b border-theme-border text-text-muted text-xs uppercase tracking-wider">
               <th className="text-left px-5 py-3 font-semibold">{t('common.employee')}</th>
               <th className="text-left px-5 py-3 font-semibold">{t('attendance.leaveType')}</th>
-              <th className="text-left px-5 py-3 font-semibold">Period</th>
+              <th className="text-left px-5 py-3 font-semibold">{t('attendance.period', 'Dönem')}</th>
               <th className="text-center px-5 py-3 font-semibold">{t('attendance.days')}</th>
-              <th className="text-left px-5 py-3 font-semibold">Reason</th>
+              <th className="text-left px-5 py-3 font-semibold">{t('attendance.reason', 'Sebep')}</th>
               <th className="text-left px-5 py-3 font-semibold">{t('common.status')}</th>
-              <th className="text-left px-5 py-3 font-semibold">Reviewed By</th>
+              <th className="text-left px-5 py-3 font-semibold">{t('attendance.reviewedBy', 'İnceleyen')}</th>
             </tr>
           </thead>
           <tbody>
             {requests.length === 0 ? (
-              <tr><td colSpan={7} className="text-center py-12 text-text-muted">No requests found</td></tr>
+              <tr><td colSpan={7} className="text-center py-12 text-text-muted">{t('attendance.noRequestsFound', 'Talep bulunamadı')}</td></tr>
             ) : requests.map((r) => (
               <tr key={r.id} className="border-b border-theme-border hover:bg-hover-bg transition-colors">
                 <td className="px-5 py-3">
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-on-surface">{r.employee?.name}</span>
                     {r.employee?.isManager && (
-                      <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">Mgr</span>
+                      <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded">{t('users.mgr', 'Yön')}</span>
                     )}
                   </div>
                 </td>
@@ -796,14 +796,14 @@ export default function Attendance() {
       <div className="mb-4 md:mb-6">
         <h1 className="text-xl md:text-2xl font-bold text-on-surface">{t('attendance.title')}</h1>
         <p className="text-[11px] md:text-sm text-text-muted mt-0.5">
-          {myEmployee ? myEmployee.name : 'Personnel attendance & leave management'}
+          {myEmployee ? myEmployee.name : t('attendance.subtitle', 'Personel devamlılık & izin yönetimi')}
         </p>
       </div>
 
       {!myEmployee && (
         <div className="bg-tertiary-fixed/20 text-on-tertiary-fixed-variant rounded-xl px-4 py-3 md:px-5 md:py-4 mb-4 md:mb-6 text-[11px] md:text-sm flex items-start md:items-center gap-2 md:gap-3">
           <span className="material-symbols-outlined text-base shrink-0 mt-0.5 md:mt-0">info</span>
-          <p>Your account email doesn't match any employee record. Ask an admin to link your email.</p>
+          <p>{t('attendance.unlinkedEmail', 'Hesap e-postanız herhangi bir personel kaydıyla eşleşmiyor. E-postanızı bağlamak için yöneticiyle iletişime geçin.')}</p>
         </div>
       )}
 

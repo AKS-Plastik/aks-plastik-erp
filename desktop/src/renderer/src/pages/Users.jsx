@@ -173,8 +173,8 @@ export default function Users() {
                     <span className="material-symbols-outlined text-white text-[13px]">person_add</span>
                   </div>
                   <div>
-                    <h2 className="text-sm font-extrabold text-white">Add User</h2>
-                    <p className="text-blue-200 text-[9px] mt-0.5">Create a new system account</p>
+                    <h2 className="text-sm font-extrabold text-white">{t('users.addUser', 'Kullanıcı Ekle')}</h2>
+                    <p className="text-blue-200 text-[9px] mt-0.5">{t('users.createNewAccount', 'Yeni sistem hesabı oluştur')}</p>
                   </div>
                 </div>
                 <button onClick={() => { setShowForm(false); setError('') }} className="p-1 rounded-md text-white/70 hover:text-white hover:bg-surface-container-lowest/10 transition-colors">
@@ -202,7 +202,7 @@ export default function Users() {
                   required
                   className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                 >
-                  <option value="">— Select an employee —</option>
+                  <option value="">{t('users.selectEmployee', '— Personel Seç —')}</option>
                   {availableEmployees.map((e) => (
                     <option key={e.id} value={e.id}>
                       {e.name} {e.department ? `(${e.department})` : ''}
@@ -213,7 +213,7 @@ export default function Users() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 <div>
-                  <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Full Name</label>
+                  <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">{t('users.fullName', 'Ad Soyad')}</label>
                   <input
                     type="text"
                     value={form.name}
@@ -224,7 +224,7 @@ export default function Users() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Email</label>
+                  <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">{t('common.email', 'E-posta')}</label>
                   <input
                     type="email"
                     value={form.email}
@@ -235,7 +235,7 @@ export default function Users() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Password</label>
+                  <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">{t('common.password', 'Şifre')}</label>
                   <input
                     type="password"
                     value={form.password}
@@ -257,19 +257,19 @@ export default function Users() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Role</label>
+                  <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">{t('users.role', 'Rol')}</label>
                   <select
                     value={form.role}
                     onChange={(e) => setForm({ ...form, role: e.target.value })}
                     className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                   >
-                    <option value="user">User</option>
-                    <option value="admin">Admin</option>
+                    <option value="user">{t('users.user', 'Kullanıcı')}</option>
+                    <option value="admin">{t('users.admin', 'Admin')}</option>
                   </select>
                 </div>
                 {form.department && (
                   <div>
-                    <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Department</label>
+                    <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">{t('settings.department', 'Departman')}</label>
                     <div className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border bg-surface-container-high text-on-surface-variant text-[11px] md:text-sm flex items-center gap-2">
                       <span className="material-symbols-outlined text-sm md:text-base text-text-muted">apartment</span>
                       {form.department}
@@ -304,7 +304,7 @@ export default function Users() {
                     <span className="material-symbols-outlined text-white text-[13px]">edit</span>
                   </div>
                   <div>
-                    <h2 className="text-sm font-extrabold text-white">Edit User</h2>
+                    <h2 className="text-sm font-extrabold text-white">{t('users.editUser', 'Kullanıcıyı Düzenle')}</h2>
                     <p className="text-blue-200 text-[9px] mt-0.5">{users.find((u) => u.id === editingUser)?.name}</p>
                   </div>
                 </div>
@@ -324,7 +324,7 @@ export default function Users() {
               {!confirmEdit ? (
                 <>
                   <div>
-                    <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Full Name</label>
+                    <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">{t('users.fullName', 'Ad Soyad')}</label>
                     <input
                       type="text"
                       value={editForm.name}
@@ -333,7 +333,7 @@ export default function Users() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Email</label>
+                    <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">{t('common.email', 'E-posta')}</label>
                     <input
                       type="email"
                       value={editForm.email}
@@ -352,28 +352,28 @@ export default function Users() {
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Role</label>
+                    <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">{t('users.role', 'Rol')}</label>
                     <select
                       value={editForm.role}
                       onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
                       className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
                     >
-                      <option value="user">User</option>
-                      <option value="admin">Admin</option>
+                      <option value="user">{t('users.user', 'Kullanıcı')}</option>
+                      <option value="admin">{t('users.admin', 'Admin')}</option>
                     </select>
                   </div>
                   {users.find((u) => u.id === editingUser)?.employeeId ? (
                     <div>
-                      <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Department</label>
+                      <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">{t('settings.department', 'Departman')}</label>
                       <div className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border bg-surface-container-high text-on-surface-variant text-[11px] md:text-sm flex items-center gap-2">
                         <span className="material-symbols-outlined text-sm md:text-base text-text-muted">apartment</span>
                         {users.find((u) => u.id === editingUser)?.department || '—'}
-                        <span className="ml-auto text-[10px] md:text-xs text-text-muted italic bg-surface-container-lowest px-2 py-0.5 rounded border border-theme-border">From Employee</span>
+                        <span className="ml-auto text-[10px] md:text-xs text-text-muted italic bg-surface-container-lowest px-2 py-0.5 rounded border border-theme-border">{t('users.fromEmployee', 'Personelden')}</span>
                       </div>
                     </div>
                   ) : (
                     <div>
-                      <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">Department</label>
+                      <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">{t('settings.department', 'Departman')}</label>
                       <select
                         value={editForm.department}
                         onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
@@ -400,7 +400,7 @@ export default function Users() {
                     <span className="material-symbols-outlined text-xl md:text-2xl text-on-surface-variant">help</span>
                   </div>
                   <p className="text-xs md:text-sm font-bold text-on-surface mb-1">{t('common.areYouSure')}</p>
-                  <p className="text-[10px] md:text-xs text-on-surface-variant mb-4 md:mb-5">This will update the user's information.</p>
+                  <p className="text-[10px] md:text-xs text-on-surface-variant mb-4 md:mb-5">{t('users.updateInfoWarning', 'Kullanıcı bilgilerini güncelleyecektir.')}</p>
                   <div className="flex gap-2 justify-center">
                     <button onClick={() => setConfirmEdit(false)} className="flex-1 py-1.5 rounded-lg border border-theme-border text-text-muted text-[11px] md:text-xs font-semibold hover:bg-hover-bg transition-colors">
                       {t('common.goBack')}
@@ -425,7 +425,7 @@ export default function Users() {
             {/* Banner */}
             <div className="primary-gradient px-4 py-3 md:py-4">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-[9px] md:text-[10px] font-bold text-white/60 uppercase tracking-widest">User Details</span>
+                <span className="text-[9px] md:text-[10px] font-bold text-white/60 uppercase tracking-widest">{t('users.userDetails', 'Kullanıcı Detayları')}</span>
                 <button onClick={() => setViewUser(null)} className="p-1 rounded-md text-white/70 hover:text-white hover:bg-surface-container-lowest/10 transition-colors">
                   <span className="material-symbols-outlined text-base md:text-lg">close</span>
                 </button>
@@ -480,7 +480,7 @@ export default function Users() {
                   <span className="material-symbols-outlined text-on-surface-variant text-base md:text-lg">calendar_today</span>
                 </div>
                 <div>
-                  <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-text-muted">Member Since</p>
+                  <p className="text-[9px] md:text-[10px] font-bold uppercase tracking-widest text-text-muted">{t('users.memberSince', 'Kayıt Tarihi')}</p>
                   <p className="text-xs md:text-sm font-medium text-on-surface">{new Date(viewUser.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</p>
                 </div>
               </div>
@@ -539,7 +539,7 @@ export default function Users() {
             <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-error-container flex items-center justify-center mx-auto mb-2 md:mb-3">
               <span className="material-symbols-outlined text-xl md:text-2xl text-error">delete_forever</span>
             </div>
-            <p className="text-sm md:text-base font-bold text-on-surface mb-1">Delete this user?</p>
+            <p className="text-sm md:text-base font-bold text-on-surface mb-1">{t('users.deleteUserConfirm', 'Kullanıcı silinsin mi?')}</p>
             <p className="text-[11px] md:text-xs text-text-muted mb-4 md:mb-5">{t('common.cantUndo')}</p>
             <div className="flex gap-2 justify-center">
               <button
@@ -568,9 +568,9 @@ export default function Users() {
               <th className="px-6 py-4 text-[10px] font-black text-text-muted uppercase tracking-widest">{t('common.name')}</th>
               <th className="px-6 py-4 text-[10px] font-black text-text-muted uppercase tracking-widest">{t('common.email')}</th>
               <th className="px-6 py-4 text-[10px] font-black text-text-muted uppercase tracking-widest">{t('common.phone')}</th>
-              <th className="px-6 py-4 text-[10px] font-black text-text-muted uppercase tracking-widest">Role</th>
+              <th className="px-6 py-4 text-[10px] font-black text-text-muted uppercase tracking-widest">{t('users.role', 'Rol')}</th>
               <th className="px-6 py-4 text-[10px] font-black text-text-muted uppercase tracking-widest">{t('common.created')}</th>
-              <th className="px-6 py-4 text-[10px] font-black text-text-muted uppercase tracking-widest text-right">Actions</th>
+              <th className="px-6 py-4 text-[10px] font-black text-text-muted uppercase tracking-widest text-right">{t('common.actions', 'İşlemler')}</th>
             </tr>
           </thead>
           <tbody>

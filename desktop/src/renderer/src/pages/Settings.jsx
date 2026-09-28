@@ -73,7 +73,7 @@ function MachineViewModal({ machine, onClose, onEdit }) {
         <div className="overflow-y-auto flex-1 px-4 py-4 md:px-6 md:py-5 space-y-4 md:space-y-6">
           {/* Basic Info */}
           <div>
-            <h3 className="text-[10px] md:text-xs font-bold text-text-muted uppercase tracking-widest md:tracking-wider mb-2 md:mb-3">Basic Information</h3>
+            <h3 className="text-[10px] md:text-xs font-bold text-text-muted uppercase tracking-widest md:tracking-wider mb-2 md:mb-3">{t('settings.basicInformation', 'Temel Bilgiler')}</h3>
             <div className="grid grid-cols-2 gap-3 md:gap-4">
               {field('Machine Code', machine.code, 'tag')}
               {field('Machine Name', machine.name, 'precision_manufacturing')}
@@ -86,7 +86,7 @@ function MachineViewModal({ machine, onClose, onEdit }) {
             </div>
             {machine.notes && (
               <div className="mt-2.5 md:mt-3 bg-surface-container-high rounded-lg md:rounded-xl px-3 py-2 md:px-4 md:py-3 text-xs md:text-sm text-text-muted leading-relaxed">
-                <span className="font-semibold text-on-surface mr-1.5">Notes:</span>{machine.notes}
+                <span className="font-semibold text-on-surface mr-1.5">{t('common.notes')}:</span>{machine.notes}
               </div>
             )}
           </div>
@@ -94,7 +94,7 @@ function MachineViewModal({ machine, onClose, onEdit }) {
           {/* Manufacturer */}
           {(machine.manufacturer || machine.manufacturerCountry || machine.manufacturerContact) && (
             <div>
-              <h3 className="text-[10px] md:text-xs font-bold text-text-muted uppercase tracking-widest md:tracking-wider mb-2 md:mb-3">Manufacturer Details</h3>
+              <h3 className="text-[10px] md:text-xs font-bold text-text-muted uppercase tracking-widest md:tracking-wider mb-2 md:mb-3">{t('settings.manufacturerDetails', 'Üretici Detayları')}</h3>
               <div className="grid grid-cols-2 gap-3 md:gap-4">
                 {field('Manufacturer', machine.manufacturer, 'factory')}
                 {field('Country', machine.manufacturerCountry, 'public')}
@@ -105,19 +105,19 @@ function MachineViewModal({ machine, onClose, onEdit }) {
 
           {/* Maintenance Summary */}
           <div>
-            <h3 className="text-[10px] md:text-xs font-bold text-text-muted uppercase tracking-widest md:tracking-wider mb-2 md:mb-3">Maintenance Overview</h3>
+            <h3 className="text-[10px] md:text-xs font-bold text-text-muted uppercase tracking-widest md:tracking-wider mb-2 md:mb-3">{t('settings.maintenanceOverview', 'Bakım Özeti')}</h3>
             <div className="grid grid-cols-3 gap-2">
               <div className="bg-surface-container-high rounded-lg md:rounded-xl p-2.5 md:p-3 text-center">
                 <p className="text-base md:text-lg font-bold text-on-surface leading-none mb-1">{(machine.maintenanceRecords || []).length}</p>
-                <p className="text-[9px] md:text-[10px] text-text-muted">Total Records</p>
+                <p className="text-[9px] md:text-[10px] text-text-muted">{t('settings.totalRecords', 'Toplam Kayıt')}</p>
               </div>
               <div className="bg-surface-container-high rounded-lg md:rounded-xl p-2.5 md:p-3 text-center">
                 <p className="text-base md:text-lg font-bold text-on-surface leading-none mb-1">{doneTasks}/{yearTasks.length}</p>
-                <p className="text-[9px] md:text-[10px] text-text-muted">Tasks This Year</p>
+                <p className="text-[9px] md:text-[10px] text-text-muted">{t('settings.tasksThisYear', 'Bu Yılki Görevler')}</p>
               </div>
               <div className="bg-surface-container-high rounded-lg md:rounded-xl p-2.5 md:p-3 text-center">
                 <p className="text-base md:text-lg font-bold text-on-surface leading-none mb-1">{machine.manualName ? 'Yes' : 'No'}</p>
-                <p className="text-[9px] md:text-[10px] text-text-muted">Manual Uploaded</p>
+                <p className="text-[9px] md:text-[10px] text-text-muted">{t('settings.manualUploaded', 'Kılavuz Yüklendi')}</p>
               </div>
             </div>
           </div>
@@ -132,9 +132,9 @@ function MachineViewModal({ machine, onClose, onEdit }) {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="bg-surface-container-high text-text-muted text-[10px] md:text-xs uppercase tracking-wider border-b border-theme-border">
-                      <th className="px-2.5 md:px-3 py-2 md:py-2.5 font-semibold">Date</th>
-                      <th className="px-2.5 md:px-3 py-2 md:py-2.5 font-semibold">Type</th>
-                      <th className="px-2.5 md:px-3 py-2 md:py-2.5 font-semibold">Description</th>
+                      <th className="px-2.5 md:px-3 py-2 md:py-2.5 font-semibold">{t('common.date', 'Tarih')}</th>
+                      <th className="px-2.5 md:px-3 py-2 md:py-2.5 font-semibold">{t('common.type', 'Tür')}</th>
+                      <th className="px-2.5 md:px-3 py-2 md:py-2.5 font-semibold">{t('common.description', 'Açıklama')}</th>
                       <th className="px-2.5 md:px-3 py-2 md:py-2.5 font-semibold text-right">Cost</th>
                     </tr>
                   </thead>
@@ -165,7 +165,7 @@ function MachineViewModal({ machine, onClose, onEdit }) {
           {/* Manual */}
           {machine.manualName && (
             <div>
-              <h3 className="text-[10px] md:text-xs font-bold text-text-muted uppercase tracking-widest md:tracking-wider mb-2 md:mb-3">User Manual</h3>
+              <h3 className="text-[10px] md:text-xs font-bold text-text-muted uppercase tracking-widest md:tracking-wider mb-2 md:mb-3">{t('settings.userManual', 'Kullanım Kılavuzu')}</h3>
               <div className="flex items-center gap-2 md:gap-3 bg-surface-container-high rounded-lg md:rounded-xl px-3 py-2 md:px-4 md:py-3">
                 <span className="material-symbols-outlined text-lg md:text-2xl text-primary">picture_as_pdf</span>
                 <span className="text-xs md:text-sm font-semibold text-on-surface flex-1 truncate">{machine.manualName}</span>
@@ -324,7 +324,7 @@ function MachineModal({ machine, onClose, onSave }) {
                 </select>
               </div>
               <div>
-                <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">Location / Department</label>
+                <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">{t('settings.locationDept', 'Konum / Departman')}</label>
                 <input className={inp()} value={form.location} onChange={set('location')} placeholder="e.g. Hall A" />
               </div>
               <div>
@@ -358,7 +358,7 @@ function MachineModal({ machine, onClose, onSave }) {
                 <input className={inp()} value={form.manufacturerCountry} onChange={set('manufacturerCountry')} placeholder="e.g. Japan" />
               </div>
               <div>
-                <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">Manufacturer Contact</label>
+                <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">{t('settings.manufacturerContact', 'Üretici İletişim')}</label>
                 <input className={inp()} value={form.manufacturerContact} onChange={set('manufacturerContact')} placeholder="Email, phone, or website" />
               </div>
             </div>
@@ -404,9 +404,9 @@ function MachineModal({ machine, onClose, onSave }) {
                   className="w-full max-w-md border-2 border-dashed border-theme-border rounded-2xl p-6 md:p-10 flex flex-col items-center gap-2 md:gap-3 cursor-pointer hover:border-primary hover:bg-hover-bg transition"
                 >
                   <span className="material-symbols-outlined text-3xl md:text-4xl text-text-muted">upload_file</span>
-                  <p className="text-[11px] md:text-sm font-medium text-on-surface">Click to upload machine manual</p>
+                  <p className="text-[11px] md:text-sm font-medium text-on-surface">{t('settings.uploadManualMsg', 'Makine kılavuzu yüklemek için tıklayın')}</p>
                   <p className="text-[10px] md:text-xs text-text-muted">PDF, DOC, DOCX — max 50 MB</p>
-                  {uploading && <p className="text-[10px] md:text-xs text-primary">Uploading…</p>}
+                  {uploading && <p className="text-[10px] md:text-xs text-primary">{t('common.uploading', 'Yükleniyor…')}</p>}
                 </div>
               )}
               <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" className="hidden" onChange={handleUpload} />
@@ -499,7 +499,7 @@ function EmployeeAssignModal({ employee, allEmployees, onClose, onSave }) {
         </div>
         <div className="space-y-3 md:space-y-4">
           <div>
-            <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">Department</label>
+            <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">{t('settings.department', 'Departman')}</label>
             <select
               className="w-full bg-surface-container border border-theme-border rounded-lg px-2.5 py-1.5 md:px-3 md:py-2 text-[11px] md:text-sm text-on-surface outline-none focus:border-primary"
               value={form.department}
@@ -510,7 +510,7 @@ function EmployeeAssignModal({ employee, allEmployees, onClose, onSave }) {
             </select>
           </div>
           <div>
-            <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">Manager (Supervisor)</label>
+            <label className="block text-[10px] md:text-xs font-semibold text-text-muted mb-1">{t('settings.manager', 'Yönetici')}</label>
             <select
               className="w-full bg-surface-container border border-theme-border rounded-lg px-2.5 py-1.5 md:px-3 md:py-2 text-[11px] md:text-sm text-on-surface outline-none focus:border-primary"
               value={form.supervisorId}
@@ -560,6 +560,7 @@ function UserRolesTab() {
       let subs = []
       if (pageKey === 'orders') subs = ['orders-create']
       if (pageKey === 'purchasing') subs = ['purchasing:create']
+      if (pageKey === 'production') subs = ['production-start']
       next = current.filter((p) => p !== pageKey && !subs.includes(p))
     } else {
       next = [...current, pageKey]
@@ -687,7 +688,7 @@ function UserRolesTab() {
       {addError && <p className="text-xs text-error -mt-2">{addError}</p>}
 
       {departments.length === 0 && (
-        <p className="text-sm text-text-muted py-4">No departments yet. Add one above.</p>
+        <p className="text-sm text-text-muted py-4">{t('settings.noDepartments', 'Henüz departman yok. Yukarıdan ekleyin.')}</p>
       )}
 
       {/* Compact department grid */}
@@ -745,7 +746,7 @@ function UserRolesTab() {
             </div>
             <div className="p-3 max-h-80 overflow-y-auto space-y-1">
               {viewEmps.length === 0 && (
-                <p className="text-[11px] md:text-sm text-text-muted text-center py-6">No employees in this department.</p>
+                <p className="text-[11px] md:text-sm text-text-muted text-center py-6">{t('settings.noEmployeesDept', 'Bu departmanda personel yok.')}</p>
               )}
               {viewManagers.map((emp) => (
                 <div key={emp.id} className="flex items-center gap-2.5 px-3 py-2 md:py-2.5 rounded-xl bg-amber-500/5 border border-amber-500/15">
@@ -756,7 +757,7 @@ function UserRolesTab() {
                     <p className="text-[11px] md:text-sm font-semibold text-on-surface truncate leading-tight">{emp.name}</p>
                     <p className="text-[9px] md:text-[11px] text-text-muted mt-0.5">{emp.position || '—'}</p>
                   </div>
-                  <span className="text-[9px] md:text-[10px] font-bold bg-amber-500/15 text-amber-600 px-1.5 md:px-2 py-0.5 rounded-full whitespace-nowrap">MANAGER</span>
+                  <span className="text-[9px] md:text-[10px] font-bold bg-amber-500/15 text-amber-600 px-1.5 md:px-2 py-0.5 rounded-full whitespace-nowrap">{t('settings.managerBadge', 'YÖNETİCİ')}</span>
                 </div>
               ))}
               {viewMembers.map((emp) => (
@@ -773,7 +774,7 @@ function UserRolesTab() {
             </div>
             
             <div className="border-t border-theme-border p-3 max-h-80 overflow-y-auto">
-              <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-text-muted mb-2 md:mb-3">Department Page Access</p>
+              <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-text-muted mb-2 md:mb-3">{t('settings.deptPageAccess', 'Departman Sayfa Erişimi')}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                 {PAGES.map((page) => {
                   const enabled = (permissions[viewDept] || []).includes(page.key)
@@ -782,6 +783,8 @@ function UserRolesTab() {
                   const ordersSubSaving = !!permSaving['orders-create']
                   const purchasingSubEnabled = page.key === 'purchasing' && enabled && (permissions[viewDept] || []).includes('purchasing:create')
                   const purchasingSubSaving = !!permSaving['purchasing:create']
+                  const productionSubEnabled = page.key === 'production' && enabled && (permissions[viewDept] || []).includes('production-start')
+                  const productionSubSaving = !!permSaving['production-start']
 
                   return (
                     <div key={page.key} className="flex flex-col gap-1">
@@ -801,6 +804,24 @@ function UserRolesTab() {
                           : <span className="material-symbols-outlined text-[12px] md:text-sm">{enabled ? 'check_circle' : 'radio_button_unchecked'}</span>
                         }
                       </button>
+                      {page.key === 'production' && enabled && (
+                        <button
+                          onClick={() => togglePermission('production-start')}
+                          disabled={productionSubSaving}
+                          className={`ml-4 w-[calc(100%-1rem)] flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition text-[10px] md:text-xs ${
+                            productionSubEnabled
+                              ? 'bg-primary/10 border-primary text-primary'
+                              : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-[12px]">precision_manufacturing</span>
+                          <span className="flex-1 text-left font-medium">{t('settings.canStartProduction', 'Üretim Başlatabilir')}</span>
+                          {productionSubSaving
+                            ? <span className="material-symbols-outlined text-[12px] animate-spin">progress_activity</span>
+                            : <span className="material-symbols-outlined text-[12px]">{productionSubEnabled ? 'check_box' : 'check_box_outline_blank'}</span>
+                          }
+                        </button>
+                      )}
                       {page.key === 'orders' && enabled && (
                         <button
                           onClick={() => togglePermission('orders-create')}
@@ -812,7 +833,7 @@ function UserRolesTab() {
                           }`}
                         >
                           <span className="material-symbols-outlined text-[12px]">add_circle</span>
-                          <span className="flex-1 text-left font-medium">Can Create/Edit Orders</span>
+                          <span className="flex-1 text-left font-medium">{t('settings.canCreateOrders', 'Sipariş Oluştur/Düzenle')}</span>
                           {ordersSubSaving
                             ? <span className="material-symbols-outlined text-[12px] animate-spin">progress_activity</span>
                             : <span className="material-symbols-outlined text-[12px]">{ordersSubEnabled ? 'check_box' : 'check_box_outline_blank'}</span>
@@ -830,7 +851,7 @@ function UserRolesTab() {
                           }`}
                         >
                           <span className="material-symbols-outlined text-[12px]">add_circle</span>
-                          <span className="flex-1 text-left font-medium">Can Create/Edit</span>
+                          <span className="flex-1 text-left font-medium">{t('settings.canCreateEdit', 'Oluştur/Düzenle')}</span>
                           {purchasingSubSaving
                             ? <span className="material-symbols-outlined text-[12px] animate-spin">progress_activity</span>
                             : <span className="material-symbols-outlined text-[12px]">{purchasingSubEnabled ? 'check_box' : 'check_box_outline_blank'}</span>
@@ -841,7 +862,7 @@ function UserRolesTab() {
                   )
                 })}
               </div>
-              <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-text-muted mt-4 mb-2 md:mb-3">Order Status Changes</p>
+              <p className="text-[10px] md:text-xs font-bold uppercase tracking-widest text-text-muted mt-4 mb-2 md:mb-3">{t('settings.orderStatusChanges', 'Sipariş Durum Değişiklikleri')}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
                 {ORDER_STATUSES.map((status) => {
                   const enabled = (statusPermissions[viewDept] || []).includes(status.key)
@@ -883,7 +904,7 @@ function UserRolesTab() {
                 <span className="material-symbols-outlined text-primary text-[18px] md:text-2xl">edit</span>
               </div>
               <div>
-                <h3 className="text-sm md:text-base font-bold text-on-surface">Rename Department</h3>
+                <h3 className="text-sm md:text-base font-bold text-on-surface">{t('settings.renameDepartment', 'Departmanı Yeniden Adlandır')}</h3>
                 <p className="text-[10px] md:text-xs text-text-muted">Current: <span className="font-semibold text-on-surface">{renamingRole.name}</span></p>
               </div>
             </div>
@@ -919,8 +940,8 @@ function UserRolesTab() {
                 <span className="material-symbols-outlined text-error text-[18px] md:text-2xl">delete</span>
               </div>
               <div>
-                <h3 className="text-sm md:text-base font-bold text-on-surface">Delete Department</h3>
-                <p className="text-[10px] md:text-xs text-text-muted">This action cannot be undone.</p>
+                <h3 className="text-sm md:text-base font-bold text-on-surface">{t('settings.deleteDepartment', 'Departmanı Sil')}</h3>
+                <p className="text-[10px] md:text-xs text-text-muted">{t('common.cannotBeUndone', 'Bu işlem geri alınamaz.')}</p>
               </div>
             </div>
             <p className="text-[11px] md:text-sm text-text-muted mb-2 md:mb-3">
@@ -1006,7 +1027,7 @@ function MachinesTab() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <p className="text-xs text-text-muted">Manage factory machines and maintenance records.</p>
+        <p className="text-xs text-text-muted">{t('settings.manageMachinesMsg', 'Fabrika makineleri ve bakım kayıtlarını yönetin.')}</p>
         <button
           onClick={() => { setError(''); setModal('new') }}
           className="flex items-center gap-1.5 primary-gradient text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm shadow-primary/10 hover:opacity-90 transition-opacity whitespace-nowrap shrink-0"
@@ -1068,7 +1089,7 @@ function MachinesTab() {
                       </span>
                     )}
                     {totalThisYear > 0 && <span>{completedThisYear}/{totalThisYear} tasks done this year</span>}
-                    {m.manualName && <span className="text-primary"><span className="material-symbols-outlined text-xs align-middle mr-0.5">menu_book</span>Manual uploaded</span>}
+                    {m.manualName && <span className="text-primary"><span className="material-symbols-outlined text-xs align-middle mr-0.5">menu_book</span>{t('settings.manualUploaded', 'Kılavuz yüklendi')}</span>}
                   </div>
                 </div>
                 <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -1228,7 +1249,7 @@ function OrderStatusTab() {
                   {isOpen && (
                     <div className="absolute left-0 top-full mt-1 z-30 bg-surface-container-lowest border border-theme-border rounded-xl shadow-xl w-full min-w-[200px] max-h-52 overflow-y-auto">
                       {users.length === 0 && (
-                        <p className="text-xs text-text-muted px-3 py-2">No users found</p>
+                        <p className="text-xs text-text-muted px-3 py-2">{t('common.noUsersFound', 'Kullanıcı bulunamadı')}</p>
                       )}
                       {users.map((u) => {
                         const checked = assignedIds.includes(u.id)
@@ -1366,7 +1387,7 @@ function PurchasingStatusTab() {
       {pending && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="bg-surface-container-low rounded-xl shadow-xl w-full max-w-sm p-4 md:p-6">
-            <h3 className="text-sm md:text-base font-bold text-on-surface mb-1.5 md:mb-2">Confirm Assignment</h3>
+            <h3 className="text-sm md:text-base font-bold text-on-surface mb-1.5 md:mb-2">{t('settings.confirmAssignment', 'Atamayı Onayla')}</h3>
             <p className="text-xs md:text-sm text-text-muted mb-1 md:mb-2 leading-snug">
               Assign <span className="font-semibold text-on-surface">{pendingUser ? pendingUser.name : 'Unassigned'}</span> to the{' '}
               <span className={`inline-flex px-1.5 py-0.5 rounded-full text-[9px] md:text-[10px] font-extrabold uppercase tracking-widest ${purchasingStatusColor[pending.status] || 'bg-surface-container-high text-text-muted'}`}>
@@ -1411,7 +1432,7 @@ export default function Settings() {
     <div className="p-4 md:p-6 max-w-5xl mx-auto">
       <div className="mb-4 md:mb-5">
         <h1 className="text-lg md:text-xl font-extrabold text-on-surface">{t('settings.title')}</h1>
-        <p className="text-[10px] md:text-xs text-text-muted mt-0.5">System configuration</p>
+        <p className="text-[10px] md:text-xs text-text-muted mt-0.5">{t('users.systemConfig', 'Sistem konfigürasyonu')}</p>
       </div>
 
       {/* Tabs */}

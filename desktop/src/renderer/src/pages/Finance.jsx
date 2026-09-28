@@ -138,9 +138,9 @@ function Modal({ title, form, setForm, onClose, onSave, errors, orders, rates, r
                 <label className="block text-[10px] md:text-[11px] font-semibold text-text-muted mb-0.5">{t('finance.paymentMethod')}</label>
                 <select className={inp('paymentMethod')} value={form.paymentMethod} onChange={set('paymentMethod')}>
                   <option value="">— Select —</option>
-                  <option value="Credit Card">Credit Card</option>
-                  <option value="Cash">Cash</option>
-                  <option value="Check">Check</option>
+                  <option value="Credit Card">{t('finance.creditCard', 'Kredi Kartı')}</option>
+                  <option value="Cash">{t('finance.cash', 'Nakit')}</option>
+                  <option value="Check">{t('finance.check', 'Çek')}</option>
                 </select>
               </div>
             </div>
@@ -161,7 +161,7 @@ function Modal({ title, form, setForm, onClose, onSave, errors, orders, rates, r
                     <input className={inp('checkBanka')} value={form.checkBanka} onChange={set('checkBanka')} placeholder="Banka adı" />
                   </div>
                   <div>
-                    <label className="block text-[9px] md:text-[10px] font-semibold text-text-muted mb-0.5">Belge No</label>
+                    <label className="block text-[9px] md:text-[10px] font-semibold text-text-muted mb-0.5">{t('finance.documentNo', 'Belge No')}</label>
                     <input className={inp('checkBelgeNo')} value={form.checkBelgeNo} onChange={set('checkBelgeNo')} placeholder="Belge numarası" />
                   </div>
                   <div>
@@ -240,7 +240,7 @@ function Modal({ title, form, setForm, onClose, onSave, errors, orders, rates, r
               <input className={inp('reference')} value={form.reference} onChange={set('reference')} placeholder="INV-0001" />
             </div>
             <div>
-              <label className="block text-[10px] md:text-[11px] font-semibold text-text-muted mb-0.5">Linked Order</label>
+              <label className="block text-[10px] md:text-[11px] font-semibold text-text-muted mb-0.5">{t('finance.linkedOrder', 'Bağlı Sipariş')}</label>
               <select className={inp('orderId')} value={form.orderId} onChange={set('orderId')}>
                 <option value="">— None —</option>
                 {orders.map(o => (
@@ -362,7 +362,7 @@ function RecordDetailModal({ record, onClose, orders, customers }) {
           {tab === 'details' && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div className="bg-surface-container-high rounded-lg p-3 md:p-4 space-y-2.5">
-                <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">Transaction Info</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">{t('finance.transactionInfo', 'İşlem Bilgisi')}</p>
                 <DetailRow icon="calendar_today" label="Date" value={record.date} />
                 <DetailRow icon="category" label="Category" value={record.category} />
                 <DetailRow icon="currency_exchange" label="Currency" value={record.currency || 'TRY'} />
@@ -399,7 +399,7 @@ function RecordDetailModal({ record, onClose, orders, customers }) {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="bg-surface-container-high rounded-lg p-3 md:p-4 space-y-2.5">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">Order Details</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">{t('finance.orderDetails', 'Sipariş Detayları')}</p>
                   <DetailRow icon="business" label="Customer" value={
                     <span className="flex flex-col items-start gap-0.5">
                       <span>{linkedOrder.customer?.name}</span>
@@ -415,7 +415,7 @@ function RecordDetailModal({ record, onClose, orders, customers }) {
                   <DetailRow icon="schedule" label="Created" value={linkedOrder.createdAt ? new Date(linkedOrder.createdAt).toLocaleDateString() : null} />
                 </div>
                 <div className="bg-surface-container-high rounded-lg p-3 md:p-4 space-y-2.5">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">Notes</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">{t('common.notes')}</p>
                   <p className="text-sm text-on-surface">{linkedOrder.notes || 'No notes'}</p>
                 </div>
               </div>
@@ -484,7 +484,7 @@ function RecordDetailModal({ record, onClose, orders, customers }) {
 
                 {/* Contact Person */}
                 <div className="bg-surface-container-high rounded-lg p-3 md:p-4 space-y-2.5">
-                  <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">Contact Person</p>
+                  <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">{t('finance.contactPerson', 'İletişim Kişisi')}</p>
                   <DetailRow icon="person" label="Name" value={linkedCustomer.contactName} />
                   <DetailRow icon="phone_in_talk" label="Phone" value={linkedCustomer.contactPhone} />
                   <DetailRow icon="forward_to_inbox" label="Email" value={linkedCustomer.contactEmail} />
@@ -494,7 +494,7 @@ function RecordDetailModal({ record, onClose, orders, customers }) {
                 {/* Bank */}
                 {(linkedCustomer.bankName || linkedCustomer.iban) && (
                   <div className="bg-surface-container-high rounded-lg p-3 md:p-4 space-y-2.5 col-span-2">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">Bank Information</p>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">{t('finance.bankInformation', 'Banka Bilgileri')}</p>
                     <div className="grid grid-cols-2 gap-3">
                       <DetailRow icon="account_balance" label="Bank Name" value={linkedCustomer.bankName} />
                       <DetailRow icon="credit_card" label="IBAN" value={linkedCustomer.iban} />
@@ -507,7 +507,7 @@ function RecordDetailModal({ record, onClose, orders, customers }) {
                 {/* Additional Info */}
                 {(linkedCustomer.industry || linkedCustomer.customerCategory || linkedCustomer.salesRepName || linkedCustomer.notes) && (
                   <div className="bg-surface-container-high rounded-lg p-3 md:p-4 space-y-2.5 col-span-2">
-                    <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">Additional Info</p>
+                    <p className="text-[9px] font-black uppercase tracking-widest text-text-muted">{t('finance.additionalInfo', 'Ek Bilgiler')}</p>
                     <div className="grid grid-cols-2 gap-3">
                       <DetailRow icon="factory" label="Industry" value={linkedCustomer.industry} />
                       <DetailRow icon="grade" label="Category" value={linkedCustomer.customerCategory} />
@@ -856,7 +856,7 @@ export default function Finance() {
             <p className={`text-sm 2xl:text-base font-bold tabular-nums truncate ${summary.balance >= 0 ? 'text-green-700' : 'text-red-600'}`} title={`${summary.balance >= 0 ? '+' : '-'}${fmt(Math.abs(summary.balance))}`}>
               {summary.balance >= 0 ? '+' : '-'}{fmt(Math.abs(summary.balance))}
             </p>
-            <p className="text-[10px] text-text-muted truncate">All time</p>
+            <p className="text-[10px] text-text-muted truncate">{t('common.allTime', 'Tüm zamanlar')}</p>
           </div>
         </div>
 
@@ -865,7 +865,7 @@ export default function Finance() {
             <span className="material-symbols-outlined text-on-surface-variant text-base">calendar_month</span>
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wide truncate">This Month</p>
+            <p className="text-[10px] font-semibold text-text-muted uppercase tracking-wide truncate">{t('finance.thisMonth', 'Bu Ay')}</p>
             <p className={`text-sm 2xl:text-base font-bold tabular-nums truncate ${summary.tmNet >= 0 ? 'text-primary' : 'text-error'}`} title={`${summary.tmNet >= 0 ? '+' : '-'}${fmt(Math.abs(summary.tmNet))}`}>
               {summary.tmNet >= 0 ? '+' : '-'}{fmt(Math.abs(summary.tmNet))}
             </p>
@@ -916,15 +916,15 @@ export default function Finance() {
         </div>
         <select value={dateFilter} onChange={e => { setDateFilter(e.target.value); setPage(1) }}
           className="bg-surface-container-lowest border border-theme-border rounded-lg px-2 py-1 text-[11px] text-on-surface outline-none focus:border-primary">
-          <option value="all">All Time</option>
-          <option value="this_month">This Month</option>
-          <option value="last_month">Last Month</option>
-          <option value="this_year">This Year</option>
+          <option value="all">{t('finance.allTime', 'Tüm Zamanlar')}</option>
+          <option value="this_month">{t('finance.thisMonth', 'Bu Ay')}</option>
+          <option value="last_month">{t('finance.lastMonth', 'Geçen Ay')}</option>
+          <option value="this_year">{t('finance.thisYear', 'Bu Yıl')}</option>
         </select>
         {allCategories.length > 0 && (
           <select value={categoryFilter} onChange={e => { setCategoryFilter(e.target.value); setPage(1) }}
             className="bg-surface-container-lowest border border-theme-border rounded-lg px-2 py-1 text-[11px] text-on-surface outline-none focus:border-primary">
-            <option value="all">All Categories</option>
+            <option value="all">{t('finance.allCategories', 'Tüm Kategoriler')}</option>
             {allCategories.map(c => <option key={c} value={c}>{c}</option>)}
           </select>
         )}

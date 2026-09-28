@@ -132,12 +132,12 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo }) {
 
         {/* Totals */}
         <div className="flex flex-col items-end gap-0.5 md:gap-1 text-[11px] md:text-sm mb-4">
-          <span className="text-text-muted">Subtotal: <span className="text-on-surface font-medium">{currency} {subtotal.toFixed(2)}</span></span>
+          <span className="text-text-muted">{t('orders.subtotal')}: <span className="text-on-surface font-medium">{currency} {subtotal.toFixed(2)}</span></span>
           {order.vat > 0 && (
-            <span className="text-text-muted">VAT ({order.vat}%): <span className="text-on-surface font-medium">+{currency} {vatAmount.toFixed(2)}</span></span>
+            <span className="text-text-muted">{t('orders.vatName')} ({order.vat}%): <span className="text-on-surface font-medium">+{currency} {vatAmount.toFixed(2)}</span></span>
           )}
           <span className="font-bold text-on-surface text-[13px] md:text-base border-t border-theme-border pt-1 mt-0.5">
-            Total: {currency} {parseFloat(order.totalAmount).toFixed(2)}
+            {t('orders.total')}: {currency} {parseFloat(order.totalAmount).toFixed(2)}
           </span>
         </div>
 

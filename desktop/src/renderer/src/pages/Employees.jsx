@@ -189,7 +189,7 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
     }
   }
 
-  const PAGE_SUB_KEYS = { orders: ['orders-create'], purchasing: ['purchasing:create'] }
+  const PAGE_SUB_KEYS = { orders: ['orders-create'], purchasing: ['purchasing:create'], production: ['production-start'] }
 
   async function togglePermission(pageKey) {
     if (!employee?.id) return
@@ -623,6 +623,12 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
                           const purchasingSubEnabled = empPurchasingSubDeny ? false : (rolePurchasingSub || empPurchasingSubAllow)
                           const purchasingSubSaving = !!permSaving['purchasing:create']
 
+                          const roleProductionSub = page.key === 'production' && roleEnabled && (permissions[dept] || []).includes('production-start')
+                          const empProductionSubDeny = page.key === 'production' && (employeePermissions[employee?.id] || []).includes('-production-start')
+                          const empProductionSubAllow = page.key === 'production' && (employeePermissions[employee?.id] || []).includes('production-start')
+                          const productionSubEnabled = empProductionSubDeny ? false : (roleProductionSub || empProductionSubAllow)
+                          const productionSubSaving = !!permSaving['production-start']
+
                           return (
                             <div key={page.key}>
                               <button
@@ -687,6 +693,28 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
                                   {purchasingSubSaving
                                     ? <span className="material-symbols-outlined text-[12px] md:text-sm animate-spin">progress_activity</span>
                                     : <span className="material-symbols-outlined text-[12px] md:text-sm">{empPurchasingSubDeny ? 'block' : purchasingSubEnabled ? 'check_circle' : 'radio_button_unchecked'}</span>
+                                  }
+                                </button>
+                              )}
+                              {page.key === 'production' && enabled && (
+                                <button
+                                  onClick={() => togglePermission('production-start')}
+                                  disabled={productionSubSaving}
+                                  className={`w-full flex items-center gap-2 md:gap-3 pl-6 md:pl-8 pr-2.5 md:pr-3 py-1.5 md:py-2 rounded-lg md:rounded-xl border transition text-[10px] md:text-sm mt-1 ${
+                                    empProductionSubDeny
+                                      ? 'bg-error/10 border-error/30 text-error'
+                                      : productionSubEnabled
+                                        ? 'bg-primary/10 border-primary text-primary'
+                                        : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
+                                  }`}
+                                >
+                                  <span className="material-symbols-outlined text-[14px] md:text-base">precision_manufacturing</span>
+                                  <span className={`flex-1 text-left font-medium ${empProductionSubDeny ? 'line-through opacity-70' : ''}`}>{t('settings.canStartProduction', 'Üretim Başlatabilir')}</span>
+                                  {roleProductionSub && !empProductionSubDeny && <span className="text-[9px] uppercase font-bold tracking-wider opacity-60 mr-2">Dept</span>}
+                                  {empProductionSubDeny && <span className="text-[9px] uppercase font-bold tracking-wider text-error opacity-80 mr-2">Denied</span>}
+                                  {productionSubSaving
+                                    ? <span className="material-symbols-outlined text-[12px] md:text-sm animate-spin">progress_activity</span>
+                                    : <span className="material-symbols-outlined text-[12px] md:text-sm">{empProductionSubDeny ? 'block' : productionSubEnabled ? 'check_circle' : 'radio_button_unchecked'}</span>
                                   }
                                 </button>
                               )}
@@ -927,8 +955,8 @@ export default function Employees() {
                 <th className="text-left px-6 py-4 font-semibold">{t('employees.title')}</th>
                 <th className="text-left px-6 py-4 font-semibold">{t('employees.department')}</th>
                 <th className="text-left px-6 py-4 font-semibold">{t('employees.position')}</th>
-                <th className="text-left px-6 py-4 font-semibold">Contact</th>
-                <th className="text-left px-6 py-4 font-semibold">Supervisor</th>
+                <th className="text-left px-6 py-4 font-semibold">{t('common.contact', 'İletişim')}</th>
+                <th className="text-left px-6 py-4 font-semibold">{t('common.supervisor', 'Yönetici')}</th>
                 <th className="text-left px-6 py-4 font-semibold">{t('common.status')}</th>
                 {isAdmin && <th className="text-right px-6 py-4 font-semibold">{t('common.actions')}</th>}
               </tr>
@@ -1039,7 +1067,7 @@ export default function Employees() {
               {/* Banner */}
               <div className="primary-gradient px-4 md:px-6 pt-4 md:pt-6 pb-5 md:pb-7 shrink-0 rounded-t-2xl">
                 <div className="flex items-center justify-between mb-3 md:mb-4">
-                  <span className="text-[10px] md:text-xs font-bold text-white/60 uppercase tracking-widest">Employee Profile</span>
+                  <span className="text-[10px] md:text-xs font-bold text-white/60 uppercase tracking-widest">{t('employees.employeeProfile', 'Personel Profili')}</span>
                   <div className="flex items-center gap-1 md:gap-2">
                     {isAdmin && (
                       <button

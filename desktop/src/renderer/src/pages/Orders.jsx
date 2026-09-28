@@ -69,113 +69,7 @@ const detailStatusStyle = {
   Delivered: 'bg-green-400 text-green-900',
 }
 
-function SendToProductionModal({ item, onClose, onSave, machines, employees }) {
-  const { t } = useTranslation()
-  const remaining = item.quantity - (item.producedQuantity || 0) - (item.inProductionQuantity || 0)
-  const extrusionMachines = machines.filter(m => m.type === 'Extrusion' || !m.type || m.type === 'General')
-  const cuttingMachines = machines.filter(m => m.type === 'Cutting' || !m.type || m.type === 'General')
-
-  const [form, setForm] = useState({
-    extrusionMachineId: '',
-    extrusionOperatorId: '',
-    cuttingMachineId: '',
-    cuttingOperatorId: '',
-    quantity: remaining,
-  })
-  const [errors, setErrors] = useState({})
-
-  const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
-
-  function handleSave() {
-    const e = {}
-    if (!form.quantity || form.quantity < 1 || form.quantity > remaining) e.quantity = 'Invalid'
-
-    if (Object.keys(e).length > 0) {
-      setErrors(e)
-      return
-    }
-
-    onSave({ ...form, orderItemId: item.id })
-  }
-
-  return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-3 md:p-6" onClick={onClose}>
-      <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[400px] max-w-none p-4 md:p-6 flex flex-col" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-on-surface">{t('orders.sendToProduction')}</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-error">
-            <span className="material-symbols-outlined">close</span>
-          </button>
-        </div>
-
-        <div className="mb-4 bg-surface-container-high rounded-xl p-3">
-          <p className="text-xs font-bold text-on-surface mb-1">{item.productName}</p>
-          <div className="flex justify-between text-[11px] text-text-muted">
-            <span>{t('orders.total')}: {item.quantity}</span>
-            <span>{t('orders.remaining')}: {remaining}</span>
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            {/* Extrusion Section */}
-            <div className="space-y-3 bg-surface-container-high/50 p-3 rounded-xl border border-theme-border">
-              <h3 className="text-xs font-bold text-on-surface flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">precision_manufacturing</span> Ekstrüzyon (Plan)</h3>
-              <div>
-                <label className="block text-[10px] font-semibold text-text-muted mb-1">{t('productionTasks.machine')}</label>
-                <select className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-[11px] text-on-surface outline-none focus:border-primary border-theme-border`} value={form.extrusionMachineId} onChange={set('extrusionMachineId')}>
-                  <option value="">{t('common.select')}</option>
-                  {extrusionMachines.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.type || 'General'})</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[10px] font-semibold text-text-muted mb-1">{t('productionTasks.operator')}</label>
-                <select className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-[11px] text-on-surface outline-none focus:border-primary border-theme-border`} value={form.extrusionOperatorId} onChange={set('extrusionOperatorId')}>
-                  <option value="">{t('common.select')}</option>
-                  {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-                </select>
-              </div>
-            </div>
-
-            {/* Cutting Section */}
-            <div className="space-y-3 bg-surface-container-high/50 p-3 rounded-xl border border-theme-border">
-              <h3 className="text-xs font-bold text-on-surface flex items-center gap-1"><span className="material-symbols-outlined text-[14px]">content_cut</span> Kesim (Plan)</h3>
-              <div>
-                <label className="block text-[10px] font-semibold text-text-muted mb-1">{t('productionTasks.machine')}</label>
-                <select className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-[11px] text-on-surface outline-none focus:border-primary border-theme-border`} value={form.cuttingMachineId} onChange={set('cuttingMachineId')}>
-                  <option value="">{t('common.select')}</option>
-                  {cuttingMachines.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.type || 'General'})</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="block text-[10px] font-semibold text-text-muted mb-1">{t('productionTasks.operator')}</label>
-                <select className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-[11px] text-on-surface outline-none focus:border-primary border-theme-border`} value={form.cuttingOperatorId} onChange={set('cuttingOperatorId')}>
-                  <option value="">{t('common.select')}</option>
-                  {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-                </select>
-              </div>
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">{t('orders.qty')} *</label>
-            <input type="number" min="1" max={remaining} className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.quantity ? 'border-error' : 'border-theme-border'}`} value={form.quantity} onChange={set('quantity')} />
-          </div>
-        </div>
-
-        <div className="flex gap-3 mt-6">
-          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition">
-            {t('common.cancel')}
-          </button>
-          <button onClick={handleSave} className="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition">
-            {t('common.save')}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function OrderDetailModal({ order, onClose, currentUser, onStatusChange, machines, employees, addProductionTask }) {
+function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
   const { t } = useTranslation()
   const { userStatusPermissions, statusPermissions } = useData()
   const [localStatus, setLocalStatus] = useState(order.status)
@@ -188,9 +82,6 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange, machine
   const userHasStatus = (userStatusPermissions[currentUser?.id] || []).includes(localStatus)
   const canAdvanceFromCurrent = isAdmin || roleHasStatus || userHasStatus
   const canChangeStatus = isAdmin || canAdvanceFromCurrent
-
-  const currency = order.items?.[0]?.currency || 'TRY'
-  const [productionItem, setProductionItem] = useState(null)
 
   function confirmStatusChange() {
     setLocalStatus(pendingStatus)
@@ -246,7 +137,6 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange, machine
                 const inProd = it.inProductionQuantity || 0
                 const remaining = it.quantity - produced - inProd
                 const itemStatus = it.status || 'Processing'
-                const canProduce = remaining > 0
                 const activeTasks = (it.productionTasks || []).filter(task => task.status !== 'completed')
 
                 return (
@@ -291,31 +181,26 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange, machine
                     <td className="block md:table-cell px-2 md:px-4 py-2 md:py-3 text-center border-t border-surface-container md:border-0 mt-2 md:mt-0">
                       <div className="flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2">
                         <div className="flex gap-1.5 text-[9px] md:text-[10px] font-bold items-center">
-                          <span className="text-text-muted bg-surface-container-high px-1 py-0.5 rounded" title="Remaining">{remaining}</span>
-                          <span className="text-white bg-orange-500 px-1 py-0.5 rounded shadow-sm" title="In Production">{inProd}</span>
-                          <span className="text-green-700 bg-green-100 px-1 py-0.5 rounded" title="Produced">{produced}</span>
+                          <span className="text-text-muted bg-surface-container-high px-1 py-0.5 rounded" title={t('orders.remaining')}>{remaining}</span>
+                          <span className="text-white bg-orange-500 px-1 py-0.5 rounded shadow-sm" title={t('production.inProduction')}>{inProd}</span>
+                          <span className="text-green-700 bg-green-100 px-1 py-0.5 rounded" title={t('production.produced')}>{produced}</span>
                           <span className="text-text-muted mx-0.5">=</span>
-                          <span className="text-primary bg-primary/10 px-1.5 py-0.5 rounded font-extrabold" title="Total">{it.quantity}</span>
+                          <span className="text-primary bg-primary/10 px-1.5 py-0.5 rounded font-extrabold" title={t('orders.total')}>{it.quantity}</span>
                         </div>
-                        {canProduce && isAdmin && (
-                          <button onClick={() => setProductionItem(it)} className="bg-primary/10 text-primary hover:bg-primary hover:text-white rounded px-2 py-1 text-[10px] font-bold transition-colors whitespace-nowrap">
-                            {t('orders.send')}
-                          </button>
+                        {activeTasks.length > 0 && (
+                          <div className="mt-2 flex flex-col gap-1 items-center">
+                            {activeTasks.map(task => {
+                              const statusKey = `productionTasks.col${task.status.charAt(0).toUpperCase() + task.status.slice(1)}`
+                              return (
+                                <span key={task.id} className="text-[9px] font-semibold text-text-muted bg-surface-container-high px-2 py-0.5 rounded-md flex items-center gap-1 w-max shadow-sm border border-theme-border/50">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                  {task.quantity} {it.product?.unit || ''} - {t(statusKey)}
+                                </span>
+                              )
+                            })}
+                          </div>
                         )}
                       </div>
-                      {activeTasks.length > 0 && (
-                        <div className="mt-2 flex flex-col gap-1 items-center">
-                          {activeTasks.map(task => {
-                            const statusKey = `productionTasks.col${task.status.charAt(0).toUpperCase() + task.status.slice(1)}`
-                            return (
-                              <span key={task.id} className="text-[9px] font-semibold text-text-muted bg-surface-container-high px-2 py-0.5 rounded-md flex items-center gap-1 w-max shadow-sm border border-theme-border/50">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                {task.quantity} {it.product?.unit || ''} - {t(statusKey)}
-                              </span>
-                            )
-                          })}
-                        </div>
-                      )}
                     </td>
                   </tr>
                 )
@@ -324,29 +209,11 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange, machine
           </table>
         </div>
 
-        {productionItem && (
-          <SendToProductionModal
-            item={productionItem}
-            machines={machines}
-            employees={employees}
-            onClose={() => setProductionItem(null)}
-            onSave={async (form) => {
-              try {
-                await addProductionTask(form)
-                setProductionItem(null)
-                // Refresh order item state by closing modal, wait it doesn't auto refresh modal. 
-                // That's fine, we will let it close and the user can see it when reopened.
-              } catch (err) {
-                alert(err.message)
-              }
-            }}
-          />
-        )}
 
         {/* Totals */}
         <div className="flex flex-col items-end gap-1 mb-4">
           <span className="font-bold text-on-surface text-[14px] md:text-base border-t border-theme-border pt-1 mt-0.5">
-            {t('orders.total')}: 
+            {t('orders.total')}:
             {(() => {
               const tg = getOrderTotals(order.items);
               const tk = Object.keys(tg);
@@ -383,7 +250,7 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange, machine
         {/* Notes */}
         {order.notes && (
           <div className="bg-surface-container-high rounded-xl px-4 py-3 text-sm text-text-muted mb-4">
-            <span className="font-semibold text-on-surface mr-2">Notes:</span>{order.notes}
+            <span className="font-semibold text-on-surface mr-2">{t('common.notes')}:</span>{order.notes}
           </div>
         )}
 
@@ -401,7 +268,7 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange, machine
                   onChange={(e) => setPendingStatus(e.target.value === localStatus ? null : e.target.value)}
                   className="w-full md:flex-1 bg-surface-container-lowest border border-theme-border rounded-lg px-2 md:px-3 py-1.5 md:py-2 text-[11px] md:text-sm text-on-surface outline-none focus:border-primary"
                 >
-                  {ORDER_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                  {ORDER_STATUSES.map((s) => <option key={s} value={s}>{t('status.' + s.replace(/-/g, ''), s)}</option>)}
                 </select>
               </div>
             ) : (
@@ -477,7 +344,7 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
   }
 
   const orderTotals = getOrderTotals(form.items);
-    const totalsKeys = Object.keys(orderTotals);
+  const totalsKeys = Object.keys(orderTotals);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-3 md:p-6">
@@ -499,8 +366,8 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
                   const acc = c.accountCode || '';
                   return code.startsWith('120') || acc.startsWith('120') || code.startsWith('CX-');
                 }).map(c => {
-                  const displayCode = c.accountCode && c.code && c.code !== c.accountCode 
-                    ? `${c.code} (${c.accountCode})` 
+                  const displayCode = c.accountCode && c.code && c.code !== c.accountCode
+                    ? `${c.code} (${c.accountCode})`
                     : (c.accountCode || c.code || '');
                   return { value: c.id, label: `${displayCode} - ${c.name}` };
                 })}
@@ -601,23 +468,23 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
                       <div className="w-[calc(50%-4px)] md:w-28 flex flex-col">
                         <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.unitPrice')}</span>
                         <div className={`flex items-center border rounded overflow-hidden bg-surface-container-lowest ${itemErr && !item.unitPrice ? 'border-error' : 'border-theme-border'}`}>
-                          <select 
-                              className="px-1 py-1.5 md:py-0 h-full text-[10px] text-text-muted border-r border-theme-border bg-surface-container-high outline-none cursor-pointer"
-                              value={item.currency || 'TRY'}
-                              onChange={(e) => setItem(idx, 'currency', e.target.value)}
-                            >
-                              <option value="TRY">TRY</option>
-                              <option value="USD">USD</option>
-                              <option value="EUR">EUR</option>
-                              <option value="GBP">GBP</option>
-                            </select>
-                            <input
-                              type="number" min="0" step="0.01"
-                              className="w-full px-2 py-1.5 text-xs md:text-sm text-on-surface outline-none bg-transparent"
-                              placeholder="0.00"
-                              value={item.unitPrice}
-                              onChange={(e) => setItem(idx, 'unitPrice', e.target.value)}
-                            />
+                          <select
+                            className="px-1 py-1.5 md:py-0 h-full text-[10px] text-text-muted border-r border-theme-border bg-surface-container-high outline-none cursor-pointer"
+                            value={item.currency || 'TRY'}
+                            onChange={(e) => setItem(idx, 'currency', e.target.value)}
+                          >
+                            <option value="TRY">TRY</option>
+                            <option value="USD">USD</option>
+                            <option value="EUR">EUR</option>
+                            <option value="GBP">GBP</option>
+                          </select>
+                          <input
+                            type="number" min="0" step="0.01"
+                            className="w-full px-2 py-1.5 text-xs md:text-sm text-on-surface outline-none bg-transparent"
+                            placeholder="0.00"
+                            value={item.unitPrice}
+                            onChange={(e) => setItem(idx, 'unitPrice', e.target.value)}
+                          />
                         </div>
                       </div>
                       <div className="w-[calc(50%-4px)] md:w-16 flex flex-col">
@@ -766,7 +633,7 @@ function getOrderTotals(items) {
 
 export default function Orders() {
   const { t } = useTranslation()
-  const { orders, addOrder, updateOrder, deleteOrder, syncAndRefreshOrders, customers, employees, products, machines, addProductionTask, isAdmin, permissions } = useData()
+  const { orders, addOrder, updateOrder, deleteOrder, syncAndRefreshOrders, customers, employees, products, isAdmin, permissions } = useData()
   const { user: currentUser, token } = useAuth()
   const [salesTeam, setSalesTeam] = useState([])
   const canDelete = isAdmin || currentUser?.department === 'Sales Manager'
@@ -984,19 +851,19 @@ export default function Orders() {
           6: { halign: 'right', cellWidth: 26 },
         },
         foot: (() => {
-            const tg = getOrderTotals(o.items);
-            const tk = Object.keys(tg);
-            if (!tk.length) {
-              return [[
-                { content: 'Order Total', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold', fontSize: 8, font: tf } },
-                { content: `0.00`, styles: { halign: 'right', fontStyle: 'bold', fontSize: 8, font: tf } },
-              ]];
-            }
-            return tk.map((k, index) => [
-              { content: index === 0 ? 'Order Total' : '', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold', fontSize: 8, font: tf } },
-              { content: `${k} ${tg[k].toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', fontSize: 8, font: tf } }
-            ]);
-          })(),
+          const tg = getOrderTotals(o.items);
+          const tk = Object.keys(tg);
+          if (!tk.length) {
+            return [[
+              { content: 'Order Total', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold', fontSize: 8, font: tf } },
+              { content: `0.00`, styles: { halign: 'right', fontStyle: 'bold', fontSize: 8, font: tf } },
+            ]];
+          }
+          return tk.map((k, index) => [
+            { content: index === 0 ? 'Order Total' : '', colSpan: 4, styles: { halign: 'right', fontStyle: 'bold', fontSize: 8, font: tf } },
+            { content: `${k} ${tg[k].toFixed(2)}`, styles: { halign: 'right', fontStyle: 'bold', fontSize: 8, font: tf } }
+          ]);
+        })(),
         footStyles: { fillColor: [241, 245, 249], textColor: [30, 30, 30] },
       })
 
@@ -1172,7 +1039,7 @@ export default function Orders() {
               className="flex items-center justify-center gap-1.5 border border-theme-border px-2.5 py-2 lg:px-3 lg:py-2 rounded-xl text-[11px] lg:text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-40 disabled:cursor-not-allowed whitespace-nowrap"
             >
               <span className="material-symbols-outlined text-[14px] lg:text-base">download</span>
-              <span className="hidden lg:inline">Export</span>{selected.size > 0 ? ` (${selected.size})` : ''}
+              <span className="hidden lg:inline">{t('common.export', 'Dışa Aktar')}</span>{selected.size > 0 ? ` (${selected.size})` : ''}
               <span className="material-symbols-outlined text-[14px] lg:text-base">arrow_drop_down</span>
             </button>
             {exportOpen && (
@@ -1222,7 +1089,7 @@ export default function Orders() {
           onChange={(e) => { setFilterStatus(e.target.value); setPage(1) }}
         >
           <option value="">{t('orders.allStatuses')}</option>
-          {ORDER_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+          {ORDER_STATUSES.map((s) => <option key={s} value={s}>{t('status.' + s.replace(/-/g, ''), s)}</option>)}
         </select>
         <div className="grid grid-cols-2 sm:flex sm:flex-row items-stretch sm:items-end gap-2 w-full md:w-auto">
           <div className="flex flex-col items-start gap-1 flex-1 md:flex-none">
@@ -1329,18 +1196,18 @@ export default function Orders() {
                       <div className="flex items-center justify-between xl:justify-end">
                         <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.total')}</span>
                         <div className="flex flex-col items-end">
-                            {(() => {
-                              const tg = getOrderTotals(o.items);
-                              const tk = Object.keys(tg);
-                              if (!tk.length) return <span className="font-semibold text-xs lg:text-sm text-on-surface">0.00</span>;
-                              return tk.map(k => (
-                                <span key={k} className="font-semibold text-xs lg:text-sm text-on-surface">
-                                  <span className="text-xs text-text-muted mr-1">{k}</span>
-                                  {tg[k].toFixed(2)}
-                                </span>
-                              ));
-                            })()}
-                          </div>
+                          {(() => {
+                            const tg = getOrderTotals(o.items);
+                            const tk = Object.keys(tg);
+                            if (!tk.length) return <span className="font-semibold text-xs lg:text-sm text-on-surface">0.00</span>;
+                            return tk.map(k => (
+                              <span key={k} className="font-semibold text-xs lg:text-sm text-on-surface">
+                                <span className="text-xs text-text-muted mr-1">{k}</span>
+                                {tg[k].toFixed(2)}
+                              </span>
+                            ));
+                          })()}
+                        </div>
                       </div>
                     </td>
                     <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
@@ -1388,7 +1255,7 @@ export default function Orders() {
       </div>
 
       <div className="flex items-center justify-between mt-4 text-sm text-text-muted">
-        <span>{filtered.length} orders</span>
+        <span>{t('orders.totalOrders', { count: filtered.length })}</span>
         <div className="flex gap-2">
           <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="px-3 py-1.5 rounded-lg border border-theme-border disabled:opacity-40 hover:bg-hover-bg transition">{t('common.prev')}</button>
           <span className="px-3 py-1.5">{page} / {totalPages}</span>
@@ -1402,9 +1269,6 @@ export default function Orders() {
           onClose={() => setDetailOrder(null)}
           currentUser={currentUser}
           onStatusChange={handleStatusChange}
-          machines={machines}
-          employees={employees}
-          addProductionTask={addProductionTask}
         />
       )}
 
