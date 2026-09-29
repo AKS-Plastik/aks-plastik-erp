@@ -109,7 +109,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             </span>
           </button>
           <div className="text-center text-[9px] text-text-muted opacity-40 mt-2">
-            v2.0.3
+            v2.0.4
           </div>
         </div>
       </aside>
