@@ -614,7 +614,7 @@ export default function ProductionTasks() {
         />
       )}
       
-      {showEodWizard && isAdmin && !isWizardDismissed && (
+      {showEodWizard && !isWizardDismissed && (
         <EodWizardModal 
           tasks={pendingPastTasks} 
           onClose={() => setIsWizardDismissed(true)}
@@ -628,7 +628,7 @@ export default function ProductionTasks() {
         />
       )}
 
-      {showEodWizard && isAdmin && isWizardDismissed && (
+      {showEodWizard && isWizardDismissed && (
         <div className="bg-error/10 border border-error/40 text-error rounded-2xl p-4 md:p-5 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm cursor-pointer hover:bg-error/20 transition-all select-none" onClick={() => setIsWizardDismissed(false)}>
           <div className="flex items-center gap-3 md:gap-4">
              <div className="w-10 h-10 rounded-full bg-error/20 flex items-center justify-center flex-shrink-0">
