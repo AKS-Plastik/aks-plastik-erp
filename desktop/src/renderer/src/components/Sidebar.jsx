@@ -40,12 +40,12 @@ export default function Sidebar({ isOpen, setIsOpen }) {
 
   const dept = user?.department
   const empId = user?.employeeId
-  
+
   const canSee = (page) => {
     if (isAdmin) return true
     const isEmpDenied = (employeePermissions?.[empId] || []).includes(`-${page}`)
     if (isEmpDenied) return false
-    
+
     const hasRolePerm = (permissions[dept] || []).includes(page)
     const hasEmpPerm = (employeePermissions?.[empId] || []).includes(page)
     return hasRolePerm || hasEmpPerm
@@ -109,7 +109,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             </span>
           </button>
           <div className="text-center text-[9px] text-text-muted opacity-40 mt-2">
-            v2.0.0
+            v2.0.1
           </div>
         </div>
       </aside>
