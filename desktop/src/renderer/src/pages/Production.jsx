@@ -341,8 +341,11 @@ export default function Production() {
   const { isAdmin, user: currentUser } = useAuth()
   
   const empId = currentUser?.employeeId
+  const activeEmployee = employees?.find(e => e.id === empId)
+  const activeDept = activeEmployee?.department || currentUser?.department
+
   const empPerms = employeePermissions?.[empId] || []
-  const deptPerms = permissions[currentUser?.department] || []
+  const deptPerms = permissions[activeDept] || []
   const isActDenied = empPerms.includes('-production-start')
   const hasEmpAct = empPerms.includes('production-start')
   const hasDeptAct = deptPerms.includes('production-start')
@@ -350,29 +353,11 @@ export default function Production() {
 
   const canChangeTo = (status) => {
     if (isAdmin) return true
-    const roleHas = (statusPermissions[currentUser?.department] || []).includes(status)
+    const roleHas = (statusPermissions[activeDept] || []).includes(status)
     const empHas = (userStatusPermissions?.[currentUser?.id] || []).includes(status)
     return roleHas || empHas
   }
 
-  // Debugging logs for permission tracing
-  useEffect(() => {
-    console.log('[Auth Debug - Production.jsx]')
-    console.log('1. User:', currentUser)
-    console.log('2. Admin Status:', isAdmin)
-    console.log('3. Department (Role) Perms:', {
-      department: currentUser?.department,
-      perms: deptPerms,
-      hasProductionStart: hasDeptAct
-    })
-    console.log('4. Employee-Specific Perms:', {
-      empId,
-      perms: empPerms,
-      isDenied: isActDenied,
-      hasProductionStart: hasEmpAct
-    })
-    console.log('5. Final canAct Result:', canAct)
-  }, [currentUser, isAdmin, deptPerms, hasDeptAct, empId, empPerms, isActDenied, hasEmpAct, canAct])
 
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('')

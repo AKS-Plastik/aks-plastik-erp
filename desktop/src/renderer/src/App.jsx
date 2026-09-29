@@ -23,10 +23,11 @@ import ProductionTasks from './pages/ProductionTasks'
 
 function InnerRoutes() {
   const { isAdmin, user: currentUser } = useAuth()
-  const { permissions, employeePermissions } = useData()
+  const { permissions, employeePermissions, employees } = useData()
 
-  const dept = currentUser?.department
   const empId = currentUser?.employeeId
+  const activeEmployee = employees?.find(e => e.id === empId)
+  const dept = activeEmployee?.department || currentUser?.department
   
   const canSee = (page) => {
     if (isAdmin) return true
