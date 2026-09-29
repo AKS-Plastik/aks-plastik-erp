@@ -362,28 +362,17 @@ export default function Users() {
                       <option value="admin">{t('users.admin', 'Admin')}</option>
                     </select>
                   </div>
-                  {users.find((u) => u.id === editingUser)?.employeeId ? (
-                    <div>
-                      <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">{t('settings.department', 'Departman')}</label>
-                      <div className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border bg-surface-container-high text-on-surface-variant text-[11px] md:text-sm flex items-center gap-2">
-                        <span className="material-symbols-outlined text-sm md:text-base text-text-muted">apartment</span>
-                        {users.find((u) => u.id === editingUser)?.department || '—'}
-                        <span className="ml-auto text-[10px] md:text-xs text-text-muted italic bg-surface-container-lowest px-2 py-0.5 rounded border border-theme-border">{t('users.fromEmployee', 'Personelden')}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <div>
-                      <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">{t('settings.department', 'Departman')}</label>
-                      <select
-                        value={editForm.department}
-                        onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
-                        className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none bg-surface-container-lowest"
-                      >
-                        <option value="">— Select Department —</option>
-                        {roles.map((r) => <option key={r.id} value={r.name}>{r.name}</option>)}
-                      </select>
-                    </div>
-                  )}
+                  <div>
+                    <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">{t('settings.department', 'Departman')}</label>
+                    <select
+                      value={editForm.department}
+                      onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
+                      className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none bg-surface-container-lowest"
+                    >
+                      <option value="">— Select Department —</option>
+                      {roles.map((r) => <option key={r.id} value={r.name}>{r.name}</option>)}
+                    </select>
+                  </div>
                   <div className="flex gap-2 justify-end pt-2">
                     <button onClick={closeEdit} className="px-3 py-1.5 text-xs md:text-sm text-on-surface-variant hover:text-on-surface transition-colors">
                       {t('common.cancel')}
