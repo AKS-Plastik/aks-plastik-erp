@@ -196,6 +196,7 @@ model Product {
 
   orderItems         OrderItem[]
   purchaseOrderItems PurchaseOrderItem[]
+  productionTasks    ProductionTask[]
 }
 
 model Employee {
@@ -351,8 +352,11 @@ model ProductionTask {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
-  orderItemId String
+  orderItem   OrderItem? @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  orderItemId String?
+
+  product   Product? @relation(fields: [productId], references: [id])
+  productId String?
 
   machine   Machine? @relation(fields: [machineId], references: [id])
   machineId Int?

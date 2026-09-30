@@ -14,7 +14,8 @@
     "employees": "Employees",
     "settings": "Settings",
     "logout": "Log Out",
-    "productionTasks": "Production Tasks"
+    "productionTasks": "Production Tasks",
+    "productionPlanning": "Production Planning"
   },
   "topbar": {
     "alerts": "Alerts",

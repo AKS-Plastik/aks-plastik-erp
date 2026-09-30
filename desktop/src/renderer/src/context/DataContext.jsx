@@ -611,7 +611,9 @@ export function DataProvider({ children }) {
     const res = await fetch(`${API_URL}/production-tasks/${id}/move`, { method: 'PATCH', headers, body: JSON.stringify({ status, ...extraData }) })
     if (!res.ok) throw new Error((await res.json()).error || 'Failed')
     const updated = await res.json(); if (!res.ok) { alert('Hata: ' + updated.error); return; }
-    setProductionTasks((prev) => prev.map((t) => (t.id === id ? updated : t)))
+    
+    // Refresh entirely since a move might split tasks and change orders
+    refreshProductionTasks()
     refreshOrders()
   }
 
