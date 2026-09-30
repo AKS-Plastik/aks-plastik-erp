@@ -14,7 +14,8 @@
     "employees": "Çalışanlar",
     "settings": "Ayarlar",
     "logout": "Çıkış Yap",
-    "productionTasks": "Üretim Görevleri"
+    "productionTasks": "Üretim Görevleri",
+    "productionPlanning": "Üretim Planlama"
   },
   "topbar": {
     "alerts": "Uyarılar",

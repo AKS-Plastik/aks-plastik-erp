@@ -14,6 +14,7 @@ const PAGES = [
   { key: 'employees',   tKey: 'nav.employees', label: 'Employees',   icon: 'badge' },
   { key: 'finance',     tKey: 'nav.finance', label: 'Finance',     icon: 'account_balance_wallet' },
   { key: 'production',  tKey: 'nav.production', label: 'Production',  icon: 'precision_manufacturing' },
+  { key: 'production-planning', tKey: 'nav.productionPlanning', label: 'Production Planning', icon: 'calendar_month' },
   { key: 'production-tasks', tKey: 'nav.productionTasks', label: 'Production Tasks', icon: 'view_kanban' },
   { key: 'maintenance', tKey: 'nav.maintenance', label: 'Maintenance', icon: 'build' },
   { key: 'logistics',   tKey: 'nav.logistics', label: 'Logistics',   icon: 'local_shipping' },

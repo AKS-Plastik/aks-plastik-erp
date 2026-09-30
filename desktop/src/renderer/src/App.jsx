@@ -20,6 +20,7 @@ import Maintenance from './pages/Maintenance'
 import Attendance from './pages/Attendance'
 import Purchasing from './pages/Purchasing'
 import ProductionTasks from './pages/ProductionTasks'
+import ProductionPlanning from './pages/ProductionPlanning'
 
 function InnerRoutes() {
   const { isAdmin, user: currentUser } = useAuth()
@@ -55,6 +56,7 @@ function InnerRoutes() {
         {canSee('maintenance') && <Route path="maintenance" element={<Maintenance />} />}
         <Route path="attendance" element={<Attendance />} />
         {canSee('purchasing') && <Route path="purchasing" element={<Purchasing />} />}
+        {canSee('production-planning') && <Route path="production-planning" element={<ProductionPlanning />} />}
         {canSee('production-tasks') && <Route path="production-tasks" element={<ProductionTasks />} />}
         {isAdmin && <Route path="finance" element={<Finance />} />}
         {isAdmin && <Route path="employees" element={<Employees />} />}

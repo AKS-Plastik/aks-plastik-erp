@@ -1,6 +1,8 @@
 import { useState, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useData } from '../context/DataContext'
+import { useAuth } from '../context/AuthContext'
+import CreateProductionTaskModal from '../components/CreateProductionTaskModal'
 import * as XLSX from 'xlsx'
 
 const COLUMNS = [
@@ -100,7 +102,7 @@ function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete,
               </div>
               <div>
                 <h2 className="text-sm md:text-base font-extrabold text-white leading-tight">
-                  {editing ? t('productionTasks.editTask') : `${task.orderItem?.order?.code} — ${task.orderItem?.productName}`}
+                  {editing ? t('productionTasks.editTask') : (task.orderItem ? `${task.orderItem.order?.code} — ${task.orderItem.productName}` : `Stok Üretimi — ${task.product?.name}`)}
                 </h2>
                 <p className="text-blue-200 text-[9px] md:text-[10px] font-mono mt-0.5">{task.code}</p>
               </div>
@@ -128,11 +130,11 @@ function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete,
           <div className="px-4 md:px-6 py-4 overflow-y-auto flex-1">
             <DetailRow icon="conveyor_belt" label={t('productionTasks.machine')} value={task.machine?.name} />
             <DetailRow icon="badge" label={t('productionTasks.operator')} value={task.operator?.name} />
-            <DetailRow icon="inventory_2" label={t('orders.product')} value={`${task.orderItem?.productName} (${task.quantity} ${task.orderItem?.product?.unit || 'pcs'})`} />
+            <DetailRow icon="inventory_2" label={t('orders.product')} value={`${task.orderItem ? task.orderItem.productName : task.product?.name} (${task.quantity} ${task.orderItem ? task.orderItem.product?.unit : task.product?.unit || 'pcs'})`} />
             <DetailRow icon="business" label={t('common.customer')} value={
               <span className="flex flex-col items-start gap-0.5">
-                <span>{task.orderItem?.order?.customer?.name}</span>
-                {(task.orderItem?.order?.customer?.accountCode || task.orderItem?.order?.customer?.code) && (
+                <span>{task.orderItem?.order?.customer?.name || t('common.noCustomer')}</span>
+                {task.orderItem && (task.orderItem.order?.customer?.accountCode || task.orderItem.order?.customer?.code) && (
                   <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest">
                     {task.orderItem.order.customer.accountCode || task.orderItem.order.customer.code}
                   </span>
@@ -247,8 +249,8 @@ function KanbanCard({ task, onClick, locked }) {
       className={`bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-slate-100 cursor-pointer hover:shadow-md hover:border-primary/20 transition-all select-none ${locked ? 'opacity-80 grayscale-[20%]' : 'active:scale-[0.98]'}`}
     >
       <div className="flex justify-between items-start mb-2">
-        <p className="text-sm font-bold text-on-surface leading-snug">{task.orderItem?.productName}</p>
-        <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[10px] font-bold">{task.quantity} {task.orderItem?.product?.unit || 'pcs'}</span>
+        <p className="text-sm font-bold text-on-surface leading-snug">{task.orderItem ? task.orderItem.productName : task.product?.name}</p>
+        <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[10px] font-bold">{task.quantity} {task.orderItem ? task.orderItem.product?.unit : task.product?.unit || 'pcs'}</span>
       </div>
 
       <div className="flex items-center justify-between gap-2 text-[11px] text-on-surface-variant mb-2">
@@ -256,7 +258,7 @@ function KanbanCard({ task, onClick, locked }) {
           <span className="material-symbols-outlined text-[13px] flex-shrink-0">business</span>
           <span className="truncate flex flex-col items-start gap-0.5 min-w-0">
             <span className="truncate w-full">{task.orderItem?.order?.customer?.name || t('common.noCustomer')}</span>
-            {(task.orderItem?.order?.customer?.accountCode || task.orderItem?.order?.customer?.code) && (
+            {task.orderItem && (task.orderItem.order?.customer?.accountCode || task.orderItem.order?.customer?.code) && (
               <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider whitespace-nowrap">
                 {task.orderItem.order.customer.accountCode || task.orderItem.order.customer.code}
               </span>
@@ -354,8 +356,8 @@ function EodWizardModal({ tasks, onProcess, onClose }) {
           </p>
 
           <div className="bg-surface-container-low p-4 rounded-xl mb-6">
-             <p className="font-bold text-sm mb-1">{task.orderItem?.productName}</p>
-             <p className="text-xs text-on-surface-variant">Toplam Miktar: {task.quantity} {task.orderItem?.product?.unit || 'pcs'}</p>
+             <p className="font-bold text-sm mb-1">{task.orderItem ? task.orderItem.productName : task.product?.name}</p>
+             <p className="text-xs text-on-surface-variant">Toplam Miktar: {task.quantity} {task.orderItem ? task.orderItem.product?.unit : task.product?.unit || 'pcs'}</p>
              <p className="text-xs text-on-surface-variant mt-1">Eski Tarih: {task.date} | Eski Statü: {t(`productionTasks.col${task.status.charAt(0).toUpperCase() + task.status.slice(1)}`)}</p>
           </div>
 
@@ -445,22 +447,27 @@ function PendingMoveModal({ moveData, machines, employees, onClose, onConfirm })
     operatorId: task.operatorId || plannedOperatorId || ''
   })
   const [errors, setErrors] = useState({})
+  const [isSplitting, setIsSplitting] = useState(false)
+  const [splitQuantity, setSplitQuantity] = useState(task.quantity)
 
   const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
 
   function handleConfirm() {
     const e = {}
-    if (!form.machineId) e.machineId = 'Required'
-    if (!form.operatorId) e.operatorId = 'Required'
+    const needsAssignment = isExtrusion || isCutting
+    if (needsAssignment && !form.machineId) e.machineId = 'Required'
+    if (needsAssignment && !form.operatorId) e.operatorId = 'Required'
+    if (isSplitting && (splitQuantity <= 0 || splitQuantity >= task.quantity)) e.splitQuantity = 'Invalid'
+    
     if (Object.keys(e).length > 0) {
       setErrors(e)
       return
     }
-    onConfirm(form)
+    onConfirm({ ...form, splitQuantity: isSplitting ? Number(splitQuantity) : undefined })
   }
 
-  const columnLabel = isExtrusion ? t('productionTasks.colExtrusion') : t('productionTasks.colCutting')
-  const icon = isExtrusion ? 'precision_manufacturing' : 'content_cut'
+  const columnLabel = COLUMNS.find((c) => c.id === columnId)?.labelKey ? t(COLUMNS.find((c) => c.id === columnId).labelKey) : columnId
+  const icon = COLUMNS.find((c) => c.id === columnId)?.icon || 'move_up'
 
   return (
     <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/40 p-3 md:p-6" onClick={onClose}>
@@ -476,25 +483,42 @@ function PendingMoveModal({ moveData, machines, employees, onClose, onConfirm })
         </div>
 
         <div className="mb-4 bg-surface-container-high rounded-xl p-3">
-          <p className="text-xs font-bold text-on-surface mb-1">{task.orderItem?.productName}</p>
-          <p className="text-[11px] text-text-muted">Bu görev {columnLabel} aşamasına geçiyor. Lütfen makine ve operatörü doğrulayın.</p>
+          <p className="text-xs font-bold text-on-surface mb-1">{task.orderItem ? task.orderItem.productName : task.product?.name}</p>
+          <p className="text-[11px] text-text-muted">Bu görev {columnLabel} aşamasına geçiyor. Toplam miktar: {task.quantity}.</p>
         </div>
 
         <div className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">{t('productionTasks.machine')} *</label>
-            <select className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.machineId ? 'border-error' : 'border-theme-border'}`} value={form.machineId} onChange={set('machineId')}>
-              <option value="">{t('common.select')}</option>
-              {targetMachines.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.type || 'General'})</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">{t('productionTasks.operator')} *</label>
-            <select className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.operatorId ? 'border-error' : 'border-theme-border'}`} value={form.operatorId} onChange={set('operatorId')}>
-              <option value="">{t('common.select')}</option>
-              {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-            </select>
-          </div>
+          <label className="flex items-center gap-2 text-sm font-bold cursor-pointer text-on-surface">
+            <input type="checkbox" checked={isSplitting} onChange={(e) => setIsSplitting(e.target.checked)} className="w-4 h-4 text-primary" />
+            Görevi Parçala (Bir kısmını önceki aşamada bırak)
+          </label>
+          
+          {isSplitting && (
+            <div className="pl-6">
+              <label className="block text-xs font-semibold text-text-muted mb-1">Yeni Aşamaya Geçecek Miktar *</label>
+              <input type="number" min="1" max={task.quantity - 1} value={splitQuantity} onChange={e => setSplitQuantity(e.target.value)} className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.splitQuantity ? 'border-error' : 'border-theme-border'}`} />
+              <p className="text-[10px] text-text-muted mt-1">{task.quantity - splitQuantity} adet mevcut aşamasında kalacak.</p>
+            </div>
+          )}
+
+          {(isExtrusion || isCutting) && (
+            <>
+              <div>
+                <label className="block text-xs font-semibold text-text-muted mb-1">{t('productionTasks.machine')} *</label>
+                <select className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.machineId ? 'border-error' : 'border-theme-border'}`} value={form.machineId} onChange={set('machineId')}>
+                  <option value="">{t('common.select')}</option>
+                  {targetMachines.map((m) => <option key={m.id} value={m.id}>{m.name} ({m.type || 'General'})</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-text-muted mb-1">{t('productionTasks.operator')} *</label>
+                <select className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.operatorId ? 'border-error' : 'border-theme-border'}`} value={form.operatorId} onChange={set('operatorId')}>
+                  <option value="">{t('common.select')}</option>
+                  {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+                </select>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="flex gap-3 mt-6">
@@ -512,8 +536,35 @@ function PendingMoveModal({ moveData, machines, employees, onClose, onConfirm })
 
 export default function ProductionTasks() {
   const { t } = useTranslation()
-  const { machines, employees, productionTasks, updateProductionTask, moveProductionTask, deleteProductionTask, rolloverProductionTask, isAdmin } = useData()
+  const { 
+    machines, 
+    employees, 
+    productionTasks, 
+    updateProductionTask, 
+    moveProductionTask, 
+    deleteProductionTask, 
+    rolloverProductionTask, 
+    isAdmin,
+    orders,
+    products,
+    permissions,
+    employeePermissions,
+    addProductionTask
+  } = useData()
+  const { user: currentUser } = useAuth()
+  
+  const empId = currentUser?.employeeId
+  const activeEmployee = employees?.find(e => e.id === empId)
+  const activeDept = activeEmployee?.department || currentUser?.department
+  const empPerms = employeePermissions?.[empId] || []
+  const deptPerms = permissions[activeDept] || []
+  const isActDenied = empPerms.includes('-production-start')
+  const hasEmpAct = empPerms.includes('production-start')
+  const hasDeptAct = deptPerms.includes('production-start')
+  const canAct = isAdmin || (!isActDenied && (hasDeptAct || hasEmpAct))
+
   const [detailTask, setDetailTask] = useState(null)
+  const [showCreateModal, setShowCreateModal] = useState(false)
   const [pendingMove, setPendingMove] = useState(null)
   const [dragOverColumn, setDragOverColumn] = useState(null)
   const [search, setSearch] = useState('')
@@ -571,13 +622,9 @@ export default function ProductionTasks() {
     e.preventDefault()
     const id = e.dataTransfer.getData('taskId')
     if (id) {
-      if (columnId === 'extrusion' || columnId === 'cutting') {
-        const task = productionTasks.find(t => t.id === id)
-        if (task && task.status !== columnId) {
-          setPendingMove({ task, columnId })
-        }
-      } else {
-        moveProductionTask(id, columnId)
+      const task = productionTasks.find(t => t.id === id)
+      if (task && task.status !== columnId) {
+        setPendingMove({ task, columnId })
       }
     }
     setDragOverColumn(null)
@@ -625,6 +672,24 @@ export default function ProductionTasks() {
               alert(err.message)
             }
           }} 
+        />
+      )}
+
+      {showCreateModal && (
+        <CreateProductionTaskModal
+          onClose={() => setShowCreateModal(false)}
+          onSave={async (form) => {
+            try {
+              await addProductionTask(form)
+              setShowCreateModal(false)
+            } catch (err) {
+              alert(err.message)
+            }
+          }}
+          machines={machines}
+          employees={employees}
+          orders={orders}
+          products={products}
         />
       )}
 
@@ -702,13 +767,24 @@ export default function ProductionTasks() {
             className="bg-transparent border-none outline-none text-xs md:text-sm w-full placeholder-slate-400"
           />
         </div>
-        <button
-          onClick={handleExport}
-          className="primary-gradient text-white px-3 md:px-5 py-1.5 md:py-2 rounded-lg md:rounded-xl font-bold text-xs md:text-sm shadow-xl shadow-primary/20 hover:opacity-90 transition-all flex items-center justify-center gap-1.5 md:gap-2 flex-shrink-0"
-        >
-          <span className="material-symbols-outlined text-[18px] md:text-[20px]">download</span>
-          <span className="hidden md:inline">{t('common.export')}</span>
-        </button>
+        <div className="flex items-center gap-3">
+          {canAct && (
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="primary-gradient text-white px-3 md:px-5 py-1.5 md:py-2 rounded-lg md:rounded-xl font-bold text-xs md:text-sm shadow-xl shadow-primary/20 hover:opacity-90 transition-all flex items-center justify-center gap-1.5 md:gap-2 flex-shrink-0"
+            >
+              <span className="material-symbols-outlined text-[18px] md:text-[20px]">add</span>
+              <span className="hidden md:inline">Yeni Görev Oluştur</span>
+            </button>
+          )}
+          <button
+            onClick={handleExport}
+            className="primary-gradient text-white px-3 md:px-5 py-1.5 md:py-2 rounded-lg md:rounded-xl font-bold text-xs md:text-sm shadow-xl shadow-primary/20 hover:opacity-90 transition-all flex items-center justify-center gap-1.5 md:gap-2 flex-shrink-0"
+          >
+            <span className="material-symbols-outlined text-[18px] md:text-[20px]">download</span>
+            <span className="hidden md:inline">{t('common.export')}</span>
+          </button>
+        </div>
       </div>
 
       {/* Kanban board */}

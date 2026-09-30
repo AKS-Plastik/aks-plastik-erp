@@ -16,6 +16,7 @@ router.get('/', async (req, res) => {
             product: true
           }
         },
+        product: true,
         machine: true,
         operator: true,
       }
@@ -29,8 +30,30 @@ router.get('/', async (req, res) => {
 // Create a new production task
 router.post('/', async (req, res) => {
   try {
-    const { orderItemId, extrusionMachineId, extrusionOperatorId, cuttingMachineId, cuttingOperatorId, quantity, date } = req.body
+    const { source, productId, orderItemId, extrusionMachineId, extrusionOperatorId, cuttingMachineId, cuttingOperatorId, quantity, date } = req.body
     
+    const code = `PT-${String(Date.now()).slice(-5)}`
+
+    if (source === 'stock') {
+      const task = await prisma.productionTask.create({
+        data: {
+          code,
+          productId,
+          quantity: parseInt(quantity),
+          status: 'open',
+          date: date || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`,
+          machineId: extrusionMachineId ? parseInt(extrusionMachineId) : null,
+          operatorId: extrusionOperatorId || null,
+        },
+        include: {
+          product: true,
+          machine: true,
+          operator: true,
+        }
+      })
+      return res.status(201).json(task)
+    }
+
     // Check orderItem limits
     const orderItem = await prisma.orderItem.findUnique({ where: { id: orderItemId } })
     if (!orderItem) return res.status(404).json({ error: 'Order item not found' })
@@ -39,8 +62,6 @@ router.post('/', async (req, res) => {
     if (totalAssigned > orderItem.quantity) {
       return res.status(400).json({ error: 'Cannot assign more quantity to production than ordered' })
     }
-
-    const code = `PT-${String(Date.now()).slice(-5)}`
 
     // Transaction to create task and update order item status/quantities
     const [task] = await prisma.$transaction([
@@ -56,6 +77,7 @@ router.post('/', async (req, res) => {
         },
         include: {
           orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true } },
+          product: true,
           machine: true,
           operator: true,
         }
@@ -92,7 +114,7 @@ router.post('/', async (req, res) => {
 // Update production task status (e.g. from Kanban)
 router.patch('/:id/move', async (req, res) => {
   try {
-    const { status, machineId, operatorId } = req.body
+    const { status, machineId, operatorId, splitQuantity } = req.body
     const task = await prisma.productionTask.findUnique({ 
       where: { id: req.params.id },
       include: { orderItem: { include: { order: true } } }
@@ -104,67 +126,126 @@ router.patch('/:id/move', async (req, res) => {
     
     const shouldClearAssignment = status !== task.status && status !== 'completed'
 
-    const updatedData = { status }
-    if (machineId !== undefined) updatedData.machineId = machineId ? parseInt(machineId) : null
-    else if (shouldClearAssignment) updatedData.machineId = null
+    let returnedTask = null;
 
-    if (operatorId !== undefined) updatedData.operatorId = operatorId || null
-    else if (shouldClearAssignment) updatedData.operatorId = null
+    if (splitQuantity && splitQuantity > 0 && splitQuantity < task.quantity) {
+      const remainQty = task.quantity - splitQuantity
+      
+      const updatedData = { status, quantity: splitQuantity }
+      if (machineId !== undefined) updatedData.machineId = machineId ? parseInt(machineId) : null
+      else if (shouldClearAssignment) updatedData.machineId = null
 
-    // Update the task status
-    updates.push(prisma.productionTask.update({
-      where: { id: task.id },
-      data: updatedData,
-      include: {
-        orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true } },
-        machine: true,
-        operator: true,
+      if (operatorId !== undefined) updatedData.operatorId = operatorId || null
+      else if (shouldClearAssignment) updatedData.operatorId = null
+
+      updates.push(prisma.productionTask.create({
+        data: {
+          code: `PT-${String(Date.now()).slice(-5)}`,
+          orderItemId: task.orderItemId || null,
+          productId: task.productId || null,
+          machineId: updatedData.machineId,
+          operatorId: updatedData.operatorId,
+          quantity: splitQuantity,
+          status: status,
+          date: task.date
+        }
+      }))
+      
+      updates.push(prisma.productionTask.update({
+        where: { id: task.id },
+        data: { quantity: remainQty }
+      }))
+
+      if (task.orderItemId) {
+         if (status === 'completed' && task.status !== 'completed') {
+           updates.push(prisma.orderItem.update({
+             where: { id: task.orderItemId },
+             data: {
+               inProductionQuantity: { decrement: splitQuantity },
+               producedQuantity: { increment: splitQuantity }
+             }
+           }))
+         } else if (task.status === 'completed' && status !== 'completed') {
+           updates.push(prisma.orderItem.update({
+             where: { id: task.orderItemId },
+             data: {
+               inProductionQuantity: { increment: splitQuantity },
+               producedQuantity: { decrement: splitQuantity }
+             }
+           }))
+         }
       }
-    }))
+      
+      const results = await prisma.$transaction(updates)
+      returnedTask = results[1]
+    } else {
+      const updatedData = { status }
+      if (machineId !== undefined) updatedData.machineId = machineId ? parseInt(machineId) : null
+      else if (shouldClearAssignment) updatedData.machineId = null
 
-    // If task is completed, shift quantity from inProduction to produced
-    if (status === 'completed' && task.status !== 'completed') {
-      updates.push(prisma.orderItem.update({
-        where: { id: task.orderItemId },
-        data: {
-          inProductionQuantity: { decrement: task.quantity },
-          producedQuantity: { increment: task.quantity }
+      if (operatorId !== undefined) updatedData.operatorId = operatorId || null
+      else if (shouldClearAssignment) updatedData.operatorId = null
+
+      // Update the task status
+      updates.push(prisma.productionTask.update({
+        where: { id: task.id },
+        data: updatedData,
+        include: {
+          orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true } },
+          product: true,
+          machine: true,
+          operator: true,
         }
       }))
-    } else if (task.status === 'completed' && status !== 'completed') {
-      // Revert if moved out of completed
-      updates.push(prisma.orderItem.update({
-        where: { id: task.orderItemId },
-        data: {
-          inProductionQuantity: { increment: task.quantity },
-          producedQuantity: { decrement: task.quantity }
+
+      if (task.orderItemId) {
+        // If task is completed, shift quantity from inProduction to produced
+        if (status === 'completed' && task.status !== 'completed') {
+          updates.push(prisma.orderItem.update({
+            where: { id: task.orderItemId },
+            data: {
+              inProductionQuantity: { decrement: task.quantity },
+              producedQuantity: { increment: task.quantity }
+            }
+          }))
+        } else if (task.status === 'completed' && status !== 'completed') {
+          // Revert if moved out of completed
+          updates.push(prisma.orderItem.update({
+            where: { id: task.orderItemId },
+            data: {
+              inProductionQuantity: { increment: task.quantity },
+              producedQuantity: { decrement: task.quantity }
+            }
+          }))
         }
-      }))
+      }
+
+      const results = await prisma.$transaction(updates)
+      returnedTask = results[0]
     }
 
-    const results = await prisma.$transaction(updates)
-    const updatedTask = results[0]
+    if (task.orderItemId) {
+      // Check if the whole orderItem is completed
+      const updatedItem = await prisma.orderItem.findUnique({ where: { id: task.orderItemId } })
+      if (updatedItem.producedQuantity >= updatedItem.quantity) {
+        await prisma.orderItem.update({ where: { id: updatedItem.id }, data: { status: 'Production Completed' } })
+      } else if (updatedItem.inProductionQuantity > 0 || updatedItem.producedQuantity > 0) {
+        await prisma.orderItem.update({ where: { id: updatedItem.id }, data: { status: 'In-Production' } })
+      }
 
-    // Check if the whole orderItem is completed
-    const updatedItem = await prisma.orderItem.findUnique({ where: { id: task.orderItemId } })
-    if (updatedItem.producedQuantity >= updatedItem.quantity) {
-      await prisma.orderItem.update({ where: { id: updatedItem.id }, data: { status: 'Production Completed' } })
-    } else if (updatedItem.inProductionQuantity > 0 || updatedItem.producedQuantity > 0) {
-      await prisma.orderItem.update({ where: { id: updatedItem.id }, data: { status: 'In-Production' } })
+      // Check if the entire order is completed
+      const allItems = await prisma.orderItem.findMany({ where: { orderId: task.orderItem.orderId } })
+      const allCompleted = allItems.every(i => i.producedQuantity >= i.quantity)
+      const order = await prisma.order.findUnique({ where: { id: task.orderItem.orderId } })
+      
+      if (allCompleted && order.status !== 'Production Completed') {
+        await prisma.order.update({ where: { id: task.orderItem.orderId }, data: { status: 'Production Completed' } })
+      } else if (!allCompleted && order.status === 'Production Completed') {
+        await prisma.order.update({ where: { id: task.orderItem.orderId }, data: { status: 'In-Production' } })
+      }
     }
 
-    // Check if the entire order is completed
-    const allItems = await prisma.orderItem.findMany({ where: { orderId: task.orderItem.orderId } })
-    const allCompleted = allItems.every(i => i.producedQuantity >= i.quantity)
-    const order = await prisma.order.findUnique({ where: { id: task.orderItem.orderId } })
-    
-    if (allCompleted && order.status !== 'Production Completed') {
-      await prisma.order.update({ where: { id: task.orderItem.orderId }, data: { status: 'Production Completed' } })
-    } else if (!allCompleted && order.status === 'Production Completed') {
-      await prisma.order.update({ where: { id: task.orderItem.orderId }, data: { status: 'In-Production' } })
-    }
-
-    res.json(updatedTask)
+    res.json(returnedTask)
   } catch (err) {
     res.status(500).json({ error: err.message })
   }
@@ -199,16 +280,18 @@ router.delete('/:id', async (req, res) => {
   try {
     const task = await prisma.productionTask.findUnique({ where: { id: req.params.id } })
     if (task) {
-      if (task.status === 'completed') {
-        await prisma.orderItem.update({
-          where: { id: task.orderItemId },
-          data: { producedQuantity: { decrement: task.quantity } }
-        })
-      } else {
-        await prisma.orderItem.update({
-          where: { id: task.orderItemId },
-          data: { inProductionQuantity: { decrement: task.quantity } }
-        })
+      if (task.orderItemId) {
+        if (task.status === 'completed') {
+          await prisma.orderItem.update({
+            where: { id: task.orderItemId },
+            data: { producedQuantity: { decrement: task.quantity } }
+          })
+        } else {
+          await prisma.orderItem.update({
+            where: { id: task.orderItemId },
+            data: { inProductionQuantity: { decrement: task.quantity } }
+          })
+        }
       }
       await prisma.productionTask.delete({ where: { id: req.params.id } })
     }
@@ -238,18 +321,21 @@ router.post('/rollover', async (req, res) => {
         },
         include: {
           orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true } },
+          product: true,
           machine: true,
           operator: true,
         }
       })
-      await prisma.productionLog.create({
-        data: {
-          orderItemId: task.orderItemId,
-          productionTaskId: taskId,
-          action: 'Rollover',
-          details: `Rolled over from ${task.date} to ${targetDate}. Status changed from ${task.status} to ${targetStatus || task.status}. Quantity: ${task.quantity}.`
-        }
-      })
+      if (task.orderItemId) {
+        await prisma.productionLog.create({
+          data: {
+            orderItemId: task.orderItemId,
+            productionTaskId: taskId,
+            action: 'Rollover',
+            details: `Rolled over from ${task.date} to ${targetDate}. Status changed from ${task.status} to ${targetStatus || task.status}. Quantity: ${task.quantity}.`
+          }
+        })
+      }
       res.json({ action: 'rollover', task: updated })
     } else if (action === 'split') {
       const compQty = parseInt(completedQuantity)

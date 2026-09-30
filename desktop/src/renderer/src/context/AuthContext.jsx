@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { API_URL } from '../config'
+import OneSignal from 'react-onesignal'
 
 const AuthContext = createContext(null)
 
@@ -24,6 +25,47 @@ export function AuthProvider({ children }) {
   const savedRt = !window.api ? (localStorage.getItem('aks_refresh_token') || sessionStorage.getItem('aks_refresh_token')) : null
   const [loading, setLoading] = useState(!!savedRt)
   const refreshTokenRef = useRef(savedRt)
+
+  // Initialize OneSignal
+  useEffect(() => {
+    const initOneSignal = async () => {
+      const appId = import.meta.env.VITE_ONESIGNAL_APP_ID
+      if (appId) {
+        try {
+          await OneSignal.init({
+            appId,
+            allowLocalhostAsSecureOrigin: true,
+          })
+        } catch (err) {
+          console.warn('OneSignal init error:', err)
+        }
+      }
+    }
+    initOneSignal()
+  }, [])
+
+  // Sync user with OneSignal
+  useEffect(() => {
+    const syncOneSignalUser = async () => {
+      if (import.meta.env.VITE_ONESIGNAL_APP_ID && OneSignal.initialized) {
+        if (user) {
+          const externalId = user.employeeId || user.id
+          try {
+            await OneSignal.login(externalId)
+          } catch (err) {
+            console.warn('OneSignal login error:', err)
+          }
+        } else {
+          try {
+            await OneSignal.logout()
+          } catch (err) {
+            console.warn('OneSignal logout error:', err)
+          }
+        }
+      }
+    }
+    syncOneSignalUser()
+  }, [user])
 
   // Web-only: Restore session on mount if we have a refresh token saved
   useEffect(() => {
