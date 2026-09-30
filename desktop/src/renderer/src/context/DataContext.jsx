@@ -40,7 +40,7 @@ export function DataProvider({ children }) {
   const refreshCustomers = useCallback(() => {
     fetch(`${API_URL}/customers`, { headers: authHeaders })
       .then((r) => r.json())
-      .then((data) => { setCustomers(data); setReady(true) })
+      .then((data) => { setCustomers(Array.isArray(data) ? data : []); setReady(true) })
       .catch(() => setReady(true))
   }, [token])
 
@@ -94,7 +94,7 @@ export function DataProvider({ children }) {
   const refreshProducts = useCallback(() => {
     fetch(`${API_URL}/products`, { headers: authHeaders })
       .then((r) => r.json())
-      .then((data) => setProducts(data))
+      .then((data) => setProducts(Array.isArray(data) ? data : []))
       .catch(() => { })
   }, [token])
   useEffect(() => { refreshProducts() }, [token])
@@ -112,7 +112,7 @@ export function DataProvider({ children }) {
   const refreshEmployees = useCallback(() => {
     fetch(`${API_URL}/employees`, { headers: authHeaders })
       .then((r) => r.json())
-      .then((data) => setEmployees(data))
+      .then((data) => setEmployees(Array.isArray(data) ? data : []))
       .catch(() => { })
   }, [token])
   useEffect(() => { refreshEmployees() }, [token])
@@ -120,7 +120,7 @@ export function DataProvider({ children }) {
   const refreshOrders = useCallback(() => {
     fetch(`${API_URL}/orders`, { headers: authHeaders })
       .then((r) => r.json())
-      .then((data) => setOrders(data))
+      .then((data) => setOrders(Array.isArray(data) ? data : []))
       .catch(() => { })
   }, [token])
   useEffect(() => { refreshOrders() }, [token])
@@ -138,7 +138,7 @@ export function DataProvider({ children }) {
   const refreshFinanceRecords = useCallback(() => {
     fetch(`${API_URL}/finance`, { headers: authHeaders })
       .then((r) => r.json())
-      .then((data) => setFinanceRecords(data))
+      .then((data) => setFinanceRecords(Array.isArray(data) ? data : []))
       .catch(() => { })
   }, [token])
   useEffect(() => { refreshFinanceRecords() }, [token])
