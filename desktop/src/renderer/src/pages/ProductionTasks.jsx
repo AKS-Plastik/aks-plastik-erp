@@ -753,9 +753,9 @@ export default function ProductionTasks() {
   }, [location.state, productionTasks])
 
   const visibleTasks = useMemo(() => {
-    if (isAdmin) return productionTasks || []
+    if (isAdmin || canAct) return productionTasks || []
     return (productionTasks || []).filter(t => t.operatorId === empId)
-  }, [productionTasks, isAdmin, empId])
+  }, [productionTasks, isAdmin, empId, canAct])
 
   // Find tasks that belong to past days and are not completed
   const pendingPastTasks = visibleTasks.filter(t => t.date && t.date < todayIso && t.status !== 'completed')
