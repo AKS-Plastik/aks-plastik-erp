@@ -771,6 +771,8 @@ export default function ProductionTasks() {
     return taskDate >= currentDate && taskDate <= endDateString
   })
 
+  const isPastBoard = currentDate < todayIso
+
   function handleExport() {
     const rows = activeTasks.map((t) => ({
       Code: t.code,
@@ -982,6 +984,12 @@ export default function ProductionTasks() {
         <div>
           <div className="flex items-center gap-3 mb-1 md:mb-2">
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-on-surface">{t('productionTasks.title')}</h1>
+            {isPastBoard && (
+              <span className="bg-error/10 text-error px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 uppercase tracking-wider">
+                <span className="material-symbols-outlined text-[14px]">lock</span>
+                Geçmiş Gün (Kilitli)
+              </span>
+            )}
           </div>
           <p className="text-on-surface-variant text-xs md:text-sm lg:text-base">
             {t('productionTasks.subtitle')}
