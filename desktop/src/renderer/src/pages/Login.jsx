@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import aksLogoLight from '../assets/aks_logo.png'
 import aksLogoDark from '../assets/aks_logo_dark.png'
+import packageJson from '../../../../package.json'
 
 export default function Login() {
   const { t } = useTranslation()
@@ -160,7 +161,7 @@ export default function Login() {
           </p>
         </div>
 
-        <p className="text-center text-xs text-text-muted mt-6">v2.0.0</p>
+        <p className="text-center text-xs text-text-muted mt-6">v{packageJson.version}</p>
       </div>
     </div>
   )

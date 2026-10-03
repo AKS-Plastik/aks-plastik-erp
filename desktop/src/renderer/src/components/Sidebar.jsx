@@ -5,6 +5,7 @@ import { useTheme } from '../context/ThemeContext'
 import { useData } from '../context/DataContext'
 import aksLogoLight from '../assets/aks_logo.png'
 import aksLogoDark from '../assets/aks_logo_dark.png'
+import packageJson from '../../../../package.json'
 
 const ALL_NAV_ITEMS = [
   { key: 'dashboard', to: '/dashboard', icon: 'dashboard', tKey: 'nav.dashboard' },
@@ -110,7 +111,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             </span>
           </button>
           <div className="text-center text-[9px] text-text-muted opacity-40 mt-2">
-            v2.0.4
+            v{packageJson.version}
           </div>
         </div>
       </aside>
