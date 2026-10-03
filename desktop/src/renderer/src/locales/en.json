@@ -14,8 +14,8 @@
     "employees": "Employees",
     "settings": "Settings",
     "logout": "Log Out",
-    "productionTasks": "Production Tasks",
-    "productionPlanning": "Production Planning"
+    "productionTasks": "Production Planning",
+    "productionPlanning": "Production Tasks"
   },
   "topbar": {
     "alerts": "Alerts",
@@ -827,8 +827,8 @@
     "canStartProduction": "Can Start Production"
   },
   "productionTasks": {
-    "title": "Production Tasks",
-    "subtitle": "Manage production tasks here.",
+    "title": "Production Planning",
+    "subtitle": "Manage production plan here.",
     "totalTasks": "Total Tasks",
     "searchPlaceholder": "Search task, machine or operator...",
     "colOpen": "Open",

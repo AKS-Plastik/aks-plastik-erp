@@ -31,6 +31,8 @@ export default function CreateProductionTaskModal({
         setProductId
     ] = useState('');
 
+    const todayIso = new Date().toISOString().split('T')[0];
+
     const [
         form,
         setForm
@@ -39,7 +41,8 @@ export default function CreateProductionTaskModal({
         extrusionOperatorId: '',
         cuttingMachineId: '',
         cuttingOperatorId: '',
-        quantity: ''
+        quantity: '',
+        date: todayIso
     });
 
     const [
@@ -141,6 +144,10 @@ export default function CreateProductionTaskModal({
             if(!form.quantity || form.quantity < 1) {
                 e.quantity = 'Invalid';
             }
+        }
+
+        if(!form.date) {
+            e.date = 'Required';
         }
 
         if(Object.keys(e).length > 0) {
@@ -387,18 +394,32 @@ export default function CreateProductionTaskModal({
                         </div>
                     </div>
 
-                    <div>
-                        <label className="block text-xs font-semibold text-text-muted mb-1">
-                            {t('orders.qty')} *
-                        </label>
-                        <input 
-                            type="number" 
-                            min="1" 
-                            max={mode === 'order' && selectedItem ? selectedItem.remaining : undefined} 
-                            className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.quantity ? 'border-error' : 'border-theme-border'}`} 
-                            value={form.quantity} 
-                            onChange={set('quantity')} 
-                        />
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                        <div>
+                            <label className="block text-xs font-semibold text-text-muted mb-1">
+                                {t('common.date') || 'Tarih'} *
+                            </label>
+                            <input 
+                                type="date" 
+                                min={todayIso}
+                                className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.date ? 'border-error' : 'border-theme-border'}`} 
+                                value={form.date} 
+                                onChange={set('date')} 
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-semibold text-text-muted mb-1">
+                                {t('orders.qty')} *
+                            </label>
+                            <input 
+                                type="number" 
+                                min="1" 
+                                max={mode === 'order' && selectedItem ? selectedItem.remaining : undefined} 
+                                className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.quantity ? 'border-error' : 'border-theme-border'}`} 
+                                value={form.quantity} 
+                                onChange={set('quantity')} 
+                            />
+                        </div>
                     </div>
                 </div>
 

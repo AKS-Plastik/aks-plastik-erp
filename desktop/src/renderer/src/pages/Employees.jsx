@@ -630,6 +630,12 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
                           const productionSubEnabled = empProductionSubDeny ? false : (roleProductionSub || empProductionSubAllow)
                           const productionSubSaving = !!permSaving['production-start']
 
+                          const rolePlanningSub = page.key === 'production-planning' && roleEnabled && (permissions[dept] || []).includes('production-planning-edit')
+                          const empPlanningSubDeny = page.key === 'production-planning' && (employeePermissions[employee?.id] || []).includes('-production-planning-edit')
+                          const empPlanningSubAllow = page.key === 'production-planning' && (employeePermissions[employee?.id] || []).includes('production-planning-edit')
+                          const planningSubEnabled = empPlanningSubDeny ? false : (rolePlanningSub || empPlanningSubAllow)
+                          const planningSubSaving = !!permSaving['production-planning-edit']
+
                           return (
                             <div key={page.key}>
                               <button
@@ -716,6 +722,28 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
                                   {productionSubSaving
                                     ? <span className="material-symbols-outlined text-[12px] md:text-sm animate-spin">progress_activity</span>
                                     : <span className="material-symbols-outlined text-[12px] md:text-sm">{empProductionSubDeny ? 'block' : productionSubEnabled ? 'check_circle' : 'radio_button_unchecked'}</span>
+                                  }
+                                </button>
+                              )}
+                              {page.key === 'production-planning' && enabled && (
+                                <button
+                                  onClick={() => togglePermission('production-planning-edit')}
+                                  disabled={planningSubSaving}
+                                  className={`w-full flex items-center gap-2 md:gap-3 pl-6 md:pl-8 pr-2.5 md:pr-3 py-1.5 md:py-2 rounded-lg md:rounded-xl border transition text-[10px] md:text-sm mt-1 ${
+                                    empPlanningSubDeny
+                                      ? 'bg-error/10 border-error/30 text-error'
+                                      : planningSubEnabled
+                                        ? 'bg-primary/10 border-primary text-primary'
+                                        : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
+                                  }`}
+                                >
+                                  <span className="material-symbols-outlined text-[14px] md:text-base">edit_calendar</span>
+                                  <span className={`flex-1 text-left font-medium ${empPlanningSubDeny ? 'line-through opacity-70' : ''}`}>Görevleri Düzenleyebilir</span>
+                                  {rolePlanningSub && !empPlanningSubDeny && <span className="text-[9px] uppercase font-bold tracking-wider opacity-60 mr-2">Dept</span>}
+                                  {empPlanningSubDeny && <span className="text-[9px] uppercase font-bold tracking-wider text-error opacity-80 mr-2">Denied</span>}
+                                  {planningSubSaving
+                                    ? <span className="material-symbols-outlined text-[12px] md:text-sm animate-spin">progress_activity</span>
+                                    : <span className="material-symbols-outlined text-[12px] md:text-sm">{empPlanningSubDeny ? 'block' : planningSubEnabled ? 'check_circle' : 'radio_button_unchecked'}</span>
                                   }
                                 </button>
                               )}

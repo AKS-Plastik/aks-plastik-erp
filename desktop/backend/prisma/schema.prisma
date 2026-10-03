@@ -197,6 +197,7 @@ model Product {
   orderItems         OrderItem[]
   purchaseOrderItems PurchaseOrderItem[]
   productionTasks    ProductionTask[]
+  employeeTasks      EmployeeTask[]
 }
 
 model Employee {
@@ -227,6 +228,7 @@ model Employee {
   attendances     Attendance[]
   leaveRequests   LeaveRequest[]
   productionTasks ProductionTask[]
+  employeeTasks   EmployeeTask[]
   user            User?
   siteVisitNotes  SiteVisitNote[]
 }
@@ -256,6 +258,7 @@ model Order {
 
   items          OrderItem[]
   financeRecords FinanceRecord[]
+  employeeTasks  EmployeeTask[]
 }
 
 model OrderItem {
@@ -339,6 +342,7 @@ model Machine {
   maintenanceRecords  MachineMaintenanceRecord[]
   monthlyMaintenance  MachineMonthlyMaintenance[]
   productionTasks     ProductionTask[]
+  employeeTasks       EmployeeTask[]
 }
 
 model ProductionTask {
@@ -364,7 +368,8 @@ model ProductionTask {
   operator   Employee? @relation(fields: [operatorId], references: [id])
   operatorId String?
 
-  logs ProductionLog[]
+  logs          ProductionLog[]
+  employeeTasks EmployeeTask[]
 }
 
 model MachineMaintenanceRecord {
@@ -604,4 +609,37 @@ model SiteVisitNote {
   createdById String?
   createdBy   Employee? @relation(fields: [createdById], references: [id])
   createdAt   DateTime  @default(now())
+}
+
+model EmployeeTask {
+  id               String          @id @default(cuid())
+  title            String
+  date             String
+  status           String          @default("pending")
+  notes            String?
+  employeeId       String?
+  employee         Employee?       @relation(fields: [employeeId], references: [id])
+  machineId        Int?
+  machine          Machine?        @relation(fields: [machineId], references: [id])
+  orderId          String?
+  order            Order?          @relation(fields: [orderId], references: [id])
+  productionTaskId String?
+  productionTask   ProductionTask? @relation(fields: [productionTaskId], references: [id])
+  productId        String?
+  product          Product?        @relation(fields: [productId], references: [id])
+  quantity         Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  taskNotes        EmployeeTaskNote[]
+}
+
+model EmployeeTaskNote {
+  id             String       @id @default(cuid())
+  taskId         String
+  task           EmployeeTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  fromStatus     String
+  toStatus       String
+  note           String
+  createdAt      DateTime     @default(now())
 }

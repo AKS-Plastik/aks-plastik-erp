@@ -114,7 +114,7 @@ router.post('/', async (req, res) => {
 // Update production task status (e.g. from Kanban)
 router.patch('/:id/move', async (req, res) => {
   try {
-    const { status, machineId, operatorId, splitQuantity } = req.body
+    const { status, machineId, operatorId, splitQuantity, date } = req.body
     const task = await prisma.productionTask.findUnique({ 
       where: { id: req.params.id },
       include: { orderItem: { include: { order: true } } }
@@ -132,6 +132,7 @@ router.patch('/:id/move', async (req, res) => {
       const remainQty = task.quantity - splitQuantity
       
       const updatedData = { status, quantity: splitQuantity }
+      if (date !== undefined) updatedData.date = date
       if (machineId !== undefined) updatedData.machineId = machineId ? parseInt(machineId) : null
       else if (shouldClearAssignment) updatedData.machineId = null
 
@@ -147,7 +148,7 @@ router.patch('/:id/move', async (req, res) => {
           operatorId: updatedData.operatorId,
           quantity: splitQuantity,
           status: status,
-          date: task.date
+          date: date || task.date
         }
       }))
       
@@ -180,6 +181,7 @@ router.patch('/:id/move', async (req, res) => {
       returnedTask = results[1]
     } else {
       const updatedData = { status }
+      if (date !== undefined) updatedData.date = date
       if (machineId !== undefined) updatedData.machineId = machineId ? parseInt(machineId) : null
       else if (shouldClearAssignment) updatedData.machineId = null
 
@@ -254,7 +256,7 @@ router.patch('/:id/move', async (req, res) => {
 // Update production task details (e.g. quantity, operator, machine)
 router.put('/:id', async (req, res) => {
   try {
-    const { machineId, operatorId, quantity, status } = req.body
+    const { machineId, operatorId, quantity, status, date } = req.body
     const updatedTask = await prisma.productionTask.update({
       where: { id: req.params.id },
       data: {
@@ -262,6 +264,7 @@ router.put('/:id', async (req, res) => {
         ...(operatorId && { operatorId }),
         ...(quantity && { quantity: parseInt(quantity) }),
         ...(status && { status }),
+        ...(date !== undefined && { date }),
       },
       include: {
         orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true } },
