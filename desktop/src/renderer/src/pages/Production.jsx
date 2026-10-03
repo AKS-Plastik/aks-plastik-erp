@@ -36,12 +36,14 @@ function SendToProductionModal({ item, onClose, onSave, machines, employees }) {
   const extrusionMachines = machines.filter(m => m.type === 'Extrusion' || !m.type || m.type === 'General')
   const cuttingMachines = machines.filter(m => m.type === 'Cutting' || !m.type || m.type === 'General')
 
+  const todayIso = new Date().toISOString().split('T')[0]
   const [form, setForm] = useState({
     extrusionMachineId: '',
     extrusionOperatorId: '',
     cuttingMachineId: '',
     cuttingOperatorId: '',
     quantity: remaining,
+    date: todayIso,
   })
   const [errors, setErrors] = useState({})
 
@@ -50,6 +52,7 @@ function SendToProductionModal({ item, onClose, onSave, machines, employees }) {
   function handleSave() {
     const e = {}
     if (!form.quantity || form.quantity < 1 || form.quantity > remaining) e.quantity = 'Invalid'
+    if (!form.date) e.date = 'Invalid'
 
     if (Object.keys(e).length > 0) {
       setErrors(e)
@@ -117,9 +120,15 @@ function SendToProductionModal({ item, onClose, onSave, machines, employees }) {
               </div>
             </div>
           </div>
-          <div>
-            <label className="block text-xs font-semibold text-text-muted mb-1">{t('orders.qty')} *</label>
-            <input type="number" min="1" max={remaining} className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.quantity ? 'border-error' : 'border-theme-border'}`} value={form.quantity} onChange={set('quantity')} />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-text-muted mb-1">{t('common.date') || 'Tarih'} *</label>
+              <input type="date" min={todayIso} className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.date ? 'border-error' : 'border-theme-border'}`} value={form.date} onChange={set('date')} />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-text-muted mb-1">{t('orders.qty')} *</label>
+              <input type="number" min="1" max={remaining} className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.quantity ? 'border-error' : 'border-theme-border'}`} value={form.quantity} onChange={set('quantity')} />
+            </div>
           </div>
         </div>
 

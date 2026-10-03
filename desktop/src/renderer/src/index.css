@@ -393,3 +393,6 @@ h4 {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+.dark { color-scheme: dark; }
+

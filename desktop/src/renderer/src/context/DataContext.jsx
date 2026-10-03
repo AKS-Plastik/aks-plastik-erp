@@ -15,6 +15,7 @@ export function DataProvider({ children }) {
   const [orders, setOrders] = useState([])
   const [financeRecords, setFinanceRecords] = useState([])
   const [productionTasks, setProductionTasks] = useState([])
+  const [employeeTasks, setEmployeeTasks] = useState([])
   const [roles, setRoles] = useState([])
   const [permissions, setPermissions] = useState({})
   const [statusPermissions, setStatusPermissions] = useState({})
@@ -40,7 +41,7 @@ export function DataProvider({ children }) {
   const refreshCustomers = useCallback(() => {
     fetch(`${API_URL}/customers`, { headers: authHeaders })
       .then((r) => r.json())
-      .then((data) => { setCustomers(data); setReady(true) })
+      .then((data) => { setCustomers(Array.isArray(data) ? data : []); setReady(true) })
       .catch(() => setReady(true))
   }, [token])
 
@@ -94,7 +95,7 @@ export function DataProvider({ children }) {
   const refreshProducts = useCallback(() => {
     fetch(`${API_URL}/products`, { headers: authHeaders })
       .then((r) => r.json())
-      .then((data) => setProducts(data))
+      .then((data) => setProducts(Array.isArray(data) ? data : []))
       .catch(() => { })
   }, [token])
   useEffect(() => { refreshProducts() }, [token])
@@ -112,7 +113,7 @@ export function DataProvider({ children }) {
   const refreshEmployees = useCallback(() => {
     fetch(`${API_URL}/employees`, { headers: authHeaders })
       .then((r) => r.json())
-      .then((data) => setEmployees(data))
+      .then((data) => setEmployees(Array.isArray(data) ? data : []))
       .catch(() => { })
   }, [token])
   useEffect(() => { refreshEmployees() }, [token])
@@ -120,7 +121,7 @@ export function DataProvider({ children }) {
   const refreshOrders = useCallback(() => {
     fetch(`${API_URL}/orders`, { headers: authHeaders })
       .then((r) => r.json())
-      .then((data) => setOrders(data))
+      .then((data) => setOrders(Array.isArray(data) ? data : []))
       .catch(() => { })
   }, [token])
   useEffect(() => { refreshOrders() }, [token])
@@ -138,7 +139,7 @@ export function DataProvider({ children }) {
   const refreshFinanceRecords = useCallback(() => {
     fetch(`${API_URL}/finance`, { headers: authHeaders })
       .then((r) => r.json())
-      .then((data) => setFinanceRecords(data))
+      .then((data) => setFinanceRecords(Array.isArray(data) ? data : []))
       .catch(() => { })
   }, [token])
   useEffect(() => { refreshFinanceRecords() }, [token])
@@ -632,6 +633,58 @@ export function DataProvider({ children }) {
     refreshOrders()
   }
 
+  const refreshEmployeeTasks = useCallback(() => {
+    fetch(`${API_URL}/employee-tasks`, { headers: authHeaders })
+      .then((r) => r.json())
+      .then((data) => setEmployeeTasks(Array.isArray(data) ? data : []))
+      .catch(() => {})
+  }, [token])
+  useEffect(() => { refreshEmployeeTasks() }, [token])
+
+  const createEmployeeTask = async (data) => {
+    const res = await fetch(`${API_URL}/employee-tasks`, { method: 'POST', headers, body: JSON.stringify(data) })
+    if (res.ok) refreshEmployeeTasks()
+    return res.json()
+  }
+
+  const updateEmployeeTask = async (id, data) => {
+    const res = await fetch(`${API_URL}/employee-tasks/${id}`, { method: 'PUT', headers, body: JSON.stringify(data) })
+    if (res.ok) refreshEmployeeTasks()
+    return res.json()
+  }
+
+  const moveEmployeeTask = async (id, status, date, note) => {
+    const res = await fetch(`${API_URL}/employee-tasks/${id}/move`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ status, date, note })
+    })
+    if (!res.ok) {
+      const d = await res.json()
+      throw new Error(d.error || 'Failed to move task')
+    }
+    refreshEmployeeTasks()
+    return res.json()
+  }
+
+  const deleteEmployeeTask = async (id) => {
+    const res = await fetch(`${API_URL}/employee-tasks/${id}`, { method: 'DELETE', headers })
+    if (res.ok) refreshEmployeeTasks()
+  }
+
+  const rolloverEmployeeTasks = async (taskIds, targetDate) => {
+    const res = await fetch(`${API_URL}/employee-tasks/rollover`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ taskIds, targetDate })
+    })
+    if (!res.ok) {
+      const d = await res.json()
+      throw new Error(d.error || 'Rollover failed')
+    }
+    refreshEmployeeTasks()
+  }
+
   // ── Finance Records ──
   async function addFinanceRecord(form) {
     const res = await fetch(`${API_URL}/finance`, { method: 'POST', headers, body: JSON.stringify(form) })
@@ -671,6 +724,7 @@ export function DataProvider({ children }) {
       addMaintenanceRecord, deleteMaintenanceRecord,
       addMonthlyTask, updateMonthlyTask, deleteMonthlyTask,
       productionTasks, addProductionTask, updateProductionTask, moveProductionTask, deleteProductionTask, rolloverProductionTask, refreshProductionTasks,
+      employeeTasks, refreshEmployeeTasks, createEmployeeTask, updateEmployeeTask, moveEmployeeTask, deleteEmployeeTask, rolloverEmployeeTasks,
       isAdmin,
     }}>
       {children}

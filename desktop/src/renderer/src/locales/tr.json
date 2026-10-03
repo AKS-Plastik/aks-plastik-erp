@@ -14,8 +14,8 @@
     "employees": "Çalışanlar",
     "settings": "Ayarlar",
     "logout": "Çıkış Yap",
-    "productionTasks": "Üretim Görevleri",
-    "productionPlanning": "Üretim Planlama"
+    "productionTasks": "Üretim Planlama",
+    "productionPlanning": "Üretim Görevleri"
   },
   "topbar": {
     "alerts": "Uyarılar",
@@ -827,8 +827,8 @@
     "canStartProduction": "Üretim Başlatabilir"
   },
   "productionTasks": {
-    "title": "Üretim Görevleri",
-    "subtitle": "Üretimdeki kalemleri buradan takip edebilirsiniz.",
+    "title": "Üretim Planlama",
+    "subtitle": "Üretim planını buradan takip edebilirsiniz.",
     "totalTasks": "Toplam Görev",
     "searchPlaceholder": "Görev, makine veya operatör ara...",
     "colOpen": "Açık",

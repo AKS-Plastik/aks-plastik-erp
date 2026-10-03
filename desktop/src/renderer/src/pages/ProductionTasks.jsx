@@ -1,5 +1,6 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useLocation } from 'react-router-dom'
 import { useData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
 import CreateProductionTaskModal from '../components/CreateProductionTaskModal'
@@ -55,8 +56,9 @@ function DetailRow({ icon, label, value }) {
   )
 }
 
-function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete, isAdmin }) {
+function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete, isAdmin, onCreateEmployeeTask }) {
   const { t } = useTranslation()
+  const todayIso = getLocalTodayIso()
   const [editing, setEditing]       = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [form, setForm] = useState({
@@ -64,6 +66,7 @@ function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete,
     operatorId: task.operatorId || '',
     quantity:   task.quantity || 1,
     status:     task.status || 'open',
+    date:       task.date || todayIso,
   })
   const [errors, setErrors] = useState({})
   const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
@@ -72,6 +75,7 @@ function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete,
     if (!form.machineId) { setErrors({ machineId: 'Required' }); return }
     if (!form.operatorId) { setErrors({ operatorId: 'Required' }); return }
     if (!form.quantity || form.quantity < 1) { setErrors({ quantity: 'Invalid' }); return }
+    if (!form.date) { setErrors({ date: 'Required' }); return }
     onSave(task.id, form)
   }
 
@@ -81,6 +85,7 @@ function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete,
       operatorId: task.operatorId || '',
       quantity:   task.quantity || 1,
       status:     task.status || 'open',
+      date:       task.date || todayIso,
     })
     setErrors({})
     setEditing(false)
@@ -130,7 +135,8 @@ function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete,
           <div className="px-4 md:px-6 py-4 overflow-y-auto flex-1">
             <DetailRow icon="conveyor_belt" label={t('productionTasks.machine')} value={task.machine?.name} />
             <DetailRow icon="badge" label={t('productionTasks.operator')} value={task.operator?.name} />
-            <DetailRow icon="inventory_2" label={t('orders.product')} value={`${task.orderItem ? task.orderItem.productName : task.product?.name} (${task.quantity} ${task.orderItem ? task.orderItem.product?.unit : task.product?.unit || 'pcs'})`} />
+            <DetailRow icon="calendar_today" label={t('common.date') || 'Tarih'} value={fmtDate(task.date)} />
+            <DetailRow icon="inventory_2" label={t('orders.product')} value={`${task.orderItem ? task.orderItem.productName : task.product?.name} (${task.quantity} ${task.orderItem?.product?.unit || task.product?.unit || 'adet'})`} />
             <DetailRow icon="business" label={t('common.customer')} value={
               <span className="flex flex-col items-start gap-0.5">
                 <span>{task.orderItem?.order?.customer?.name || t('common.noCustomer')}</span>
@@ -141,7 +147,7 @@ function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete,
                 )}
               </span>
             } />
-            <DetailRow icon="calendar_today" label={t('common.created')} value={fmtDate(task.createdAt)} />
+            <DetailRow icon="schedule" label={t('common.created')} value={fmtDate(task.createdAt)} />
           </div>
         )}
 
@@ -163,6 +169,11 @@ function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete,
             <div className="col-span-2">
               <Field label={t('orders.qty')} icon="production_quantity_limits" error={errors.quantity}>
                 <input type="number" min="1" max={task.orderItem?.quantity} value={form.quantity} onChange={set('quantity')} className={inputCls} />
+              </Field>
+            </div>
+            <div className="col-span-2">
+              <Field label={t('common.date') || 'Tarih'} icon="event" error={errors.date}>
+                <input type="date" min={todayIso} value={form.date} onChange={set('date')} className={inputCls} />
               </Field>
             </div>
             <div className="col-span-2">
@@ -217,6 +228,10 @@ function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete,
                   <span className="hidden md:inline">{t('common.delete')}</span>
                 </button>
                 )}
+                <button onClick={() => onCreateEmployeeTask && onCreateEmployeeTask(task)} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 border-secondary text-secondary text-xs md:text-sm font-bold hover:bg-secondary hover:text-white transition-all flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-[14px] md:text-[18px]">assignment_add</span>
+                  <span className="hidden md:inline">Görev Oluştur</span>
+                </button>
               </div>
               <button onClick={onClose} className="px-4 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity">
                 {t('common.close')}
@@ -239,31 +254,164 @@ function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete,
   )
 }
 
+function EmployeeTaskCreateModal({ task, employees, machines, onClose, onCreate }) {
+  const { products } = useData()
+  
+  // Try to find a matching product ID if not explicitly set
+  const matchedProductId = useMemo(() => {
+    if (task.productId) return task.productId;
+    if (task.orderItem?.productId) return task.orderItem.productId;
+    
+    // Fallback: try to match by code or name
+    if (products) {
+      if (task.orderItem?.productCode) {
+        const matchByCode = products.find(p => p.stockNo === task.orderItem.productCode || p.code === task.orderItem.productCode);
+        if (matchByCode) return matchByCode.id;
+      }
+      const productName = task.product?.name || task.orderItem?.productName;
+      if (productName) {
+        const match = products.find(p => p.name.trim().toLowerCase() === productName.trim().toLowerCase());
+        if (match) return match.id;
+      }
+    }
+    return '';
+  }, [task, products]);
+
+  const [form, setForm] = useState({
+    title: task.product?.name ? `${task.product.name} için Görev` : (task.orderItem?.productName ? `${task.orderItem.productName} için Görev` : 'Yeni Görev'),
+    employeeId: '',
+    productId: matchedProductId,
+    quantity: task.quantity || '',
+    machineId: task.machineId || '',
+    date: new Date().toISOString().split('T')[0],
+    productionTaskId: task.id,
+    orderId: task.orderItem?.orderId || '',
+    status: 'open'
+  })
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    onCreate(form)
+  }
+
+  return (
+    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="bg-surface rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-theme-border">
+        <div className="p-6 border-b border-theme-border flex justify-between items-center bg-surface-container-low/30">
+          <h2 className="text-xl font-black text-on-surface">Personel Görevi Oluştur</h2>
+          <button onClick={onClose} className="text-on-surface-variant hover:text-error transition-colors">
+            <span className="material-symbols-outlined">close</span>
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-6 flex flex-col gap-4">
+          <p className="text-xs text-on-surface-variant font-medium mb-2">
+            Bu görev, <span className="font-bold text-on-surface">{task.code}</span> numaralı üretim planına bağlanacaktır.
+          </p>
+          <div>
+            <label className="block text-xs font-bold text-on-surface-variant mb-1 uppercase tracking-wider">Görev Başlığı / Açıklama</label>
+            <input required type="text" value={form.title} onChange={e => setForm({...form, title: e.target.value})} className="w-full bg-surface-container p-3 rounded-xl border border-theme-border text-on-surface text-sm outline-none focus:border-primary transition-colors" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-on-surface-variant mb-1 uppercase tracking-wider">Ürün / Malzeme</label>
+              <select value={form.productId} onChange={e => setForm({...form, productId: e.target.value})} className="w-full bg-surface-container p-3 rounded-xl border border-theme-border text-on-surface text-sm outline-none focus:border-primary transition-colors">
+                <option value="">Seçiniz... (Opsiyonel)</option>
+                {products?.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-on-surface-variant mb-1 uppercase tracking-wider">Miktar</label>
+              <input required type="number" min="1" value={form.quantity} onChange={e => setForm({...form, quantity: e.target.value})} className="w-full bg-surface-container p-3 rounded-xl border border-theme-border text-on-surface text-sm outline-none focus:border-primary transition-colors" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-on-surface-variant mb-1 uppercase tracking-wider">Tarih</label>
+            <input required type="date" value={form.date} onChange={e => setForm({...form, date: e.target.value})} className="w-full bg-surface-container p-3 rounded-xl border border-theme-border text-on-surface text-sm outline-none focus:border-primary transition-colors" />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-on-surface-variant mb-1 uppercase tracking-wider">Personel</label>
+            <select required value={form.employeeId} onChange={e => setForm({...form, employeeId: e.target.value})} className="w-full bg-surface-container p-3 rounded-xl border border-theme-border text-on-surface text-sm outline-none focus:border-primary transition-colors">
+              <option value="">Seçiniz...</option>
+              {employees.filter(e => e.status === 'Active').map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-on-surface-variant mb-1 uppercase tracking-wider">Makine (Opsiyonel)</label>
+            <select value={form.machineId} onChange={e => setForm({...form, machineId: e.target.value})} className="w-full bg-surface-container p-3 rounded-xl border border-theme-border text-on-surface text-sm outline-none focus:border-primary transition-colors">
+              <option value="">Yok</option>
+              {machines.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-on-surface-variant mb-1 uppercase tracking-wider">Başlangıç Statüsü</label>
+            <select value={form.status} onChange={e => setForm({...form, status: e.target.value})} className="w-full bg-surface-container p-3 rounded-xl border border-theme-border text-on-surface text-sm outline-none focus:border-primary transition-colors">
+              <option value="open">Açık Görev</option>
+              <option value="extrusion">Ekstrüzyonda</option>
+              <option value="cutting">Kesimde</option>
+              <option value="completed">Tamamlandı</option>
+            </select>
+          </div>
+          <button type="submit" className="w-full bg-primary text-on-primary font-bold py-3 rounded-xl mt-4 hover:opacity-90 transition-opacity">
+            Görevi Kaydet
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+const STATUS_STYLES = {
+  open: { bg: 'bg-slate-500/5 dark:bg-slate-500/10', labelBg: 'bg-slate-500/10 dark:bg-slate-500/20', border: 'border-slate-300 dark:border-slate-700/60', text: 'text-slate-600 dark:text-slate-400' },
+  extrusion: { bg: 'bg-orange-500/5 dark:bg-orange-500/10', labelBg: 'bg-orange-500/10 dark:bg-orange-500/20', border: 'border-orange-400/60 dark:border-orange-700/60', text: 'text-orange-600 dark:text-orange-400' },
+  cutting: { bg: 'bg-purple-500/5 dark:bg-purple-500/10', labelBg: 'bg-purple-500/10 dark:bg-purple-500/20', border: 'border-purple-400/60 dark:border-purple-700/60', text: 'text-purple-600 dark:text-purple-400' },
+  completed: { bg: 'bg-green-500/5 dark:bg-green-500/10', labelBg: 'bg-green-500/10 dark:bg-green-500/20', border: 'border-green-400/60 dark:border-green-700/60', text: 'text-green-600 dark:text-green-400' }
+}
+
 function KanbanCard({ task, onClick, locked }) {
   const { t } = useTranslation()
+  const statusDef = STATUS_STYLES[task.status] || STATUS_STYLES.open
+  const statusLabel = t(`productionTasks.col${task.status.charAt(0).toUpperCase() + task.status.slice(1)}`)
+
   return (
     <div
       draggable={!locked}
-      onDragStart={(e) => !locked && e.dataTransfer.setData('taskId', task.id)}
+      onDragStart={(e) => {
+        if (!locked) {
+          e.dataTransfer.setData('text/plain', String(task.id))
+        }
+      }}
       onClick={onClick}
-      className={`bg-surface-container-lowest rounded-xl p-4 shadow-sm border border-slate-100 cursor-pointer hover:shadow-md hover:border-primary/20 transition-all select-none ${locked ? 'opacity-80 grayscale-[20%]' : 'active:scale-[0.98]'}`}
+      className={`relative ${statusDef.bg} rounded-xl p-3 sm:p-4 shadow-sm border ${statusDef.border} cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all select-none w-full ${locked ? 'opacity-80 grayscale-[20%]' : 'active:scale-[0.98]'}`}
     >
-      <div className="flex justify-between items-start mb-2">
-        <p className="text-sm font-bold text-on-surface leading-snug">{task.orderItem ? task.orderItem.productName : task.product?.name}</p>
-        <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[10px] font-bold">{task.quantity} {task.orderItem ? task.orderItem.product?.unit : task.product?.unit || 'pcs'}</span>
+      <div className={`absolute top-0 right-0 rounded-bl-xl rounded-tr-lg px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${statusDef.labelBg} ${statusDef.text}`}>
+        {statusLabel}
+      </div>
+
+      <div className="flex justify-between items-start mb-2 mt-2">
+        <p className="text-sm font-bold text-on-surface leading-snug pr-12">{task.orderItem ? task.orderItem.productName : task.product?.name}</p>
+        <span className="bg-primary/10 text-primary px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap">{task.quantity} {task.orderItem ? task.orderItem.product?.unit : task.product?.unit || 'pcs'}</span>
       </div>
 
       <div className="flex items-center justify-between gap-2 text-[11px] text-on-surface-variant mb-2">
         <div className="flex items-center gap-1 min-w-0">
-          <span className="material-symbols-outlined text-[13px] flex-shrink-0">business</span>
-          <span className="truncate flex flex-col items-start gap-0.5 min-w-0">
-            <span className="truncate w-full">{task.orderItem?.order?.customer?.name || t('common.noCustomer')}</span>
-            {task.orderItem && (task.orderItem.order?.customer?.accountCode || task.orderItem.order?.customer?.code) && (
-              <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider whitespace-nowrap">
-                {task.orderItem.order.customer.accountCode || task.orderItem.order.customer.code}
+          {task.orderItem ? (
+            <>
+              <span className="material-symbols-outlined text-[13px] flex-shrink-0">business</span>
+              <span className="truncate flex flex-col items-start gap-0.5 min-w-0">
+                <span className="truncate w-full">{task.orderItem.order?.customer?.name || t('common.noCustomer')}</span>
+                {(task.orderItem.order?.customer?.accountCode || task.orderItem.order?.customer?.code) && (
+                  <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider whitespace-nowrap">
+                    {task.orderItem.order.customer.accountCode || task.orderItem.order.customer.code}
+                  </span>
+                )}
               </span>
-            )}
-          </span>
+            </>
+          ) : (
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-primary/10 rounded-lg">
+              <span className="material-symbols-outlined text-[14px] text-primary">inventory_2</span>
+              <span className="text-[10px] font-black text-primary tracking-wider uppercase">Stok İçin Üretim</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -280,7 +428,9 @@ function KanbanCard({ task, onClick, locked }) {
 
       <div className="flex justify-between items-center mt-2">
         <p className="text-[9px] text-on-surface-variant/50 font-medium">{t('reports.createdAt')} {fmtDate(task.createdAt)}</p>
-        <p className="text-[9px] text-on-surface-variant/50 font-medium">#{task.orderItem?.order?.code}</p>
+        <p className="text-[9px] text-on-surface-variant/50 font-medium">
+          #{task.orderItem?.order?.code || 'STOK'}
+        </p>
       </div>
     </div>
   )
@@ -349,7 +499,7 @@ function EodWizardModal({ tasks, onProcess, onClose }) {
           </button>
           <div className="flex items-center gap-3 text-error mb-4">
             <span className="material-symbols-outlined text-3xl">warning</span>
-            <h2 className="text-lg font-bold">Geçmişten Kalan Görevler ({currentIndex + 1}/{tasks.length})</h2>
+            <h2 className="text-lg font-bold">Geçmişten Kalan Görevler ({currentIndex + 1}/{initialTasks.length})</h2>
           </div>
           <p className="text-sm text-on-surface-variant mb-6">
             Dünden veya daha eski tarihlerden kalan tamamlanmamış görevler var. Bugünün panosuna geçmeden önce bu görevlere ne olacağına karar vermelisiniz.
@@ -549,9 +699,11 @@ export default function ProductionTasks() {
     products,
     permissions,
     employeePermissions,
-    addProductionTask
+    addProductionTask,
+    createEmployeeTask
   } = useData()
   const { user: currentUser } = useAuth()
+  const location = useLocation()
   
   const empId = currentUser?.employeeId
   const activeEmployee = employees?.find(e => e.id === empId)
@@ -564,7 +716,9 @@ export default function ProductionTasks() {
   const canAct = isAdmin || (!isActDenied && (hasDeptAct || hasEmpAct))
 
   const [detailTask, setDetailTask] = useState(null)
+  const [employeeTaskModal, setEmployeeTaskModal] = useState(null)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [viewMode, setViewMode] = useState('agenda')
   const [pendingMove, setPendingMove] = useState(null)
   const [dragOverColumn, setDragOverColumn] = useState(null)
   const [search, setSearch] = useState('')
@@ -574,14 +728,48 @@ export default function ProductionTasks() {
   const [currentDate, setCurrentDate] = useState(todayIso)
   const [isWizardDismissed, setIsWizardDismissed] = useState(false)
 
-  // Rollover/EOD Wizard Logic
+  const daysOfWeek = useMemo(() => {
+    return Array.from({ length: 7 }).map((_, i) => {
+      const d = new Date(currentDate)
+      d.setDate(d.getDate() + i)
+      const dateString = d.toISOString().split('T')[0]
+      const isToday = todayIso === dateString
+      const shortName = d.toLocaleDateString('tr-TR', { weekday: 'long' })
+      const dateNumber = d.getDate()
+      const monthName = d.toLocaleDateString('tr-TR', { month: 'short' })
+      return { date: d, dateString, isToday, shortName, dateNumber, monthName }
+    })
+  }, [currentDate, todayIso])
+
+  useEffect(() => {
+    if (location.state?.openTaskId && productionTasks) {
+      const taskToOpen = productionTasks.find(t => t.id === location.state.openTaskId)
+      if (taskToOpen) {
+        setDetailTask(taskToOpen)
+        // Clear the state so it doesn't reopen on subsequent renders if closed
+        window.history.replaceState({}, document.title)
+      }
+    }
+  }, [location.state, productionTasks])
+
+  const visibleTasks = useMemo(() => {
+    if (isAdmin) return productionTasks || []
+    return (productionTasks || []).filter(t => t.operatorId === empId)
+  }, [productionTasks, isAdmin, empId])
+
   // Find tasks that belong to past days and are not completed
-  const pendingPastTasks = (productionTasks || []).filter(t => t.date && t.date < todayIso && t.status !== 'completed')
+  const pendingPastTasks = visibleTasks.filter(t => t.date && t.date < todayIso && t.status !== 'completed')
   const showEodWizard = pendingPastTasks.length > 0
 
-  // The active board tasks are filtered by the selected currentDate
-  const activeTasks = (productionTasks || []).filter(t => (t.date || todayIso) === currentDate)
-  const isPastBoard = currentDate < todayIso
+  // activeTasks corresponds to tasks in the 7 days window (agenda) or just currentDate (kanban)
+  const endDateString = daysOfWeek[6].dateString
+  const activeTasks = visibleTasks.filter(t => {
+    const taskDate = t.date || todayIso
+    if (viewMode === 'kanban') {
+      return taskDate === currentDate
+    }
+    return taskDate >= currentDate && taskDate <= endDateString
+  })
 
   function handleExport() {
     const rows = activeTasks.map((t) => ({
@@ -613,20 +801,57 @@ export default function ProductionTasks() {
   })
 
   function handleDragOver(e) {
-    if (isPastBoard || showEodWizard) return;
+    if (showEodWizard) return;
     e.preventDefault()
   }
 
-  function handleDrop(e, columnId) {
-    if (isPastBoard || showEodWizard) return;
+  function handleDropToStatus(e, targetStatusId) {
+    if (showEodWizard || currentDate < todayIso) return;
     e.preventDefault()
-    const id = e.dataTransfer.getData('taskId')
+    const id = e.dataTransfer.getData('text/plain')
     if (id) {
-      const task = productionTasks.find(t => t.id === id)
-      if (task && task.status !== columnId) {
-        setPendingMove({ task, columnId })
+      const task = productionTasks.find(t => String(t.id) === String(id))
+      if (task && task.status !== targetStatusId) {
+        setPendingMove({ task, columnId: targetStatusId })
       }
     }
+    setDragOverColumn(null)
+  }
+
+  function handleDropToDay(e, targetDateString) {
+    if (showEodWizard || targetDateString < todayIso) {
+      alert("Geçmiş güne veya sihirbaz açıkken taşıyamazsınız.");
+      return;
+    }
+    e.preventDefault()
+    const id = e.dataTransfer.getData('text/plain')
+    if (!id) {
+      alert("Görev ID'si alınamadı (drag-drop engellendi).");
+      return;
+    }
+    const task = productionTasks.find(t => String(t.id) === String(id))
+    if (!task) {
+      alert("Görev bulunamadı.");
+      return;
+    }
+    if ((task.date || todayIso) === targetDateString) {
+      return;
+    }
+    
+    const extraData = {
+      machineId: task.machineId || null,
+      operatorId: task.operatorId || null,
+      date: targetDateString,
+    }
+    
+    // updateProductionTask sessizce tarihi ignore ediyorsa, 'move' endpoint'ini deneyelim.
+    moveProductionTask(task.id, task.status, extraData).then(() => {
+      // success, DataContext will refresh tasks
+    }).catch(err => {
+      console.error('Drag drop error:', err)
+      alert('Tarih güncellenirken hata oluştu: ' + err.message)
+    })
+    
     setDragOverColumn(null)
   }
 
@@ -643,8 +868,42 @@ export default function ProductionTasks() {
           employees={employees}
           isAdmin={isAdmin}
           onClose={() => setDetailTask(null)}
-          onSave={(id, form) => { updateProductionTask(id, form); setDetailTask(null) }}
+          onSave={(id, form) => { 
+            if (form.status !== detailTask.status) {
+              setPendingMove({
+                task: { ...detailTask, ...form, id },
+                columnId: form.status,
+                oldStatus: detailTask.status,
+                originalForm: form
+              })
+              setDetailTask(null)
+            } else {
+              updateProductionTask(id, form); 
+              setDetailTask(null) 
+            }
+          }}
           onDelete={(id) => { deleteProductionTask(id); setDetailTask(null) }}
+          onCreateEmployeeTask={(task) => {
+             setDetailTask(null)
+             setEmployeeTaskModal(task)
+          }}
+        />
+      )}
+
+      {employeeTaskModal && (
+        <EmployeeTaskCreateModal
+          task={employeeTaskModal}
+          employees={employees}
+          machines={machines}
+          onClose={() => setEmployeeTaskModal(null)}
+          onCreate={async (formData) => {
+             try {
+                await createEmployeeTask(formData)
+                setEmployeeTaskModal(null)
+             } catch(e) {
+                alert(e.message)
+             }
+          }}
         />
       )}
 
@@ -654,7 +913,15 @@ export default function ProductionTasks() {
           machines={machines}
           employees={employees}
           onClose={() => setPendingMove(null)}
-          onConfirm={(extraData) => {
+          onConfirm={async (extraData) => {
+            if (pendingMove.originalForm) {
+              const { status, ...restForm } = pendingMove.originalForm
+              try {
+                await updateProductionTask(pendingMove.task.id, { ...restForm, status: pendingMove.oldStatus })
+              } catch (err) {
+                console.error("Failed to apply pre-move updates:", err)
+              }
+            }
             moveProductionTask(pendingMove.task.id, pendingMove.columnId, extraData)
             setPendingMove(null)
           }}
@@ -715,33 +982,80 @@ export default function ProductionTasks() {
         <div>
           <div className="flex items-center gap-3 mb-1 md:mb-2">
             <h1 className="text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-tight text-on-surface">{t('productionTasks.title')}</h1>
-            {isPastBoard && (
-              <span className="bg-error/10 text-error px-2 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1 uppercase tracking-wider">
-                <span className="material-symbols-outlined text-[14px]">lock</span>
-                Geçmiş Gün (Kilitli)
-              </span>
-            )}
           </div>
           <p className="text-on-surface-variant text-xs md:text-sm lg:text-base">
             {t('productionTasks.subtitle')}
           </p>
         </div>
         <div className="flex items-stretch gap-3 md:gap-4 self-start md:self-auto">
-          {/* Date Picker */}
-          <div 
-            onClick={() => dateInputRef.current?.showPicker()}
-            className="bg-surface-container-lowest border border-theme-border rounded-xl lg:rounded-2xl px-3 py-2 lg:px-4 lg:py-3 flex items-center gap-2 cursor-pointer hover:bg-surface-container-low transition-colors select-none"
-          >
-            <span className="material-symbols-outlined text-on-surface-variant text-[18px]">calendar_month</span>
-            <input 
-              ref={dateInputRef}
-              type="date" 
-              max={todayIso}
-              value={currentDate} 
-              onChange={e => setCurrentDate(e.target.value)}
-              className="bg-transparent border-none outline-none text-xs md:text-sm font-bold text-on-surface uppercase tracking-wider cursor-pointer w-full pointer-events-none [&::-webkit-calendar-picker-indicator]:hidden"
-            />
+          {/* Date Navigation */}
+          <div className="bg-surface-container-lowest border border-theme-border rounded-xl lg:rounded-2xl flex items-center p-1">
+            <button 
+              onClick={() => {
+                const d = new Date(currentDate)
+                d.setDate(d.getDate() - (viewMode === 'agenda' ? 7 : 1))
+                setCurrentDate(d.toISOString().split('T')[0])
+              }}
+              className="p-1.5 hover:bg-surface-container-high rounded-lg transition-colors text-on-surface-variant flex items-center justify-center"
+              title={viewMode === 'agenda' ? 'Önceki Hafta' : 'Önceki Gün'}
+            >
+              <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+            </button>
+            
+            <div 
+              onClick={() => dateInputRef.current?.showPicker()}
+              className="px-2 lg:px-3 py-1.5 lg:py-2 flex items-center gap-2 cursor-pointer hover:bg-surface-container-low transition-colors select-none rounded-lg"
+            >
+              <span className="material-symbols-outlined text-on-surface-variant text-[18px]">calendar_month</span>
+              <input 
+                ref={dateInputRef}
+                type="date" 
+                value={currentDate} 
+                onChange={e => setCurrentDate(e.target.value)}
+                className="bg-transparent border-none outline-none text-xs md:text-sm font-bold text-on-surface uppercase tracking-wider cursor-pointer w-[100px] md:w-[110px] pointer-events-none [&::-webkit-calendar-picker-indicator]:hidden"
+              />
+            </div>
+
+            <button 
+              onClick={() => {
+                const d = new Date(currentDate)
+                d.setDate(d.getDate() + (viewMode === 'agenda' ? 7 : 1))
+                setCurrentDate(d.toISOString().split('T')[0])
+              }}
+              className="p-1.5 hover:bg-surface-container-high rounded-lg transition-colors text-on-surface-variant flex items-center justify-center"
+              title={viewMode === 'agenda' ? 'Sonraki Hafta' : 'Sonraki Gün'}
+            >
+              <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+            </button>
           </div>
+
+          {currentDate !== todayIso && (
+            <button 
+              onClick={() => setCurrentDate(todayIso)}
+              className="hidden lg:flex px-4 py-2 bg-surface-container-lowest border border-theme-border hover:bg-surface-container-low rounded-xl items-center justify-center transition-colors text-xs font-bold text-on-surface select-none"
+            >
+              Bugün
+            </button>
+          )}
+
+          {/* View Toggle */}
+          <div className="hidden md:flex bg-surface-container-lowest border border-theme-border rounded-xl lg:rounded-2xl p-1 items-center">
+            <button 
+              onClick={() => setViewMode('agenda')}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors text-xs font-bold ${viewMode === 'agenda' ? 'bg-surface-container-high text-on-surface' : 'text-on-surface-variant hover:bg-surface-container'}`}
+            >
+              <span className="material-symbols-outlined text-[16px]">view_agenda</span>
+              Haftalık
+            </button>
+            <button 
+              onClick={() => setViewMode('kanban')}
+              className={`px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors text-xs font-bold ${viewMode === 'kanban' ? 'bg-surface-container-high text-on-surface' : 'text-on-surface-variant hover:bg-surface-container'}`}
+            >
+              <span className="material-symbols-outlined text-[16px]">view_kanban</span>
+              Günlük
+            </button>
+          </div>
+
           <div className="bg-surface-container-lowest rounded-xl lg:rounded-2xl px-4 py-2 lg:px-5 lg:py-3 flex items-center gap-3 lg:gap-4 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-surface-tint" />
             <div className="w-8 h-8 lg:w-10 lg:h-10 rounded-lg lg:rounded-xl bg-surface-container-high flex items-center justify-center flex-shrink-0">
@@ -787,55 +1101,123 @@ export default function ProductionTasks() {
         </div>
       </div>
 
-      {/* Kanban board */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5 items-start">
-        {COLUMNS.map((col) => {
-          const colTasks = filtered.filter((t) => t.status === col.id)
-          return (
-            <div
-              key={col.id}
-              onDragOver={handleDragOver}
-              onDrop={(e) => handleDrop(e, col.id)}
-              onDragEnter={() => setDragOverColumn(col.id)}
-              onDragLeave={handleDragLeave}
-              className={`bg-surface-container-lowest rounded-2xl flex flex-col transition-all ${
-                dragOverColumn === col.id ? 'ring-2 ring-primary ring-offset-2' : ''
-              }`}
-            >
-              {/* Column header */}
-              <div className={`${col.headerClass} rounded-t-2xl px-3 md:px-4 py-2 flex items-center justify-between`}>
-                <div className="flex items-center gap-1.5 md:gap-2">
-                  <span className="material-symbols-outlined text-[16px] md:text-[18px]">{col.icon}</span>
-                  <span className="text-xs md:text-sm font-bold">{t(col.labelKey)}</span>
-                  <span className="px-1.5 py-0.5 rounded-full bg-surface-container-lowest/60 text-[10px] md:text-xs font-black">
-                    {colTasks.length}
-                  </span>
+      {viewMode === 'agenda' ? (
+        <div className="flex flex-col gap-4 md:gap-5">
+          {/* 7-Day Agenda Board */}
+          {daysOfWeek.map(day => {
+            const dayTasks = filtered.filter(t => (t.date || todayIso) === day.dateString)
+            const isPast = day.dateString < todayIso
+
+            return (
+              <div 
+                key={day.dateString}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDropToDay(e, day.dateString)}
+                onDragEnter={(e) => {
+                  e.preventDefault()
+                  setDragOverColumn(day.dateString)
+                }}
+                onDragLeave={handleDragLeave}
+                className={`bg-surface-container-lowest border border-theme-border rounded-2xl flex flex-col transition-all overflow-hidden shadow-sm ${
+                  dragOverColumn === day.dateString ? 'ring-2 ring-primary ring-offset-2' : ''
+                }`}
+              >
+                {/* Row Header */}
+                <div className={`px-4 py-3 flex items-center justify-between border-b border-theme-border ${day.isToday ? 'bg-primary/5' : 'bg-surface-container-high/30'}`}>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-2xl font-black ${day.isToday ? 'text-primary' : 'text-on-surface'}`}>{day.dateNumber}</span>
+                    <div className="flex flex-col">
+                      <span className={`text-xs font-bold uppercase tracking-widest ${day.isToday ? 'text-primary' : 'text-on-surface-variant'}`}>{day.shortName}</span>
+                      <span className="text-[10px] text-on-surface-variant font-semibold">{day.monthName}</span>
+                    </div>
+                    {day.isToday && (
+                      <span className="ml-2 bg-primary text-white text-[9px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">BUGÜN</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="bg-surface-container text-on-surface-variant text-xs font-black px-2 py-1 rounded-lg">{dayTasks.length} {t('productionTasks.totalTasks')}</span>
+                  </div>
+                </div>
+
+                {/* Cards Container */}
+                <div className="p-4 flex flex-wrap gap-4 min-h-[100px] items-start">
+                  {dayTasks.map(task => (
+                    <div key={task.id} className="w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.33%-11px)] xl:w-[calc(25%-12px)]">
+                      <KanbanCard
+                        task={task}
+                        locked={isPast || showEodWizard}
+                        onClick={() => {
+                          if (!showEodWizard) setDetailTask(task)
+                        }}
+                      />
+                    </div>
+                  ))}
+                  {dayTasks.length === 0 && (
+                    <div className="w-full py-6 flex flex-col items-center justify-center text-on-surface-variant/40">
+                      <span className="material-symbols-outlined text-3xl mb-1">free_cancellation</span>
+                      <p className="text-[10px] font-bold uppercase tracking-wider">Görev Yok</p>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {/* Cards */}
-              <div className="p-3 flex flex-col gap-3 min-h-[140px]">
-                {colTasks.map((task) => (
-                  <KanbanCard
-                    key={task.id}
-                    task={task}
-                    locked={isPastBoard || showEodWizard}
-                    onClick={() => {
-                      if (!showEodWizard) setDetailTask(task)
-                    }}
-                  />
-                ))}
-                {colTasks.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-10 text-on-surface-variant/30">
-                    <span className="material-symbols-outlined text-3xl">inbox</span>
-                    <p className="text-xs font-medium mt-2">{t('productionTasks.noTasks')}</p>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 items-start">
+          {/* Kanban board */}
+          {COLUMNS.map((col) => {
+            const colTasks = filtered.filter((t) => t.status === col.id)
+            const isPastBoard = currentDate < todayIso
+            return (
+              <div
+                key={col.id}
+                onDragOver={handleDragOver}
+                onDrop={(e) => handleDropToStatus(e, col.id)}
+                onDragEnter={(e) => {
+                e.preventDefault()
+                setDragOverColumn(col.id)
+              }}
+                onDragLeave={handleDragLeave}
+                className={`bg-surface-container-lowest rounded-2xl flex flex-col transition-all ${
+                  dragOverColumn === col.id ? 'ring-2 ring-primary ring-offset-2' : ''
+                }`}
+              >
+                {/* Column header */}
+                <div className={`${col.headerClass} rounded-t-2xl px-3 md:px-4 py-2 flex items-center justify-between border-b border-theme-border`}>
+                  <div className="flex items-center gap-1.5 md:gap-2">
+                    <span className="material-symbols-outlined text-[16px] md:text-[18px]">{col.icon}</span>
+                    <span className="text-xs md:text-sm font-bold">{t(col.labelKey)}</span>
+                    <span className="px-1.5 py-0.5 rounded-full bg-surface-container-lowest/60 text-[10px] md:text-xs font-black">
+                      {colTasks.length}
+                    </span>
                   </div>
-                )}
+                </div>
+
+                {/* Cards */}
+                <div className="p-3 flex flex-col gap-3 min-h-[140px]">
+                  {colTasks.map((task) => (
+                    <KanbanCard
+                      key={task.id}
+                      task={task}
+                      locked={isPastBoard || showEodWizard}
+                      onClick={() => {
+                        if (!showEodWizard) setDetailTask(task)
+                      }}
+                    />
+                  ))}
+                  {colTasks.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-10 text-on-surface-variant/30">
+                      <span className="material-symbols-outlined text-3xl">inbox</span>
+                      <p className="text-xs font-medium mt-2">{t('productionTasks.noTasks')}</p>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }
