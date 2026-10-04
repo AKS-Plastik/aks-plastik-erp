@@ -129,14 +129,48 @@ function ProductionReportModal({ onClose }) {
   }, [filter, token])
 
   const handleExport = () => {
-    if (!data?.trend) return
-    const ws = XLSX.utils.json_to_sheet(data.trend.map(d => ({
-      'Tarih': d.date,
-      'Tamamlanan Görev': d.totalCompletedTasks,
-      'Toplam Üretim (Miktar)': d.totalQuantity
-    })))
+    if (!data) return
     const wb = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(wb, ws, 'Üretim')
+
+    // 1. Günlük Trend
+    if (data.trend && data.trend.length > 0) {
+      const wsTrend = XLSX.utils.json_to_sheet(data.trend.map(d => ({
+        'Tarih': d.date,
+        'Tamamlanan Görev': d.totalCompletedTasks,
+        'Toplam Üretim (Miktar)': d.totalQuantity
+      })))
+      XLSX.utils.book_append_sheet(wb, wsTrend, 'Günlük Trend')
+    }
+
+    // 2. Operatör Özeti
+    if (data.metrics?.byOperator) {
+      const opData = Object.entries(data.metrics.byOperator).map(([op, m]) => ({
+        'Operatör': op,
+        'Tamamlanan Görev': m.tasksCompleted,
+        'Kesimde Kalan Görev': m.tasksCutting,
+        'Ekstrüzyonda Kalan Görev': m.tasksExtrusion,
+        'Açık Kalan Görev': m.tasksOpen
+      }))
+      if (opData.length > 0) {
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(opData), 'Operatör Özeti')
+      }
+    }
+
+    // 3. Ürün Özeti
+    if (data.metrics?.byProduct) {
+      const prodData = Object.entries(data.metrics.byProduct).map(([prod, pDetail]) => ({
+        'Ürün': prod,
+        'Birim': pDetail.unit,
+        'Tamamlanan Miktar': pDetail.completed || 0,
+        'Kesimde Bekleyen': pDetail.cutting || 0,
+        'Ekstrüzyonda Bekleyen': pDetail.extrusion || 0,
+        'Açık Bekleyen': pDetail.open || 0
+      }))
+      if (prodData.length > 0) {
+        XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(prodData), 'Ürün Özeti')
+      }
+    }
+
     XLSX.writeFile(wb, 'Uretim_Raporu.xlsx')
   }
 
@@ -358,6 +392,43 @@ function SalesReportModal({ onClose }) {
     return Object.values(daily).sort((a, b) => a.date.localeCompare(b.date))
   }, [data])
 
+  const handleExport = () => {
+    if (!data) return
+    const wb = XLSX.utils.book_new()
+    
+    // Temsilci Performansı
+    if (data.metrics?.bySalesRep) {
+      const repData = Object.entries(data.metrics.bySalesRep).map(([rep, m]) => ({
+        'Temsilci': rep,
+        'Toplam Sipariş': m.totalOrders,
+        'Toplam Ciro': m.totalRevenue
+      }))
+      if (repData.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(repData), 'Temsilci Performansı')
+    }
+
+    // Ürün Bazlı Satış Özeti
+    if (data.metrics?.byProduct) {
+      const prodData = Object.entries(data.metrics.byProduct).map(([prod, m]) => ({
+        'Ürün': prod,
+        'Satılan Toplam Miktar': m.totalQuantity,
+        'Toplam Ciro': m.totalRevenue
+      }))
+      if (prodData.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(prodData), 'Ürün Özeti')
+    }
+
+    // Günlük Trend verisini de ekleyelim
+    if (chartData && chartData.length > 0) {
+      const trendData = chartData.map(d => ({
+        'Tarih': d.date,
+        'Sipariş Sayısı': d.count,
+        'Ciro': d.totalAmount
+      }))
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(trendData), 'Günlük Trend')
+    }
+
+    XLSX.writeFile(wb, 'Satis_Raporu.xlsx')
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={onClose} />
@@ -386,6 +457,9 @@ function SalesReportModal({ onClose }) {
               <option value="year">Bu Yıl</option>
               <option value="all">Tüm Zamanlar</option>
             </select>
+            <button onClick={handleExport} className="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant font-bold text-xs flex items-center gap-2 transition-colors">
+              <span className="material-symbols-outlined text-[16px]">download</span> Excel
+            </button>
             <button onClick={onClose} className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors">
               <span className="material-symbols-outlined">close</span>
             </button>
@@ -503,6 +577,22 @@ function VisitsReportModal({ onClose }) {
       .catch(() => setLoading(false))
   }, [filter, token])
 
+  const handleExport = () => {
+    if (!data) return
+    const wb = XLSX.utils.book_new()
+    
+    if (data.metrics?.byEmployee) {
+      const empData = Object.entries(data.metrics.byEmployee).map(([emp, m]) => {
+        const row = { 'Personel': emp, 'Toplam Ziyaret': m.total }
+        Object.entries(m.statuses || {}).forEach(([st, c]) => { row[st] = c })
+        return row
+      })
+      if (empData.length > 0) XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(empData), 'Personel Ziyaretleri')
+    }
+
+    XLSX.writeFile(wb, 'Saha_Ziyaretleri_Raporu.xlsx')
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={onClose} />
@@ -531,6 +621,9 @@ function VisitsReportModal({ onClose }) {
               <option value="year">Bu Yıl</option>
               <option value="all">Tüm Zamanlar</option>
             </select>
+            <button onClick={handleExport} className="px-3 py-1.5 rounded-lg bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant font-bold text-xs flex items-center gap-2 transition-colors">
+              <span className="material-symbols-outlined text-[16px]">download</span> Excel
+            </button>
             <button onClick={onClose} className="p-2 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors">
               <span className="material-symbols-outlined">close</span>
             </button>
