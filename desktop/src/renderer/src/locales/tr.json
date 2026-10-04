@@ -15,7 +15,8 @@
     "settings": "Ayarlar",
     "logout": "Çıkış Yap",
     "productionTasks": "Üretim Planlama",
-    "productionPlanning": "Üretim Görevleri"
+    "productionPlanning": "Üretim Görevleri",
+    "reports": "Raporlar"
   },
   "topbar": {
     "alerts": "Uyarılar",

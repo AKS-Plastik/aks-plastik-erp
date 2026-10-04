@@ -8,6 +8,7 @@ const { authenticate } = require('./middleware/auth')
 const { pullProductsFromVio } = require('./lib/productVioSync')
 const { pullCustomersFromVio } = require('./lib/customerVioSync')
 const { pullOrdersFromVio } = require('./lib/orderVioSync')
+const { initSnapshotJobs } = require('./jobs/snapshot')
 const requestLogger = require('./middleware/requestLogger')
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, '..', 'uploads')
@@ -17,6 +18,7 @@ const authRoutes = require('./routes/auth')
 const customerRoutes = require('./routes/customers')
 const customerTagRoutes = require('./routes/customerTags')
 const reportRoutes = require('./routes/reports')
+const analyticsRoutes = require('./routes/analytics')
 const siteVisitRoutes = require('./routes/siteVisits')
 const productRoutes = require('./routes/products')
 const employeeRoutes = require('./routes/employees')
@@ -63,6 +65,7 @@ app.use('/api/auth', authRoutes)
 app.use('/api/customers', authenticate, customerRoutes)
 app.use('/api/customer-tags', authenticate, customerTagRoutes)
 app.use('/api/reports', authenticate, reportRoutes)
+app.use('/api/analytics', authenticate, analyticsRoutes)
 app.use('/api/site-visits', authenticate, siteVisitRoutes)
 app.use('/api/products', authenticate, productRoutes)
 app.use('/api/employees', authenticate, employeeRoutes)
@@ -84,6 +87,9 @@ app.use('/api/employee-tasks', authenticate, employeeTaskRoutes)
 
 app.listen(PORT, () => {
   console.log(`AKS ERP API running on http://localhost:${PORT}`)
+
+  // Initialize Snapshot/Cron Jobs
+  initSnapshotJobs()
 
   // 30 minute cron for Vio Sync using node-cron
   console.log('Starting 30-minute Vio sync cron job (*/30 * * * *)...')

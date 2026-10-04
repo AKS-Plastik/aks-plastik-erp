@@ -8,6 +8,7 @@ import Dashboard from './pages/Dashboard'
 import WorkOrders from './pages/WorkOrders'
 import Customers from './pages/Customers'
 import Reports from './pages/Reports'
+import Analytics from './pages/Analytics'
 import Account from './pages/Account'
 import Products from './pages/Products'
 import Employees from './pages/Employees'
@@ -51,6 +52,7 @@ function InnerRoutes() {
         {canSee('orders')      && <Route path="orders"      element={<Orders />} />}
         {canSee('work-orders') && <Route path="work-orders" element={<WorkOrders />} />}
         {canSee('reports')     && <Route path="reports"     element={<Reports />} />}
+        {canSee('analytics')   && <Route path="analytics"   element={<Analytics />} />}
         {canSee('production')  && <Route path="production"  element={<Production />} />}
         {canSee('logistics')   && <Route path="logistics"   element={<Logistics />} />}
         {canSee('maintenance') && <Route path="maintenance" element={<Maintenance />} />}

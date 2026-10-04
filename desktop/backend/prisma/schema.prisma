@@ -643,3 +643,14 @@ model EmployeeTaskNote {
   note           String
   createdAt      DateTime     @default(now())
 }
+
+model DailyProductionSnapshot {
+  id                  String   @id @default(cuid())
+  date                String   @unique
+  totalCompletedTasks Int      @default(0)
+  totalQuantity       Float    @default(0)
+  metrics             Json
+  isLocked            Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}

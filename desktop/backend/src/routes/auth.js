@@ -161,17 +161,22 @@ const REALM = process.env.KEYCLOAK_REALM || 'AKS'
 const CLIENT_ID = 'aks-erp-app'
 
 router.post('/web-login', async (req, res) => {
-  const { email, password } = req.body
+  const { email, password, rememberMe } = req.body
   try {
+    const payload = {
+      grant_type: 'password',
+      client_id: CLIENT_ID,
+      username: email,
+      password,
+    }
+    if (rememberMe) {
+      payload.scope = 'openid offline_access'
+    }
+
     const kcRes = await fetch(`${KEYCLOAK_URL}/realms/${REALM}/protocol/openid-connect/token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'password',
-        client_id: CLIENT_ID,
-        username: email,
-        password,
-      }).toString()
+      body: new URLSearchParams(payload).toString()
     })
     if (!kcRes.ok) {
       return res.status(401).json({ error: 'Giriş başarısız. Bilgilerinizi kontrol edin.' })

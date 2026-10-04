@@ -15,7 +15,8 @@
     "settings": "Settings",
     "logout": "Log Out",
     "productionTasks": "Production Planning",
-    "productionPlanning": "Production Tasks"
+    "productionPlanning": "Production Tasks",
+    "reports": "Reports"
   },
   "topbar": {
     "alerts": "Alerts",

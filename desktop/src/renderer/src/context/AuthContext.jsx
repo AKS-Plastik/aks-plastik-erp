@@ -115,22 +115,23 @@ export function AuthProvider({ children }) {
     const payload = parseJWT(token)
     if (!payload?.exp) return
 
-    const msUntilRefresh = payload.exp * 1000 - Date.now() - 60_000 // refresh 60s early
-    if (msUntilRefresh <= 0) return
-
-    const timer = setTimeout(async () => {
+    const doRefresh = async () => {
       if (!refreshTokenRef.current) return
       
       let result;
       if (window.api) {
         result = await window.api.authRefresh(refreshTokenRef.current)
       } else {
-        const res = await fetch(`${API_URL}/auth/web-refresh`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refresh_token: refreshTokenRef.current })
-        })
-        result = await res.json()
+        try {
+          const res = await fetch(`${API_URL}/auth/web-refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh_token: refreshTokenRef.current })
+          })
+          result = await res.json()
+        } catch {
+          result = { ok: false }
+        }
       }
 
       if (result.ok) {
@@ -139,8 +140,15 @@ export function AuthProvider({ children }) {
       } else {
         logout()
       }
-    }, msUntilRefresh)
+    }
 
+    const msUntilRefresh = payload.exp * 1000 - Date.now() - 60_000 // refresh 60s early
+    if (msUntilRefresh <= 0) {
+      doRefresh()
+      return
+    }
+
+    const timer = setTimeout(doRefresh, msUntilRefresh)
     return () => clearTimeout(timer)
   }, [token])
 
@@ -155,7 +163,7 @@ export function AuthProvider({ children }) {
         const res = await fetch(`${API_URL}/auth/web-login`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, password })
+          body: JSON.stringify({ email, password, rememberMe })
         })
         result = await res.json()
       }
