@@ -290,8 +290,15 @@ export default function ProductionPlanning() {
       {/* Rollover Wizard */}
       {showRollover && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-surface rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-theme-border animate-in fade-in zoom-in duration-200">
-            <div className="p-6 text-center">
+          <div className="bg-surface rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-theme-border animate-in fade-in zoom-in duration-200 relative">
+            <button
+              onClick={() => navigate(-1)}
+              className="absolute top-4 right-4 p-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors flex items-center justify-center z-10"
+              title="Geri Dön"
+            >
+              <span className="material-symbols-outlined">close</span>
+            </button>
+            <div className="p-6 text-center pt-10">
               <div className="w-16 h-16 bg-orange-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="material-symbols-outlined text-3xl text-orange-500">update</span>
               </div>

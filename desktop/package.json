@@ -1,6 +1,6 @@
 {
   "name": "aks-erp-app",
-  "version": "2.0.8",
+  "version": "2.0.9",
   "description": "AKS CRM Dashboard Desktop Application",
   "main": "out/main/index.js",
   "scripts": {
