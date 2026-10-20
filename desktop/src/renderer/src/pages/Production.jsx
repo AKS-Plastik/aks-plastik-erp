@@ -78,6 +78,29 @@ function SendToProductionModal({ item, onClose, onSave, machines, employees }) {
             <span>{t('orders.total')}: {item.quantity}</span>
             <span>{t('orders.remaining')}: {remaining}</span>
           </div>
+          {item.notes && item.notes.length > 0 && (
+            <div className="mt-2.5 pt-2.5 border-t border-theme-border/60">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-[15px]">sticky_note_2</span>
+                <span className="text-[11px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">
+                  {t('orders.itemNotes', 'Kalem Notları')} ({item.notes.length})
+                </span>
+              </div>
+              <div className="space-y-1.5 max-h-28 overflow-y-auto pr-1">
+                {item.notes.map((n) => (
+                  <div key={n.id} className="p-2 rounded-lg bg-surface-container-lowest border border-theme-border/50 text-[11px]">
+                    <div className="flex items-center justify-between text-[10px] text-red-700 dark:text-red-300 font-semibold mb-0.5">
+                      <span>{n.authorName || 'Kullanıcı'}</span>
+                      <span className="font-mono opacity-70">
+                        {new Date(n.createdAt).toLocaleDateString('tr-TR')}
+                      </span>
+                    </div>
+                    <p className="text-on-surface whitespace-pre-wrap">{n.note}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="space-y-4">
@@ -150,6 +173,7 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo, mach
   const { t } = useTranslation()
   const [confirming, setConfirming] = useState(false)
   const [productionItem, setProductionItem] = useState(null)
+  const [expandedNotes, setExpandedNotes] = useState({})
   const subtotal = (order.items || []).reduce(
     (s, it) => s + (parseFloat(it.unitPrice) || 0) * (parseInt(it.quantity) || 0), 0
   )
@@ -205,74 +229,138 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo, mach
                 const activeTasks = (it.productionTasks || []).filter(task => task.status !== 'completed')
 
                 return (
-                <tr key={i} className="block md:table-row border-t border-theme-border py-2 md:py-0 bg-surface-container-lowest md:bg-transparent">
-                  <td className="block md:table-cell w-full md:w-auto relative px-3 md:px-4 py-1 md:py-3 font-mono text-xs text-text-muted">
-                    <div className="flex items-center justify-between md:justify-start">
-                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('products.stockNo')}</span>
-                      <span>{it.product?.stockNo || '—'}</span>
-                    </div>
-                  </td>
-                  <td className="block md:table-cell w-full md:w-auto relative px-3 md:px-4 py-1 md:py-3 text-on-surface font-medium">
-                    <div className="flex items-start md:items-center justify-between md:justify-start gap-4">
-                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted pt-0.5">{t('orders.product')}</span>
-                      <span className="text-right md:text-left flex-1">{it.productName}</span>
-                    </div>
-                  </td>
-                  <td className="block md:table-cell w-full md:w-auto relative px-3 md:px-4 py-1 md:py-3 text-right text-text-muted">
-                    <div className="flex items-center justify-between md:justify-end">
-                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.qty')}</span>
-                      <span>{it.quantity}</span>
-                    </div>
-                  </td>
-                  <td className="block md:table-cell w-full md:w-auto relative px-3 md:px-4 py-1 md:py-3 text-right text-on-surface">
-                    <div className="flex items-center justify-between md:justify-end">
-                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.unitPrice')}</span>
-                      <span>
-                        <span className="text-[10px] md:text-xs text-text-muted mr-1">{it.currency || 'TRY'}</span>
-                        {parseFloat(it.unitPrice).toFixed(2)}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="block md:table-cell w-full md:w-auto relative px-3 md:px-4 py-1 md:py-3 text-right font-semibold text-on-surface">
-                    <div className="flex items-center justify-between md:justify-end">
-                      <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.lineTotal')}</span>
-                      <span>
-                        <span className="text-[10px] md:text-xs text-text-muted mr-1">{it.currency || 'TRY'}</span>
-                        {(parseFloat(it.unitPrice) * parseInt(it.quantity)).toFixed(2)}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="block md:table-cell w-full md:w-auto relative px-3 md:px-4 py-1 md:py-3 text-center border-t md:border-t-0 border-theme-border mt-2 md:mt-0">
-                    <div className="flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2">
-                      <div className="flex gap-1.5 text-[9px] md:text-[10px] font-bold items-center">
-                        <span className="text-text-muted bg-surface-container-high px-1 py-0.5 rounded" title={t('orders.remaining')}>{remaining}</span>
-                        <span className="text-white bg-orange-500 px-1 py-0.5 rounded shadow-sm" title={t('production.inProduction')}>{inProd}</span>
-                        <span className="text-green-700 bg-green-100 px-1 py-0.5 rounded" title={t('production.produced')}>{produced}</span>
-                        <span className="text-text-muted mx-0.5">=</span>
-                        <span className="text-primary bg-primary/10 px-1.5 py-0.5 rounded font-extrabold" title={t('orders.total')}>{it.quantity}</span>
-                      </div>
-                      {canProduce && canAct && (
-                        <button onClick={() => setProductionItem(it)} className="bg-primary/10 text-primary hover:bg-primary hover:text-white rounded px-2 py-1 text-[10px] font-bold transition-colors whitespace-nowrap">
-                          {t('orders.send')}
-                        </button>
-                      )}
-                    </div>
-                    {activeTasks.length > 0 && (
-                      <div className="mt-2 flex flex-col gap-1 items-center">
-                        {activeTasks.map(task => {
-                          const statusKey = `productionTasks.col${task.status.charAt(0).toUpperCase() + task.status.slice(1)}`
-                          return (
-                            <span key={task.id} className="text-[9px] font-semibold text-text-muted bg-surface-container-high px-2 py-0.5 rounded-md flex items-center gap-1 w-max shadow-sm border border-theme-border/50">
-                              <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                              {task.quantity} {it.product?.unit || ''} - {t(statusKey)}
-                            </span>
-                          )
-                        })}
-                      </div>
+                  <div key={it.id || i} className="contents">
+                    <tr className="block md:table-row border-t border-theme-border py-2 md:py-0 bg-surface-container-lowest md:bg-transparent">
+                      <td className="block md:table-cell w-full md:w-auto relative px-3 md:px-4 py-1 md:py-3 font-mono text-xs text-text-muted">
+                        <div className="flex items-center justify-between md:justify-start">
+                          <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('products.stockNo')}</span>
+                          <span>{it.product?.stockNo || '—'}</span>
+                        </div>
+                      </td>
+                      <td className="block md:table-cell w-full md:w-auto relative px-3 md:px-4 py-1 md:py-3 text-on-surface font-medium">
+                        <div className="flex items-start md:items-center justify-between md:justify-start gap-4">
+                          <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted pt-0.5">{t('orders.product')}</span>
+                          <div className="text-right md:text-left flex-1 flex flex-col items-start gap-1">
+                            <span>{it.productName}</span>
+                            {it.notes && it.notes.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setExpandedNotes((prev) => ({ ...prev, [i]: !prev[i] }))
+                                }}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 hover:bg-red-200 dark:hover:bg-red-900/60 transition cursor-pointer"
+                                title={`${it.notes.length} not`}
+                              >
+                                <span className="material-symbols-outlined text-[13px] text-red-600 dark:text-red-400">sticky_note_2</span>
+                                <span>{it.notes.length} {t('orders.notes', 'Not')}</span>
+                                <span className={`material-symbols-outlined text-[13px] transition-transform duration-200 ${expandedNotes[i] ? 'rotate-180' : ''}`}>
+                                  expand_more
+                                </span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="block md:table-cell w-full md:w-auto relative px-3 md:px-4 py-1 md:py-3 text-right text-text-muted">
+                        <div className="flex items-center justify-between md:justify-end">
+                          <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.qty')}</span>
+                          <span>{it.quantity}</span>
+                        </div>
+                      </td>
+                      <td className="block md:table-cell w-full md:w-auto relative px-3 md:px-4 py-1 md:py-3 text-right text-on-surface">
+                        <div className="flex items-center justify-between md:justify-end">
+                          <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.unitPrice')}</span>
+                          <span>
+                            <span className="text-[10px] md:text-xs text-text-muted mr-1">{it.currency || 'TRY'}</span>
+                            {parseFloat(it.unitPrice).toFixed(2)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="block md:table-cell w-full md:w-auto relative px-3 md:px-4 py-1 md:py-3 text-right font-semibold text-on-surface">
+                        <div className="flex items-center justify-between md:justify-end">
+                          <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.lineTotal')}</span>
+                          <span>
+                            <span className="text-[10px] md:text-xs text-text-muted mr-1">{it.currency || 'TRY'}</span>
+                            {(parseFloat(it.unitPrice) * parseInt(it.quantity)).toFixed(2)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="block md:table-cell w-full md:w-auto relative px-3 md:px-4 py-1 md:py-3 text-center border-t md:border-t-0 border-theme-border mt-2 md:mt-0">
+                        <div className="flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2">
+                          <div className="flex gap-1.5 text-[9px] md:text-[10px] font-bold items-center">
+                            <span className="text-text-muted bg-surface-container-high px-1 py-0.5 rounded" title={t('orders.remaining')}>{remaining}</span>
+                            <span className="text-white bg-orange-500 px-1 py-0.5 rounded shadow-sm" title={t('production.inProduction')}>{inProd}</span>
+                            <span className="text-green-700 bg-green-100 px-1 py-0.5 rounded" title={t('production.produced')}>{produced}</span>
+                            <span className="text-text-muted mx-0.5">=</span>
+                            <span className="text-primary bg-primary/10 px-1.5 py-0.5 rounded font-extrabold" title={t('orders.total')}>{it.quantity}</span>
+                          </div>
+                          {canProduce && canAct && (
+                            <button onClick={() => setProductionItem(it)} className="bg-primary/10 text-primary hover:bg-primary hover:text-white rounded px-2 py-1 text-[10px] font-bold transition-colors whitespace-nowrap">
+                              {t('orders.send')}
+                            </button>
+                          )}
+                        </div>
+                        {activeTasks.length > 0 && (
+                          <div className="mt-2 flex flex-col gap-1 items-center">
+                            {activeTasks.map(task => {
+                              const statusKey = `productionTasks.col${task.status.charAt(0).toUpperCase() + task.status.slice(1)}`
+                              return (
+                                <span key={task.id} className="text-[9px] font-semibold text-text-muted bg-surface-container-high px-2 py-0.5 rounded-md flex items-center gap-1 w-max shadow-sm border border-theme-border/50">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                  {task.quantity} {it.product?.unit || ''} - {t(statusKey)}
+                                </span>
+                              )
+                            })}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                    {expandedNotes[i] && it.notes && it.notes.length > 0 && (
+                      <tr key={`notes-${i}`} className="block md:table-row bg-red-50/40 dark:bg-red-950/20 border-t border-theme-border/60">
+                        <td colSpan={6} className="block md:table-cell p-3 md:p-4">
+                          <div className="bg-surface-container-lowest border border-red-200/80 dark:border-red-900/40 rounded-xl p-3 space-y-2">
+                            <div className="flex items-center justify-between pb-1.5 border-b border-theme-border/60">
+                              <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-base">sticky_note_2</span>
+                                <span className="font-bold text-xs text-on-surface">
+                                  {it.productName} — {t('orders.itemNotes', 'Kalem Notları')}
+                                </span>
+                                <span className="text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded-full border border-red-200 dark:border-red-900/50">
+                                  {it.notes.length}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => setExpandedNotes((prev) => ({ ...prev, [i]: false }))}
+                                className="text-text-muted hover:text-on-surface p-1 rounded hover:bg-hover-bg transition"
+                              >
+                                <span className="material-symbols-outlined text-sm">close</span>
+                              </button>
+                            </div>
+                            <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                              {it.notes.map((n) => (
+                                <div key={n.id} className="p-2.5 rounded-lg bg-surface-container-high/30 border border-theme-border/50 text-xs">
+                                  <div className="flex items-center justify-between gap-2 mb-1">
+                                    <span className="font-bold text-[11px] text-red-700 dark:text-red-300 flex items-center gap-1">
+                                      <span className="material-symbols-outlined text-[13px]">person</span>
+                                      {n.authorName || 'Kullanıcı'}
+                                    </span>
+                                    <span className="text-[10px] text-text-muted font-mono">
+                                      {new Date(n.createdAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-on-surface whitespace-pre-wrap leading-relaxed">{n.note}</p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
                     )}
-                  </td>
-                </tr>
-              )})}
+                  </div>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -525,9 +613,22 @@ export default function Production() {
                     onClick={() => setDetailOrder(o)}
                   >
                     <td className="block xl:table-cell w-full xl:w-auto relative mb-2 xl:mb-0 px-2 xl:px-4 py-1 xl:py-4">
-                      <div className="flex items-center justify-between xl:justify-start">
+                      <div className="flex items-center justify-between xl:justify-start gap-2">
                         <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.order')}</span>
                         <span className="font-mono text-xs text-text-muted font-semibold">{o.code}</span>
+                        {(() => {
+                          const totalItemNotes = (o.items || []).reduce((acc, it) => acc + (it.notes?.length || 0), 0)
+                          if (totalItemNotes === 0) return null
+                          return (
+                            <span
+                              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50"
+                              title={`${totalItemNotes} kalem notu`}
+                            >
+                              <span className="material-symbols-outlined text-[12px]">sticky_note_2</span>
+                              {totalItemNotes}
+                            </span>
+                          )
+                        })()}
                       </div>
                     </td>
                     <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 px-3 xl:px-4 py-1 xl:py-4">

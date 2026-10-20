@@ -7,6 +7,40 @@ const prisma = new PrismaClient()
 const router = Router()
 
 
+async function canAddOrderNote(user) {
+  if (user.role === 'admin' || user.department === 'Sales Manager') return true
+  if (user.employeeId) {
+    const empPerms = await prisma.employeePermission.findMany({ where: { employeeId: user.employeeId } })
+    const pages = empPerms.map((p) => p.page)
+    if (pages.includes('-orders-note-create')) return false
+    if (pages.includes('orders-note-create')) return true
+  }
+  if (user.department) {
+    const rolePerm = await prisma.rolePermission.findFirst({
+      where: { role: user.department, page: 'orders-note-create' }
+    })
+    if (rolePerm) return true
+  }
+  return false
+}
+
+async function canDeleteOrderNote(user) {
+  if (user.role === 'admin' || user.department === 'Sales Manager') return true
+  if (user.employeeId) {
+    const empPerms = await prisma.employeePermission.findMany({ where: { employeeId: user.employeeId } })
+    const pages = empPerms.map((p) => p.page)
+    if (pages.includes('-orders-note-delete')) return false
+    if (pages.includes('orders-note-delete')) return true
+  }
+  if (user.department) {
+    const rolePerm = await prisma.rolePermission.findFirst({
+      where: { role: user.department, page: 'orders-note-delete' }
+    })
+    if (rolePerm) return true
+  }
+  return false
+}
+
 router.get('/', async (req, res) => {
   try {
     const orders = await prisma.order.findMany({
@@ -18,7 +52,8 @@ router.get('/', async (req, res) => {
         items: { 
           include: { 
             product: { select: { stockNo: true, currency: true, unit: true } },
-            productionTasks: { include: { machine: true, operator: true } }
+            productionTasks: { include: { machine: true, operator: true } },
+            notes: { orderBy: { createdAt: 'asc' } }
           } 
         },
       },
@@ -50,7 +85,8 @@ router.get('/:id', async (req, res) => {
         items: { 
           include: { 
             product: true,
-            productionTasks: { include: { machine: true, operator: true } }
+            productionTasks: { include: { machine: true, operator: true } },
+            notes: { orderBy: { createdAt: 'asc' } }
           } 
         } 
       },
@@ -92,6 +128,15 @@ router.post('/', async (req, res) => {
             currency: item.currency || 'USD',
             vat: parseFloat(item.vat) || 0,
             ...(item.productId ? { product: { connect: { id: item.productId } } } : {}),
+            ...(item.notes && item.notes.length ? {
+              notes: {
+                create: item.notes.filter(n => (typeof n === 'string' ? n.trim() : n.note?.trim())).map((n) => ({
+                  note: typeof n === 'string' ? n.trim() : n.note.trim(),
+                  authorId: req.user?.id || null,
+                  authorName: req.user?.name || 'Kullanıcı',
+                })),
+              },
+            } : {}),
           })),
         },
       },
@@ -102,7 +147,8 @@ router.post('/', async (req, res) => {
         items: { 
           include: { 
             product: { select: { stockNo: true, currency: true, unit: true } },
-            productionTasks: { include: { machine: true, operator: true } }
+            productionTasks: { include: { machine: true, operator: true } },
+            notes: { orderBy: { createdAt: 'asc' } }
           } 
         },
       },
@@ -211,6 +257,15 @@ router.put('/:id', async (req, res) => {
             currency: item.currency || 'USD',
             vat: parseFloat(item.vat) || 0,
             ...(item.productId ? { product: { connect: { id: item.productId } } } : {}),
+            ...(item.notes && item.notes.length ? {
+              notes: {
+                create: item.notes.filter(n => (typeof n === 'string' ? n.trim() : n.note?.trim())).map((n) => ({
+                  note: typeof n === 'string' ? n.trim() : n.note.trim(),
+                  authorId: req.user?.id || null,
+                  authorName: req.user?.name || 'Kullanıcı',
+                })),
+              },
+            } : {}),
           })),
         },
       },
@@ -221,11 +276,29 @@ router.put('/:id', async (req, res) => {
         items: { 
           include: { 
             product: { select: { stockNo: true, currency: true, unit: true } },
-            productionTasks: { include: { machine: true, operator: true } }
+            productionTasks: { include: { machine: true, operator: true } },
+            notes: { orderBy: { createdAt: 'asc' } }
           } 
         },
       },
     })
+    // Insert new notes for existing items if any
+    for (const item of itemsWithId) {
+      if (item.notes && item.notes.length) {
+        const newNotes = item.notes.filter(n => (!n.id || String(n.id).startsWith('temp_')) && (typeof n === 'string' ? n.trim() : n.note?.trim()))
+        if (newNotes.length) {
+          await prisma.orderItemNote.createMany({
+            data: newNotes.map(n => ({
+              orderItemId: item.id,
+              note: typeof n === 'string' ? n.trim() : n.note.trim(),
+              authorId: req.user?.id || null,
+              authorName: req.user?.name || 'Kullanıcı',
+            }))
+          })
+        }
+      }
+    }
+
     // Set new fields via raw SQL until Prisma client is regenerated
     await prisma.$executeRawUnsafe(
       `UPDATE "Order" SET "shipmentType" = $1, "paymentMethod" = $2, "visitId" = $3 WHERE id = $4`,
@@ -237,7 +310,65 @@ router.put('/:id', async (req, res) => {
     // Vio'ya artık sadece sipariş ilk oluştuğunda (POST) gönderiyoruz. 
     // PUT işleminde tekrar gönderirsek Vio'da mükerrer (çift) kayıt oluşur.
     
-    res.json(order)
+    // Refresh order to ensure created notes are present in response
+    const freshOrder = await prisma.order.findUnique({
+      where: { id: order.id },
+      include: {
+        customer: { select: { id: true, name: true, code: true, accountCode: true } },
+        employee: { select: { id: true, name: true } },
+        salesRep: { select: { id: true, name: true } },
+        items: { 
+          include: { 
+            product: { select: { stockNo: true, currency: true, unit: true } },
+            productionTasks: { include: { machine: true, operator: true } },
+            notes: { orderBy: { createdAt: 'asc' } }
+          } 
+        },
+      },
+    })
+
+    res.json(freshOrder || order)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// POST /api/orders/items/:itemId/notes - add note to order item
+router.post('/items/:itemId/notes', async (req, res) => {
+  try {
+    const allowed = await canAddOrderNote(req.user)
+    if (!allowed) {
+      return res.status(403).json({ error: 'Kalem notu ekleme yetkiniz bulunmamaktadır.' })
+    }
+    const { note } = req.body
+    if (!note || !note.trim()) {
+      return res.status(400).json({ error: 'Not içeriği boş olamaz.' })
+    }
+    const createdNote = await prisma.orderItemNote.create({
+      data: {
+        orderItemId: req.params.itemId,
+        note: note.trim(),
+        authorId: req.user.id || null,
+        authorName: req.user.name || 'Kullanıcı',
+      },
+    })
+    res.status(201).json(createdNote)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// DELETE /api/orders/items/notes/:noteId - delete order item note
+router.delete('/items/notes/:noteId', async (req, res) => {
+  try {
+    const allowed = await canDeleteOrderNote(req.user)
+    if (!allowed) {
+      return res.status(403).json({ error: 'Kalem notu silme yetkiniz bulunmamaktadır.' })
+    }
+    await prisma.orderItemNote.delete({
+      where: { id: req.params.noteId },
+    })
+    res.json({ success: true })
   } catch (err) {
     res.status(500).json({ error: err.message })
   }

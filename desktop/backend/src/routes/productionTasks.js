@@ -13,7 +13,8 @@ router.get('/', async (req, res) => {
         orderItem: {
           include: {
             order: { select: { code: true, customer: true, salesRep: true, employee: true } },
-            product: true
+            product: true,
+            notes: { orderBy: { createdAt: 'asc' } }
           }
         },
         product: true,
@@ -76,7 +77,7 @@ router.post('/', async (req, res) => {
           operatorId: extrusionOperatorId || null,
         },
         include: {
-          orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true } },
+          orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true, notes: { orderBy: { createdAt: 'asc' } } } },
           product: true,
           machine: true,
           operator: true,
@@ -193,7 +194,7 @@ router.patch('/:id/move', async (req, res) => {
         where: { id: task.id },
         data: updatedData,
         include: {
-          orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true } },
+          orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true, notes: { orderBy: { createdAt: 'asc' } } } },
           product: true,
           machine: true,
           operator: true,
@@ -267,7 +268,7 @@ router.put('/:id', async (req, res) => {
         ...(date !== undefined && { date }),
       },
       include: {
-        orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true } },
+        orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true, notes: { orderBy: { createdAt: 'asc' } } } },
         machine: true,
         operator: true,
       }
@@ -323,7 +324,7 @@ router.post('/rollover', async (req, res) => {
           ...(shouldClear ? { machineId: null, operatorId: null } : {})
         },
         include: {
-          orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true } },
+          orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true, notes: { orderBy: { createdAt: 'asc' } } } },
           product: true,
           machine: true,
           operator: true,
@@ -386,7 +387,7 @@ router.post('/rollover', async (req, res) => {
           date: targetDate
         },
         include: {
-          orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true } },
+          orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true, notes: { orderBy: { createdAt: 'asc' } } } },
           product: true,
           machine: true,
           operator: true,

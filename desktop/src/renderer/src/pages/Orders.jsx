@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useLocation } from 'react-router-dom'
 import * as XLSX from 'xlsx'
@@ -51,10 +51,10 @@ const PAYMENT_METHODS = [
   'PayPal / Online Payment',
 ]
 
-const emptyItem = { productName: '', quantity: 1, unitPrice: '', currency: 'TRY', vat: '0', unit: '' }
+const emptyItem = { productName: '', quantity: 1, unitPrice: '', currency: 'TRY', vat: '0', unit: '', notes: [] }
 
 function emptyForm() {
-  return { customerId: '', salesRepId: '', status: 'Processing', notes: '', shipmentType: '', paymentMethod: '', items: [{ ...emptyItem }] }
+  return { customerId: '', salesRepId: '', status: 'Processing', notes: '', shipmentType: '', paymentMethod: '', items: [{ ...emptyItem, notes: [] }] }
 }
 
 // ─── Order Detail Modal ───────────────────────────────────────────────────────
@@ -69,11 +69,24 @@ const detailStatusStyle = {
   Delivered: 'bg-green-400 text-green-900',
 }
 
-function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
+function OrderDetailModal({
+  order,
+  onClose,
+  currentUser,
+  onStatusChange,
+  canAddNote,
+  canDeleteNote,
+  addOrderItemNote,
+  deleteOrderItemNote,
+}) {
   const { t } = useTranslation()
   const { userStatusPermissions, statusPermissions } = useData()
   const [localStatus, setLocalStatus] = useState(order.status)
   const [pendingStatus, setPendingStatus] = useState(null)
+  const [expandedNotes, setExpandedNotes] = useState({})
+  const [newNoteInputs, setNewNoteInputs] = useState({})
+  const [savingNoteId, setSavingNoteId] = useState(null)
+  const [deletingNoteId, setDeletingNoteId] = useState(null)
   const isAdmin = currentUser?.role === 'admin'
   const nextStatus = ORDER_STATUSES[ORDER_STATUSES.indexOf(localStatus) + 1]
 
@@ -87,6 +100,37 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
     setLocalStatus(pendingStatus)
     onStatusChange(order.id, pendingStatus)
     setPendingStatus(null)
+  }
+
+  function toggleItemNotes(key) {
+    setExpandedNotes((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  async function handleAddDetailNote(itemId, key) {
+    const text = (newNoteInputs[key] || '').trim()
+    if (!text || !itemId || !addOrderItemNote) return
+    setSavingNoteId(key)
+    try {
+      await addOrderItemNote(itemId, text)
+      setNewNoteInputs((prev) => ({ ...prev, [key]: '' }))
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setSavingNoteId(null)
+    }
+  }
+
+  async function handleDeleteDetailNote(itemId, noteId) {
+    if (!confirm(t('orders.deleteNoteConfirm', 'Bu notu silmek istediğinize emin misiniz?'))) return
+    if (!deleteOrderItemNote) return
+    setDeletingNoteId(noteId)
+    try {
+      await deleteOrderItemNote(itemId, noteId)
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setDeletingNoteId(null)
+    }
   }
 
   return (
@@ -117,7 +161,7 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
         </div>
 
         {/* Line Items */}
-        <div className="rounded-xl border border-theme-border overflow-y-auto max-h-[240px] md:max-h-none mb-4 bg-surface-container-lowest">
+        <div className="rounded-xl border border-theme-border overflow-y-auto max-h-[320px] md:max-h-none mb-4 bg-surface-container-lowest">
           <table className="w-full text-sm block md:table">
             <thead className="hidden md:table-header-group sticky top-0 bg-surface-container-high z-10 shadow-sm">
               <tr className="text-text-muted text-xs uppercase tracking-wider">
@@ -138,71 +182,215 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
                 const remaining = it.quantity - produced - inProd
                 const itemStatus = it.status || 'Processing'
                 const activeTasks = (it.productionTasks || []).filter(task => task.status !== 'completed')
+                const itemKey = it.id || i
+                const notesCount = it.notes?.length || 0
 
                 return (
-                  <tr key={i} className="block md:table-row border-b border-theme-border last:border-0 p-2 md:p-0">
-                    <td className="block md:table-cell px-2 md:px-4 py-1 md:py-3 text-on-surface font-semibold md:font-medium text-[11px] md:text-sm">
-                      <span className="md:hidden text-[9px] font-bold uppercase text-text-muted block mb-0.5">{t('orders.product')}</span>
-                      <div className="flex flex-col">
-                        <span>{it.productName}</span>
-                        {itemStatus !== 'Processing' && (
-                          <span className={`inline-block mt-0.5 w-max px-1.5 py-0.5 rounded text-[9px] font-bold ${detailStatusStyle[itemStatus] || 'bg-surface-container-high'}`}>
-                            {itemStatus}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="flex md:table-cell justify-between items-center px-2 md:px-4 py-1 md:py-3 text-right text-text-muted text-[11px] md:text-sm">
-                      <span className="md:hidden text-[9px] font-bold uppercase text-text-muted">{t('orders.qty')}</span>
-                      <span className="font-medium text-on-surface md:text-text-muted">{it.quantity}</span>
-                    </td>
-                    <td className="flex md:table-cell justify-between items-center px-2 md:px-4 py-1 md:py-3 text-center text-text-muted text-[11px] md:text-sm">
-                      <span className="md:hidden text-[9px] font-bold uppercase text-text-muted">{t('common.unit')}</span>
-                      <span className="font-medium text-on-surface md:text-text-muted">{it.product?.unit || '—'}</span>
-                    </td>
-                    <td className="flex md:table-cell justify-between items-center px-2 md:px-4 py-1 md:py-3 text-right text-on-surface text-[11px] md:text-sm">
-                      <span className="md:hidden text-[9px] font-bold uppercase text-text-muted">{t('orders.unitPrice')}</span>
-                      <div className="font-medium">
-                        <span className="text-[9px] md:text-xs text-text-muted mr-1">{it.currency || 'TRY'}</span>
-                        {parseFloat(it.unitPrice).toFixed(2)}
-                      </div>
-                    </td>
-                    <td className="flex md:table-cell justify-between items-center px-2 md:px-4 py-1 md:py-3 text-right text-text-muted text-[11px] md:text-sm">
-                      <span className="md:hidden text-[9px] font-bold uppercase text-text-muted">{t('orders.vat')}</span>
-                      <span className="font-medium text-on-surface md:text-text-muted">{it.vat > 0 ? `${it.vat}%` : '—'}</span>
-                    </td>
-                    <td className="flex md:table-cell justify-between items-center px-2 md:px-4 py-1 md:py-3 text-right font-bold md:font-semibold text-on-surface mt-1 md:mt-0 pt-1 md:pt-0 border-t border-surface-container md:border-0 text-[11px] md:text-sm">
-                      <span className="md:hidden text-[9px] font-bold uppercase text-text-muted">{t('orders.lineTotal')}</span>
-                      <div>
-                        <span className="text-[9px] md:text-xs text-text-muted mr-1">{it.currency || 'TRY'}</span>
-                        {lineTotal.toFixed(2)}
-                      </div>
-                    </td>
-                    <td className="block md:table-cell px-2 md:px-4 py-2 md:py-3 text-center border-t border-surface-container md:border-0 mt-2 md:mt-0">
-                      <div className="flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2">
-                        <div className="flex gap-1.5 text-[9px] md:text-[10px] font-bold items-center">
-                          <span className="text-text-muted bg-surface-container-high px-1 py-0.5 rounded" title={t('orders.remaining')}>{remaining}</span>
-                          <span className="text-white bg-orange-500 px-1 py-0.5 rounded shadow-sm" title={t('production.inProduction')}>{inProd}</span>
-                          <span className="text-green-700 bg-green-100 px-1 py-0.5 rounded" title={t('production.produced')}>{produced}</span>
-                          <span className="text-text-muted mx-0.5">=</span>
-                          <span className="text-primary bg-primary/10 px-1.5 py-0.5 rounded font-extrabold" title={t('orders.total')}>{it.quantity}</span>
-                        </div>
-                        {activeTasks.length > 0 && (
-                          <div className="mt-2 flex flex-col gap-1 items-center">
-                            {activeTasks.map(task => {
-                              const statusKey = `productionTasks.col${task.status.charAt(0).toUpperCase() + task.status.slice(1)}`
-                              return (
-                                <span key={task.id} className="text-[9px] font-semibold text-text-muted bg-surface-container-high px-2 py-0.5 rounded-md flex items-center gap-1 w-max shadow-sm border border-theme-border/50">
-                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
-                                  {task.quantity} {it.product?.unit || ''} - {t(statusKey)}
+                  <Fragment key={itemKey}>
+                    <tr className="block md:table-row border-b border-theme-border last:border-0 p-2 md:p-0">
+                      <td className="block md:table-cell px-2 md:px-4 py-1.5 md:py-3 text-on-surface font-semibold md:font-medium text-[11px] md:text-sm">
+                        <span className="md:hidden text-[9px] font-bold uppercase text-text-muted block mb-0.5">{t('orders.product')}</span>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span>{it.productName}</span>
+                            {notesCount > 0 ? (
+                              <button
+                                type="button"
+                                onClick={() => toggleItemNotes(itemKey)}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 hover:bg-red-100 transition shadow-xs cursor-pointer"
+                                title={t('orders.itemNotes', 'Kalem Notları')}
+                              >
+                                <span className="material-symbols-outlined text-[15px] text-red-600 dark:text-red-400">sticky_note_2</span>
+                                <span className="text-red-600 dark:text-red-400 font-extrabold">{notesCount}</span>
+                                <span className={`material-symbols-outlined text-[14px] text-red-500 transition-transform duration-200 ${expandedNotes[itemKey] ? 'rotate-180' : ''}`}>
+                                  expand_more
                                 </span>
-                              )
-                            })}
+                              </button>
+                            ) : canAddNote ? (
+                              <button
+                                type="button"
+                                onClick={() => toggleItemNotes(itemKey)}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] text-text-muted hover:text-primary bg-surface-container-high/60 hover:bg-primary/10 border border-dashed border-theme-border hover:border-primary/40 transition cursor-pointer"
+                                title={t('orders.addNote', 'Not Ekle')}
+                              >
+                                <span className="material-symbols-outlined text-[13px]">add_comment</span>
+                                <span>{t('orders.addNote', 'Not Ekle')}</span>
+                              </button>
+                            ) : null}
                           </div>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+                          {itemStatus !== 'Processing' && (
+                            <span className={`inline-block mt-0.5 w-max px-1.5 py-0.5 rounded text-[9px] font-bold ${detailStatusStyle[itemStatus] || 'bg-surface-container-high'}`}>
+                              {itemStatus}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="flex md:table-cell justify-between items-center px-2 md:px-4 py-1 md:py-3 text-right text-text-muted text-[11px] md:text-sm">
+                        <span className="md:hidden text-[9px] font-bold uppercase text-text-muted">{t('orders.qty')}</span>
+                        <span className="font-medium text-on-surface md:text-text-muted">{it.quantity}</span>
+                      </td>
+                      <td className="flex md:table-cell justify-between items-center px-2 md:px-4 py-1 md:py-3 text-center text-text-muted text-[11px] md:text-sm">
+                        <span className="md:hidden text-[9px] font-bold uppercase text-text-muted">{t('common.unit')}</span>
+                        <span className="font-medium text-on-surface md:text-text-muted">{it.product?.unit || '—'}</span>
+                      </td>
+                      <td className="flex md:table-cell justify-between items-center px-2 md:px-4 py-1 md:py-3 text-right text-on-surface text-[11px] md:text-sm">
+                        <span className="md:hidden text-[9px] font-bold uppercase text-text-muted">{t('orders.unitPrice')}</span>
+                        <div className="font-medium">
+                          <span className="text-[9px] md:text-xs text-text-muted mr-1">{it.currency || 'TRY'}</span>
+                          {parseFloat(it.unitPrice).toFixed(2)}
+                        </div>
+                      </td>
+                      <td className="flex md:table-cell justify-between items-center px-2 md:px-4 py-1 md:py-3 text-right text-text-muted text-[11px] md:text-sm">
+                        <span className="md:hidden text-[9px] font-bold uppercase text-text-muted">{t('orders.vat')}</span>
+                        <span className="font-medium text-on-surface md:text-text-muted">{it.vat > 0 ? `${it.vat}%` : '—'}</span>
+                      </td>
+                      <td className="flex md:table-cell justify-between items-center px-2 md:px-4 py-1 md:py-3 text-right font-bold md:font-semibold text-on-surface mt-1 md:mt-0 pt-1 md:pt-0 border-t border-surface-container md:border-0 text-[11px] md:text-sm">
+                        <span className="md:hidden text-[9px] font-bold uppercase text-text-muted">{t('orders.lineTotal')}</span>
+                        <div>
+                          <span className="text-[9px] md:text-xs text-text-muted mr-1">{it.currency || 'TRY'}</span>
+                          {lineTotal.toFixed(2)}
+                        </div>
+                      </td>
+                      <td className="block md:table-cell px-2 md:px-4 py-2 md:py-3 text-center border-t border-surface-container md:border-0 mt-2 md:mt-0">
+                        <div className="flex flex-col md:flex-row items-center justify-center gap-1.5 md:gap-2">
+                          <div className="flex gap-1.5 text-[9px] md:text-[10px] font-bold items-center">
+                            <span className="text-text-muted bg-surface-container-high px-1 py-0.5 rounded" title={t('orders.remaining')}>{remaining}</span>
+                            <span className="text-white bg-orange-500 px-1 py-0.5 rounded shadow-sm" title={t('production.inProduction')}>{inProd}</span>
+                            <span className="text-green-700 bg-green-100 px-1 py-0.5 rounded" title={t('production.produced')}>{produced}</span>
+                            <span className="text-text-muted mx-0.5">=</span>
+                            <span className="text-primary bg-primary/10 px-1.5 py-0.5 rounded font-extrabold" title={t('orders.total')}>{it.quantity}</span>
+                          </div>
+                          {activeTasks.length > 0 && (
+                            <div className="mt-2 flex flex-col gap-1 items-center">
+                              {activeTasks.map(task => {
+                                const statusKey = `productionTasks.col${task.status.charAt(0).toUpperCase() + task.status.slice(1)}`
+                                return (
+                                  <span key={task.id} className="text-[9px] font-semibold text-text-muted bg-surface-container-high px-2 py-0.5 rounded-md flex items-center gap-1 w-max shadow-sm border border-theme-border/50">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span>
+                                    {task.quantity} {it.product?.unit || ''} - {t(statusKey)}
+                                  </span>
+                                )
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+
+                    {/* Accordion panel across full width of the table */}
+                    {expandedNotes[itemKey] && (
+                      <tr
+                        key={`${itemKey}-notes`}
+                        className="block md:table-row bg-surface-container-high/20 border-b border-theme-border"
+                      >
+                        <td
+                          colSpan={7}
+                          className="block md:table-cell p-2.5 md:px-5 md:py-3"
+                        >
+                          <div className="w-full bg-surface-container-lowest border border-theme-border rounded-xl shadow-xs p-3 md:p-3.5 space-y-2.5">
+                            <div className="flex items-center justify-between border-b border-theme-border/60 pb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-red-500 text-base">sticky_note_2</span>
+                                <span className="font-bold text-xs text-on-surface">
+                                  {it.productName} — {t('orders.itemNotes', 'Kalem Notları')}
+                                </span>
+                                <span className="text-[11px] font-bold text-red-600 bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded-full border border-red-200 dark:border-red-900/50">
+                                  {notesCount}
+                                </span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => toggleItemNotes(itemKey)}
+                                className="text-text-muted hover:text-on-surface p-1 rounded hover:bg-hover-bg transition cursor-pointer"
+                              >
+                                <span className="material-symbols-outlined text-sm">close</span>
+                              </button>
+                            </div>
+
+                            {/* List of notes */}
+                            <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                              {notesCount === 0 ? (
+                                <p className="text-xs text-text-muted italic py-1 font-normal">
+                                  {t('orders.noItemNotes', 'Bu kaleme ait not bulunmamaktadır.')}
+                                </p>
+                              ) : (
+                                (it.notes || []).map((n, nIdx) => (
+                                  <div
+                                    key={n.id || nIdx}
+                                    className="flex items-start justify-between gap-2 p-2 rounded-lg bg-surface-container-high/30 border border-theme-border/50 text-xs font-normal"
+                                  >
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-0.5">
+                                        <span className="font-bold text-[11px] text-on-surface flex items-center gap-1">
+                                          <span className="material-symbols-outlined text-[13px] text-text-muted">person</span>
+                                          {n.authorName || 'Kullanıcı'}
+                                        </span>
+                                        {n.createdAt && (
+                                          <span className="text-[10px] text-text-muted font-mono">
+                                            {new Date(n.createdAt).toLocaleString('tr-TR', {
+                                              day: '2-digit', month: '2-digit', year: 'numeric',
+                                              hour: '2-digit', minute: '2-digit',
+                                            })}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="text-xs text-on-surface whitespace-pre-wrap leading-relaxed">{n.note}</p>
+                                    </div>
+                                    {canDeleteNote && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteDetailNote(it.id, n.id)}
+                                        disabled={deletingNoteId === n.id}
+                                        className="text-text-muted hover:text-error p-1 rounded hover:bg-error/10 transition shrink-0 cursor-pointer"
+                                        title={t('common.delete', 'Sil')}
+                                      >
+                                        <span className="material-symbols-outlined text-[15px]">delete</span>
+                                      </button>
+                                    )}
+                                  </div>
+                                ))
+                              )}
+                            </div>
+
+                            {/* Add Note Input if canAddNote */}
+                            {canAddNote && (
+                              <div className="flex items-center gap-2 pt-1.5 border-t border-theme-border/50 font-normal">
+                                <input
+                                  type="text"
+                                  value={newNoteInputs[itemKey] || ''}
+                                  onChange={(e) => setNewNoteInputs((prev) => ({ ...prev, [itemKey]: e.target.value }))}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                      e.preventDefault()
+                                      handleAddDetailNote(it.id, itemKey)
+                                    }
+                                  }}
+                                  placeholder={t('orders.notePlaceholder', 'Kalem ile ilgili bir not yazın...')}
+                                  className="flex-1 bg-surface-container-high/40 border border-theme-border rounded-lg px-2.5 py-1.5 text-xs text-on-surface outline-none focus:border-primary transition"
+                                  disabled={savingNoteId === itemKey}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleAddDetailNote(it.id, itemKey)}
+                                  disabled={savingNoteId === itemKey || !(newNoteInputs[itemKey] || '').trim()}
+                                  className="bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:opacity-90 transition disabled:opacity-50 flex items-center gap-1 shrink-0 cursor-pointer"
+                                >
+                                  {savingNoteId === itemKey ? (
+                                    <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+                                  ) : (
+                                    <>
+                                      <span className="material-symbols-outlined text-[14px]">send</span>
+                                      <span>{t('orders.addNote', 'Not Ekle')}</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 )
               })}
             </tbody>
@@ -309,8 +497,17 @@ function OrderDetailModal({ order, onClose, currentUser, onStatusChange }) {
 // ─── Add / Edit Modal ─────────────────────────────────────────────────────────
 const SALES_DEPTS = ['Sales Manager', 'Sales Representative']
 
-function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, customers, employees, products, currentUser, salesTeam, isAdmin }) {
+function OrderModal({
+  title, form, setForm, onClose, onSave, errors, saveError,
+  customers, employees, products, currentUser, salesTeam, isAdmin,
+  canAddNote, canDeleteNote, addOrderItemNote, deleteOrderItemNote,
+}) {
   const { t } = useTranslation()
+  const [expandedNotes, setExpandedNotes] = useState({})
+  const [newNoteInputs, setNewNoteInputs] = useState({})
+  const [savingNoteIdx, setSavingNoteIdx] = useState(null)
+  const [deletingNoteId, setDeletingNoteId] = useState(null)
+
   const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
 
   const inputCls = (err) =>
@@ -324,7 +521,7 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
   }
 
   function addItem() {
-    setForm((f) => ({ ...f, items: [...f.items, { ...emptyItem }] }))
+    setForm((f) => ({ ...f, items: [...f.items, { ...emptyItem, notes: [] }] }))
   }
 
   function removeItem(idx) {
@@ -338,6 +535,87 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
         const items = f.items.map((it, i) =>
           i === idx ? { ...it, productName: prod.name, unitPrice: prod.price, productId: prod.id, currency: prod.currency || 'TRY', unit: prod.unit || '' } : it
         )
+        return { ...f, items }
+      })
+    }
+  }
+
+  async function handleAddModalNote(idx) {
+    const text = (newNoteInputs[idx] || '').trim()
+    if (!text) return
+    const currentItem = form.items[idx]
+    if (currentItem?.id && addOrderItemNote) {
+      setSavingNoteIdx(idx)
+      try {
+        const created = await addOrderItemNote(currentItem.id, text)
+        setForm((f) => {
+          const items = f.items.map((it, i) => {
+            if (i !== idx) return it
+            return {
+              ...it,
+              notes: [...(it.notes || []), created],
+            }
+          })
+          return { ...f, items }
+        })
+        setNewNoteInputs((prev) => ({ ...prev, [idx]: '' }))
+      } catch (err) {
+        alert(err.message)
+      } finally {
+        setSavingNoteIdx(null)
+      }
+    } else {
+      const tempNote = {
+        id: 'temp_' + Date.now() + Math.random().toString(36).substring(2, 5),
+        note: text,
+        authorName: currentUser?.name || 'Kullanıcı',
+        createdAt: new Date().toISOString(),
+      }
+      setForm((f) => {
+        const items = f.items.map((it, i) => {
+          if (i !== idx) return it
+          return {
+            ...it,
+            notes: [...(it.notes || []), tempNote],
+          }
+        })
+        return { ...f, items }
+      })
+      setNewNoteInputs((prev) => ({ ...prev, [idx]: '' }))
+    }
+  }
+
+  async function handleDeleteModalNote(idx, note) {
+    if (!confirm(t('orders.deleteNoteConfirm', 'Bu notu silmek istediğinize emin misiniz?'))) return
+    const currentItem = form.items[idx]
+    if (currentItem?.id && note?.id && !String(note.id).startsWith('temp_') && deleteOrderItemNote) {
+      setDeletingNoteId(note.id)
+      try {
+        await deleteOrderItemNote(currentItem.id, note.id)
+        setForm((f) => {
+          const items = f.items.map((it, i) => {
+            if (i !== idx) return it
+            return {
+              ...it,
+              notes: (it.notes || []).filter((n) => n.id !== note.id),
+            }
+          })
+          return { ...f, items }
+        })
+      } catch (err) {
+        alert(err.message)
+      } finally {
+        setDeletingNoteId(null)
+      }
+    } else {
+      setForm((f) => {
+        const items = f.items.map((it, i) => {
+          if (i !== idx) return it
+          return {
+            ...it,
+            notes: (it.notes || []).filter((n) => n.id !== note.id),
+          }
+        })
         return { ...f, items }
       })
     }
@@ -429,92 +707,231 @@ function OrderModal({ title, form, setForm, onClose, onSave, errors, saveError, 
               {form.items.map((item, idx) => {
                 const itemErr = errors.items && item.productName && (!item.unitPrice || parseInt(item.quantity) < 1)
                 const itemTotal = (parseFloat(item.unitPrice) || 0) * (parseInt(item.quantity) || 0) * (1 + (parseFloat(item.vat) || 0) / 100)
-                return (
-                  <div key={idx} className="flex flex-col md:flex-row md:items-center gap-3 md:gap-2 border border-theme-border md:border-0 rounded-xl md:rounded-none p-3 md:p-0 bg-surface-container-high/30 md:bg-transparent">
-                    <div className="flex-1 md:w-auto mt-2 md:mt-0">
-                      <SearchableSelect
-                        options={products.map(p => ({
-                          value: p.id,
-                          label: p.stockNo ? `${p.stockNo} — ${p.name}` : p.name
-                        }))}
-                        value={item.productId || ''}
-                        onChange={(val) => fillFromProduct(idx, val)}
-                        placeholder={t('orders.selectProduct')}
-                        error={errors.items && !item.productName}
-                      />
-                    </div>
+                const notesCount = item.notes?.length || 0
 
-                    <div className="flex flex-wrap md:flex-nowrap items-end gap-2 w-full md:w-auto">
-                      <div className="w-[calc(50%-4px)] md:w-14">
-                        <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.qty')}</span>
-                        <input
-                          type="number" min="1"
-                          className={`w-full border rounded px-2 py-1.5 text-xs md:text-sm bg-surface-container-lowest text-on-surface outline-none focus:border-primary text-center ${itemErr && parseInt(item.quantity) < 1 ? 'border-error' : 'border-theme-border'}`}
-                          placeholder="1"
-                          value={item.quantity}
-                          onChange={(e) => setItem(idx, 'quantity', e.target.value)}
+                return (
+                  <div key={idx} className="flex flex-col border border-theme-border rounded-xl p-3 bg-surface-container-high/30">
+                    <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-2">
+                      <div className="flex-1 md:w-auto mt-2 md:mt-0">
+                        <SearchableSelect
+                          options={products.map(p => ({
+                            value: p.id,
+                            label: p.stockNo ? `${p.stockNo} — ${p.name}` : p.name
+                          }))}
+                          value={item.productId || ''}
+                          onChange={(val) => fillFromProduct(idx, val)}
+                          placeholder={t('orders.selectProduct')}
+                          error={errors.items && !item.productName}
                         />
                       </div>
-                      <div className="w-[calc(50%-4px)] md:w-12 flex flex-col">
-                        <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('common.unit')}</span>
-                        <div className="h-[28px] md:h-auto flex items-center justify-center">
-                          {item.unit ? (
-                            <span className="text-[11px] font-semibold text-text-muted bg-surface-container-high border border-theme-border rounded px-1.5 py-1 leading-none w-full text-center">{item.unit}</span>
-                          ) : (
-                            <span className="text-[11px] text-text-muted/40 w-full text-center">—</span>
-                          )}
+
+                      <div className="flex flex-wrap md:flex-nowrap items-end gap-2 w-full md:w-auto">
+                        <div className="w-[calc(50%-4px)] md:w-14">
+                          <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.qty')}</span>
+                          <input
+                            type="number" min="1"
+                            className={`w-full border rounded px-2 py-1.5 text-xs md:text-sm bg-surface-container-lowest text-on-surface outline-none focus:border-primary text-center ${itemErr && parseInt(item.quantity) < 1 ? 'border-error' : 'border-theme-border'}`}
+                            placeholder="1"
+                            value={item.quantity}
+                            onChange={(e) => setItem(idx, 'quantity', e.target.value)}
+                          />
+                        </div>
+                        <div className="w-[calc(50%-4px)] md:w-12 flex flex-col">
+                          <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('common.unit')}</span>
+                          <div className="h-[28px] md:h-auto flex items-center justify-center">
+                            {item.unit ? (
+                              <span className="text-[11px] font-semibold text-text-muted bg-surface-container-high border border-theme-border rounded px-1.5 py-1 leading-none w-full text-center">{item.unit}</span>
+                            ) : (
+                              <span className="text-[11px] text-text-muted/40 w-full text-center">—</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="w-[calc(50%-4px)] md:w-28 flex flex-col">
+                          <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.unitPrice')}</span>
+                          <div className={`flex items-center border rounded overflow-hidden bg-surface-container-lowest ${itemErr && !item.unitPrice ? 'border-error' : 'border-theme-border'}`}>
+                            <select
+                              className="px-1 py-1.5 md:py-0 h-full text-[10px] text-text-muted border-r border-theme-border bg-surface-container-high outline-none cursor-pointer"
+                              value={item.currency || 'TRY'}
+                              onChange={(e) => setItem(idx, 'currency', e.target.value)}
+                            >
+                              <option value="TRY">TRY</option>
+                              <option value="USD">USD</option>
+                              <option value="EUR">EUR</option>
+                              <option value="GBP">GBP</option>
+                            </select>
+                            <input
+                              type="number" min="0" step="0.01"
+                              className="w-full px-2 py-1.5 text-xs md:text-sm text-on-surface outline-none bg-transparent"
+                              placeholder="0.00"
+                              value={item.unitPrice}
+                              onChange={(e) => setItem(idx, 'unitPrice', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <div className="w-[calc(50%-4px)] md:w-16 flex flex-col">
+                          <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.vat')}</span>
+                          <div className="flex items-center border border-theme-border rounded overflow-hidden bg-surface-container-lowest">
+                            <input
+                              type="number" min="0" max="100" step="0.1"
+                              className="w-full px-2 py-1.5 text-xs md:text-sm text-on-surface outline-none bg-transparent text-center"
+                              placeholder="0"
+                              value={item.vat}
+                              onChange={(e) => setItem(idx, 'vat', e.target.value)}
+                            />
+                            <span className="px-1.5 text-[10px] text-text-muted border-l border-theme-border bg-surface-container-high">%</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="w-[calc(50%-4px)] md:w-28 flex flex-col">
-                        <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.unitPrice')}</span>
-                        <div className={`flex items-center border rounded overflow-hidden bg-surface-container-lowest ${itemErr && !item.unitPrice ? 'border-error' : 'border-theme-border'}`}>
-                          <select
-                            className="px-1 py-1.5 md:py-0 h-full text-[10px] text-text-muted border-r border-theme-border bg-surface-container-high outline-none cursor-pointer"
-                            value={item.currency || 'TRY'}
-                            onChange={(e) => setItem(idx, 'currency', e.target.value)}
+
+                      <div className="flex items-center justify-between w-full md:w-auto mt-1 md:mt-0 pt-2 md:pt-0 border-t border-theme-border md:border-0 gap-2">
+                        <div className="flex flex-col md:items-end">
+                          <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-0.5 block">{t('orders.total')}</span>
+                          <span className="text-xs md:text-sm font-semibold text-on-surface md:w-24 md:text-right">
+                            {item.currency || 'TRY'} {itemTotal.toFixed(2)}
+                          </span>
+                        </div>
+
+                        {/* Accordion trigger badge */}
+                        {notesCount > 0 ? (
+                          <button
+                            type="button"
+                            onClick={() => setExpandedNotes((prev) => ({ ...prev, [idx]: !prev[idx] }))}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 hover:bg-red-100 transition shadow-xs cursor-pointer shrink-0"
+                            title={t('orders.itemNotes', 'Kalem Notları')}
                           >
-                            <option value="TRY">TRY</option>
-                            <option value="USD">USD</option>
-                            <option value="EUR">EUR</option>
-                            <option value="GBP">GBP</option>
-                          </select>
-                          <input
-                            type="number" min="0" step="0.01"
-                            className="w-full px-2 py-1.5 text-xs md:text-sm text-on-surface outline-none bg-transparent"
-                            placeholder="0.00"
-                            value={item.unitPrice}
-                            onChange={(e) => setItem(idx, 'unitPrice', e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <div className="w-[calc(50%-4px)] md:w-16 flex flex-col">
-                        <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.vat')}</span>
-                        <div className="flex items-center border border-theme-border rounded overflow-hidden bg-surface-container-lowest">
-                          <input
-                            type="number" min="0" max="100" step="0.1"
-                            className="w-full px-2 py-1.5 text-xs md:text-sm text-on-surface outline-none bg-transparent text-center"
-                            placeholder="0"
-                            value={item.vat}
-                            onChange={(e) => setItem(idx, 'vat', e.target.value)}
-                          />
-                          <span className="px-1.5 text-[10px] text-text-muted border-l border-theme-border bg-surface-container-high">%</span>
-                        </div>
+                            <span className="material-symbols-outlined text-[15px] text-red-600 dark:text-red-400">sticky_note_2</span>
+                            <span className="text-red-600 dark:text-red-400 font-extrabold">{notesCount}</span>
+                            <span className={`material-symbols-outlined text-[14px] text-red-500 transition-transform duration-200 ${expandedNotes[idx] ? 'rotate-180' : ''}`}>
+                              expand_more
+                            </span>
+                          </button>
+                        ) : canAddNote ? (
+                          <button
+                            type="button"
+                            onClick={() => setExpandedNotes((prev) => ({ ...prev, [idx]: !prev[idx] }))}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] text-text-muted hover:text-primary bg-surface-container-high/60 hover:bg-primary/10 border border-dashed border-theme-border hover:border-primary/40 transition cursor-pointer shrink-0"
+                            title={t('orders.addNote', 'Not Ekle')}
+                          >
+                            <span className="material-symbols-outlined text-[14px]">add_comment</span>
+                            <span>{t('orders.addNote', 'Not Ekle')}</span>
+                          </button>
+                        ) : null}
+
+                        {form.items.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeItem(idx)}
+                            className="text-text-muted hover:text-error flex items-center justify-center p-1.5 rounded-lg hover:bg-error/10 transition shrink-0"
+                          >
+                            <span className="material-symbols-outlined text-base">remove_circle</span>
+                          </button>
+                        )}
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between w-full md:w-auto mt-1 md:mt-0 pt-2 md:pt-0 border-t border-theme-border md:border-0">
-                      <div className="flex flex-col md:items-end">
-                        <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-0.5 block">{t('orders.total')}</span>
-                        <span className="text-xs md:text-sm font-semibold text-on-surface md:w-24 md:text-right">
-                          {item.currency || 'TRY'} {itemTotal.toFixed(2)}
-                        </span>
+                    {/* Accordion panel */}
+                    {expandedNotes[idx] && (
+                      <div className="mt-2.5 pt-2.5 border-t border-theme-border/60 bg-surface-container-lowest/90 border border-theme-border rounded-xl p-3 space-y-2.5">
+                        <div className="flex items-center justify-between border-b border-theme-border/60 pb-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="material-symbols-outlined text-red-500 text-base">sticky_note_2</span>
+                            <span className="font-bold text-xs text-on-surface">
+                              {item.productName || t('orders.lineItems', 'Kalem')} — {t('orders.itemNotes', 'Kalem Notları')}
+                            </span>
+                            <span className="text-[11px] font-bold text-red-600 bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded-full border border-red-200 dark:border-red-900/50">
+                              {notesCount}
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => setExpandedNotes((prev) => ({ ...prev, [idx]: false }))}
+                            className="text-text-muted hover:text-on-surface p-1 rounded hover:bg-hover-bg transition"
+                          >
+                            <span className="material-symbols-outlined text-sm">close</span>
+                          </button>
+                        </div>
+
+                        {/* Notes list */}
+                        <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+                          {notesCount === 0 ? (
+                            <p className="text-xs text-text-muted italic py-1 font-normal">
+                              {t('orders.noItemNotes', 'Bu kaleme ait not bulunmamaktadır.')}
+                            </p>
+                          ) : (
+                            (item.notes || []).map((n, nIdx) => (
+                              <div
+                                key={n.id || nIdx}
+                                className="flex items-start justify-between gap-2 p-2 rounded-lg bg-surface-container-high/30 border border-theme-border/50 text-xs font-normal"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 mb-0.5">
+                                    <span className="font-bold text-[11px] text-on-surface flex items-center gap-1">
+                                      <span className="material-symbols-outlined text-[13px] text-text-muted">person</span>
+                                      {n.authorName || currentUser?.name || 'Kullanıcı'}
+                                    </span>
+                                    {n.createdAt && (
+                                      <span className="text-[10px] text-text-muted font-mono">
+                                        {new Date(n.createdAt).toLocaleString('tr-TR', {
+                                          day: '2-digit', month: '2-digit', year: 'numeric',
+                                          hour: '2-digit', minute: '2-digit',
+                                        })}
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-xs text-on-surface whitespace-pre-wrap leading-relaxed">{n.note}</p>
+                                </div>
+                                {canDeleteNote && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteModalNote(idx, n)}
+                                    disabled={deletingNoteId === n.id}
+                                    className="text-text-muted hover:text-error p-1 rounded hover:bg-error/10 transition shrink-0"
+                                    title={t('common.delete', 'Sil')}
+                                  >
+                                    <span className="material-symbols-outlined text-[15px]">delete</span>
+                                  </button>
+                                )}
+                              </div>
+                            ))
+                          )}
+                        </div>
+
+                        {/* Add note input */}
+                        {canAddNote && (
+                          <div className="flex items-center gap-2 pt-1 border-t border-theme-border/50 font-normal">
+                            <input
+                              type="text"
+                              value={newNoteInputs[idx] || ''}
+                              onChange={(e) => setNewNoteInputs((prev) => ({ ...prev, [idx]: e.target.value }))}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault()
+                                  handleAddModalNote(idx)
+                                }
+                              }}
+                              placeholder={t('orders.notePlaceholder', 'Kalem ile ilgili bir not yazın...')}
+                              className="flex-1 bg-surface-container-lowest border border-theme-border rounded-lg px-2.5 py-1.5 text-xs text-on-surface outline-none focus:border-primary transition"
+                              disabled={savingNoteIdx === idx}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleAddModalNote(idx)}
+                              disabled={savingNoteIdx === idx || !(newNoteInputs[idx] || '').trim()}
+                              className="bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:opacity-90 transition disabled:opacity-50 flex items-center gap-1 shrink-0 cursor-pointer"
+                            >
+                              {savingNoteIdx === idx ? (
+                                <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+                              ) : (
+                                <>
+                                  <span className="material-symbols-outlined text-[14px]">send</span>
+                                  <span>{t('orders.addNote', 'Not Ekle')}</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        )}
                       </div>
-                      {form.items.length > 1 && (
-                        <button onClick={() => removeItem(idx)} className="text-text-muted hover:text-error flex items-center justify-center p-1.5 rounded-lg hover:bg-error/10 transition">
-                          <span className="material-symbols-outlined text-base">remove_circle</span>
-                        </button>
-                      )}
-                    </div>
+                    )}
                   </div>
                 )
               })}
@@ -633,7 +1050,21 @@ function getOrderTotals(items) {
 
 export default function Orders() {
   const { t } = useTranslation()
-  const { orders, addOrder, updateOrder, deleteOrder, syncAndRefreshOrders, customers, employees, products, isAdmin, permissions } = useData()
+  const {
+    orders,
+    addOrder,
+    updateOrder,
+    deleteOrder,
+    syncAndRefreshOrders,
+    customers,
+    employees,
+    products,
+    isAdmin,
+    permissions,
+    employeePermissions,
+    addOrderItemNote,
+    deleteOrderItemNote,
+  } = useData()
   const { user: currentUser, token } = useAuth()
   const [salesTeam, setSalesTeam] = useState([])
   const canDelete = isAdmin || currentUser?.department === 'Sales Manager'
@@ -642,6 +1073,20 @@ export default function Orders() {
     || currentUser?.department === 'Sales Representative'
     || (permissions[currentUser?.department] || []).includes('orders-create')
   const canEditProcessing = isAdmin || canCreate
+
+  const empId = currentUser?.employeeId || currentUser?.id
+  const empPerms = employeePermissions?.[empId] || []
+  const dept = currentUser?.department
+
+  const checkPerm = (permKey) => {
+    if (isAdmin || dept === 'Sales Manager') return true
+    if (empPerms.includes(`-${permKey}`)) return false
+    if (empPerms.includes(permKey)) return true
+    return (permissions?.[dept] || []).includes(permKey)
+  }
+
+  const canAddNote = checkPerm('orders-note-create')
+  const canDeleteNote = checkPerm('orders-note-delete')
 
   const location = useLocation()
   useEffect(() => {
@@ -693,6 +1138,7 @@ export default function Orders() {
   const [selected, setSelected] = useState(new Set())
   const [exportOpen, setExportOpen] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+  const [expandedListNotes, setExpandedListNotes] = useState({})
   const exportRef = useRef(null)
 
   useEffect(() => {
@@ -725,6 +1171,7 @@ export default function Orders() {
           'Sales Rep': idx === 0 ? (o.salesRep?.name || o.employee?.name || '') : '',
           'Status': idx === 0 ? o.status : '',
           'Notes': idx === 0 ? (o.notes || '') : '',
+          'Item Notes': (it.notes || []).map((n) => n.note).join('; '),
           'Product Name': it.productName || '',
           'Quantity': it.quantity ?? '',
           'Unit': it.product?.unit || '',
@@ -920,8 +1367,9 @@ export default function Orders() {
           currency: it.currency || 'TRY',
           vat: it.vat ?? '0',
           productId: it.productId || '',
+          notes: Array.isArray(it.notes) ? [...it.notes] : [],
         }))
-        : [{ ...emptyItem }],
+        : [{ ...emptyItem, notes: [] }],
     })
     setErrors({})
     setEditItem(item)
@@ -969,11 +1417,14 @@ export default function Orders() {
       shipmentType: order.shipmentType || '',
       paymentMethod: order.paymentMethod || '',
       items: (order.items || []).map((it) => ({
+        id: it.id,
         productName: it.productName,
         quantity: it.quantity,
         unitPrice: it.unitPrice,
         currency: it.currency || 'TRY',
+        vat: it.vat,
         productId: it.productId || null,
+        notes: it.notes || [],
       })),
     })
   }
@@ -985,7 +1436,9 @@ export default function Orders() {
       const inCustomer = (o.customer?.name || '').toLowerCase().includes(q) || (o.customer?.accountCode || o.customer?.code || '').toLowerCase().includes(q)
       const inRep = (o.salesRep?.name || o.employee?.name || '').toLowerCase().includes(q)
       const inProduct = (o.items || []).some((it) => it.productName.toLowerCase().includes(q))
-      if (!inCode && !inCustomer && !inRep && !inProduct) return false
+      const inOrderNotes = (o.notes || '').toLowerCase().includes(q)
+      const inItemNotes = (o.items || []).some((it) => (it.notes || []).some((n) => (n.note || '').toLowerCase().includes(q)))
+      if (!inCode && !inCustomer && !inRep && !inProduct && !inOrderNotes && !inItemNotes) return false
     }
     if (filterStatus && o.status !== filterStatus) return false
     if (filterDateFrom && new Date(o.createdAt) < new Date(filterDateFrom)) return false
@@ -1150,103 +1603,251 @@ export default function Orders() {
                 const createdAt = o.createdAt ? new Date(o.createdAt) : null
                 const dateStr = createdAt ? createdAt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
                 const timeStr = createdAt ? createdAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }) : '—'
+                const itemNotesCount = (o.items || []).reduce((acc, it) => acc + (it.notes?.length || 0), 0)
+                const hasOrderNote = Boolean(o.notes && o.notes.trim())
+                const totalNotesCount = itemNotesCount + (hasOrderNote ? 1 : 0)
+                const isNotesExpanded = !!expandedListNotes[o.id]
+
+                const notesTooltip = [
+                  ...(hasOrderNote ? [`[Sipariş Notu] ${o.notes}`] : []),
+                  ...(o.items || []).flatMap((it) =>
+                    (it.notes || []).map((n) => `[${it.productName}] ${n.authorName ? n.authorName + ': ' : ''}${n.note}`)
+                  )
+                ].join('\n')
+
                 return (
-                  <tr
-                    key={o.id}
-                    className={`block xl:table-row bg-surface-container-lowest xl:bg-transparent rounded-2xl xl:rounded-none mb-3 xl:mb-0 p-3 xl:p-0 shadow-sm xl:shadow-none border border-surface-container-low xl:border-0 xl:border-b border-theme-border hover:bg-hover-bg transition-colors cursor-pointer ${selected.has(o.id) ? 'bg-primary/5 xl:bg-primary/5 ring-2 ring-primary xl:ring-0' : ''}`}
-                    onClick={() => setDetailOrder(o)}
-                  >
-                    <td className="block xl:table-cell w-full xl:w-auto relative mb-2 xl:mb-0 xl:px-4 py-1 xl:py-2" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-between xl:justify-start">
-                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">Seç</span>
-                        <input
-                          type="checkbox"
-                          checked={selected.has(o.id)}
-                          onChange={() => toggleRow(o.id)}
-                          className="w-4 h-4 rounded accent-primary cursor-pointer"
-                        />
-                      </div>
-                    </td>
-                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
-                      <div className="flex items-center justify-between xl:justify-start">
-                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.order')}</span>
-                        <span className="font-mono text-xs text-text-muted font-semibold">{o.code || '—'}</span>
-                      </div>
-                    </td>
-                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
-                      <div className="flex items-center justify-between xl:justify-start">
-                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.customer')}</span>
-                        <span className="font-medium text-xs lg:text-sm text-on-surface flex flex-col items-start gap-0.5">
-                          <span className="line-clamp-2">{o.customer?.name || '—'}</span>
-                          {(o.customer?.accountCode || o.customer?.code) && (
-                            <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">
-                              {o.customer.accountCode || o.customer.code}
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
-                      <div className="flex items-center justify-between xl:justify-start">
-                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.salesRep')}</span>
-                        <span className="text-text-muted text-xs lg:text-sm">{o.salesRep?.name || o.employee?.name || '—'}</span>
-                      </div>
-                    </td>
-                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
-                      <div className="flex items-center justify-between xl:justify-end">
-                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.total')}</span>
-                        <div className="flex flex-col items-end">
-                          {(() => {
-                            const tg = getOrderTotals(o.items);
-                            const tk = Object.keys(tg);
-                            if (!tk.length) return <span className="font-semibold text-xs lg:text-sm text-on-surface">0.00</span>;
-                            return tk.map(k => (
-                              <span key={k} className="font-semibold text-xs lg:text-sm text-on-surface">
-                                <span className="text-xs text-text-muted mr-1">{k}</span>
-                                {tg[k].toFixed(2)}
-                              </span>
-                            ));
-                          })()}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
-                      <div className="flex items-center justify-between xl:justify-start">
-                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.status')}</span>
-                        <span className={`inline-flex px-2 lg:px-2.5 py-0.5 rounded-full text-[10px] lg:text-xs font-semibold ${statusStyle[o.status] || statusStyle.Draft}`}>
-                          {o.status}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
-                      <div className="flex items-center justify-between xl:justify-start">
-                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.date')}</span>
-                        <span className="text-xs text-text-muted">{dateStr}</span>
-                      </div>
-                    </td>
-                    <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
-                      <div className="flex items-center justify-between xl:justify-start">
-                        <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('workOrders.time')}</span>
-                        <span className="text-xs text-text-muted">{timeStr}</span>
-                      </div>
-                    </td>
-                    {(canDelete || (canEditProcessing && o.status === 'Processing')) && (
-                      <td className="block xl:table-cell w-full xl:w-auto relative mt-3 xl:mt-0 pt-3 xl:pt-0 border-t border-surface-container-low xl:border-0 xl:px-4 py-1 xl:py-2" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end gap-2">
-                          {(canDelete || (canEditProcessing && o.status === 'Processing')) && (
-                            <button onClick={() => openEdit(o)} className="flex-1 xl:flex-none flex justify-center p-1.5 lg:p-1.5 rounded-lg border xl:border-0 border-theme-border hover:bg-hover-bg text-text-muted hover:text-primary transition">
-                              <span className="material-symbols-outlined text-[16px] lg:text-base">edit</span>
-                            </button>
-                          )}
-                          {canDelete && (
-                            <button onClick={() => setConfirmDeleteId(o.id)} className="flex-1 xl:flex-none flex justify-center p-1.5 lg:p-1.5 rounded-lg border xl:border-0 border-theme-border hover:bg-hover-bg text-text-muted hover:text-error transition">
-                              <span className="material-symbols-outlined text-[16px] lg:text-base">delete</span>
-                            </button>
-                          )}
+                  <Fragment key={o.id}>
+                    <tr
+                      className={`block xl:table-row bg-surface-container-lowest xl:bg-transparent rounded-2xl xl:rounded-none mb-3 xl:mb-0 p-3 xl:p-0 shadow-sm xl:shadow-none border border-surface-container-low xl:border-0 xl:border-b border-theme-border hover:bg-hover-bg transition-colors cursor-pointer ${selected.has(o.id) ? 'bg-primary/5 xl:bg-primary/5 ring-2 ring-primary xl:ring-0' : ''}`}
+                      onClick={() => setDetailOrder(o)}
+                    >
+                      <td className="block xl:table-cell w-full xl:w-auto relative mb-2 xl:mb-0 xl:px-4 py-1 xl:py-2" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-between xl:justify-start">
+                          <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">Seç</span>
+                          <input
+                            type="checkbox"
+                            checked={selected.has(o.id)}
+                            onChange={() => toggleRow(o.id)}
+                            className="w-4 h-4 rounded accent-primary cursor-pointer"
+                          />
                         </div>
                       </td>
+                      <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
+                        <div className="flex items-center justify-between xl:justify-start gap-2">
+                          <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.order')}</span>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-mono text-xs text-text-muted font-semibold">{o.code || '—'}</span>
+                            {totalNotesCount > 0 && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  setExpandedListNotes((prev) => ({ ...prev, [o.id]: !prev[o.id] }))
+                                }}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10px] font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 hover:bg-red-100 dark:hover:bg-red-900/60 transition shadow-xs cursor-pointer"
+                                title={notesTooltip}
+                              >
+                                <span className="material-symbols-outlined text-[13px] text-red-600 dark:text-red-400">sticky_note_2</span>
+                                <span>{totalNotesCount}</span>
+                                <span className={`material-symbols-outlined text-[12px] text-red-500 transition-transform duration-200 ${isNotesExpanded ? 'rotate-180' : ''}`}>
+                                  expand_more
+                                </span>
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
+                        <div className="flex items-center justify-between xl:justify-start">
+                          <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.customer')}</span>
+                          <span className="font-medium text-xs lg:text-sm text-on-surface flex flex-col items-start gap-0.5">
+                            <span className="line-clamp-2">{o.customer?.name || '—'}</span>
+                            {(o.customer?.accountCode || o.customer?.code) && (
+                              <span className="text-[10px] font-bold text-amber-500 uppercase tracking-wider">
+                                {o.customer.accountCode || o.customer.code}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
+                        <div className="flex items-center justify-between xl:justify-start">
+                          <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.salesRep')}</span>
+                          <span className="text-text-muted text-xs lg:text-sm">{o.salesRep?.name || o.employee?.name || '—'}</span>
+                        </div>
+                      </td>
+                      <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
+                        <div className="flex items-center justify-between xl:justify-end">
+                          <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.total')}</span>
+                          <div className="flex flex-col items-end">
+                            {(() => {
+                              const tg = getOrderTotals(o.items);
+                              const tk = Object.keys(tg);
+                              if (!tk.length) return <span className="font-semibold text-xs lg:text-sm text-on-surface">0.00</span>;
+                              return tk.map(k => (
+                                <span key={k} className="font-semibold text-xs lg:text-sm text-on-surface">
+                                  <span className="text-xs text-text-muted mr-1">{k}</span>
+                                  {tg[k].toFixed(2)}
+                                </span>
+                              ));
+                            })()}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
+                        <div className="flex items-center justify-between xl:justify-start">
+                          <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.status')}</span>
+                          <span className={`inline-flex px-2 lg:px-2.5 py-0.5 rounded-full text-[10px] lg:text-xs font-semibold ${statusStyle[o.status] || statusStyle.Draft}`}>
+                            {o.status}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
+                        <div className="flex items-center justify-between xl:justify-start">
+                          <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('common.date')}</span>
+                          <span className="text-xs text-text-muted">{dateStr}</span>
+                        </div>
+                      </td>
+                      <td className="block xl:table-cell w-full xl:w-auto relative mb-1.5 xl:mb-0 xl:px-4 py-1 xl:py-2">
+                        <div className="flex items-center justify-between xl:justify-start">
+                          <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('workOrders.time')}</span>
+                          <span className="text-xs text-text-muted">{timeStr}</span>
+                        </div>
+                      </td>
+                      {(canDelete || (canEditProcessing && o.status === 'Processing')) && (
+                        <td className="block xl:table-cell w-full xl:w-auto relative mt-3 xl:mt-0 pt-3 xl:pt-0 border-t border-surface-container-low xl:border-0 xl:px-4 py-1 xl:py-2" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end gap-2">
+                            {(canDelete || (canEditProcessing && o.status === 'Processing')) && (
+                              <button onClick={() => openEdit(o)} className="flex-1 xl:flex-none flex justify-center p-1.5 lg:p-1.5 rounded-lg border xl:border-0 border-theme-border hover:bg-hover-bg text-text-muted hover:text-primary transition">
+                                <span className="material-symbols-outlined text-[16px] lg:text-base">edit</span>
+                              </button>
+                            )}
+                            {canDelete && (
+                              <button onClick={() => setConfirmDeleteId(o.id)} className="flex-1 xl:flex-none flex justify-center p-1.5 lg:p-1.5 rounded-lg border xl:border-0 border-theme-border hover:bg-hover-bg text-text-muted hover:text-error transition">
+                                <span className="material-symbols-outlined text-[16px] lg:text-base">delete</span>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      )}
+                    </tr>
+
+                    {/* Accordion Row in List */}
+                    {isNotesExpanded && (
+                      <tr
+                        className="block xl:table-row bg-red-50/20 dark:bg-red-950/15 border-b border-theme-border"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <td
+                          colSpan={(canDelete || (canEditProcessing && o.status === 'Processing')) ? 9 : 8}
+                          className="block xl:table-cell p-2.5 xl:px-6 xl:py-3"
+                        >
+                          <div className="bg-surface-container-lowest border border-red-200/80 dark:border-red-900/50 rounded-xl p-3 shadow-xs space-y-2.5">
+                            <div className="flex items-center justify-between border-b border-theme-border/60 pb-2">
+                              <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-red-500 text-base">sticky_note_2</span>
+                                <span className="font-bold text-xs text-on-surface">
+                                  {o.code} — {t('orders.orderNotes', 'Sipariş & Kalem Notları')}
+                                </span>
+                                <span className="text-[11px] font-bold text-red-600 bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded-full border border-red-200 dark:border-red-900/50">
+                                  {totalNotesCount}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => setDetailOrder(o)}
+                                  className="text-[11px] text-primary hover:underline font-semibold flex items-center gap-1 cursor-pointer"
+                                >
+                                  <span>{t('orders.viewDetail', 'Sipariş Detayına Git')}</span>
+                                  <span className="material-symbols-outlined text-[13px]">open_in_new</span>
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setExpandedListNotes((prev) => ({ ...prev, [o.id]: false }))}
+                                  className="text-text-muted hover:text-on-surface p-1 rounded hover:bg-hover-bg transition cursor-pointer"
+                                >
+                                  <span className="material-symbols-outlined text-sm">close</span>
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* General Order Note */}
+                            {hasOrderNote && (
+                              <div className="p-2 rounded-lg bg-surface-container-high/30 border border-theme-border/50 text-xs">
+                                <div className="flex items-center gap-1.5 font-bold text-[11px] text-text-muted mb-1">
+                                  <span className="material-symbols-outlined text-[13px]">description</span>
+                                  <span>{t('orders.generalNote', 'Genel Sipariş Notu')}</span>
+                                </div>
+                                <p className="text-xs text-on-surface whitespace-pre-wrap leading-relaxed pl-5 font-normal">
+                                  {o.notes}
+                                </p>
+                              </div>
+                            )}
+
+                            {/* Line Items Notes */}
+                            {itemNotesCount > 0 && (
+                              <div className="space-y-2">
+                                {(o.items || [])
+                                  .filter((it) => it.notes && it.notes.length > 0)
+                                  .map((it, itemIdx) => (
+                                    <div
+                                      key={it.id || itemIdx}
+                                      className="rounded-lg bg-surface-container-high/20 border border-theme-border/40 p-2.5 space-y-1.5"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span className="font-semibold text-xs text-on-surface flex items-center gap-1.5">
+                                          <span className="material-symbols-outlined text-[14px] text-primary">inventory_2</span>
+                                          {it.productName}
+                                          <span className="text-[11px] text-text-muted font-normal">
+                                            ({it.quantity} {it.product?.unit || 'Adet'})
+                                          </span>
+                                        </span>
+                                        <span className="text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-950/40 px-1.5 py-0.5 rounded-full border border-red-200 dark:border-red-900/50">
+                                          {it.notes.length} not
+                                        </span>
+                                      </div>
+
+                                      <div className="space-y-1 pl-4">
+                                        {it.notes.map((n, nIdx) => (
+                                          <div
+                                            key={n.id || nIdx}
+                                            className="flex items-start justify-between gap-2 p-1.5 rounded bg-surface-container-lowest border border-theme-border/40 text-xs font-normal"
+                                          >
+                                            <div className="flex-1 min-w-0">
+                                              <div className="flex items-center gap-2 mb-0.5">
+                                                <span className="font-bold text-[11px] text-on-surface flex items-center gap-1">
+                                                  <span className="material-symbols-outlined text-[12px] text-text-muted">person</span>
+                                                  {n.authorName || 'Kullanıcı'}
+                                                </span>
+                                                {n.createdAt && (
+                                                  <span className="text-[10px] text-text-muted font-mono">
+                                                    {new Date(n.createdAt).toLocaleString('tr-TR', {
+                                                      day: '2-digit',
+                                                      month: '2-digit',
+                                                      year: 'numeric',
+                                                      hour: '2-digit',
+                                                      minute: '2-digit',
+                                                    })}
+                                                  </span>
+                                                )}
+                                              </div>
+                                              <p className="text-xs text-on-surface whitespace-pre-wrap leading-relaxed">
+                                                {n.note}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  ))}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
                     )}
-                  </tr>
+                  </Fragment>
                 )
               })
             )}
@@ -1269,6 +1870,10 @@ export default function Orders() {
           onClose={() => setDetailOrder(null)}
           currentUser={currentUser}
           onStatusChange={handleStatusChange}
+          canAddNote={canAddNote}
+          canDeleteNote={canDeleteNote}
+          addOrderItemNote={addOrderItemNote}
+          deleteOrderItemNote={deleteOrderItemNote}
         />
       )}
 
@@ -1293,14 +1898,46 @@ export default function Orders() {
       )}
 
       {showAdd && (
-        <OrderModal title={t('orders.newOrder')} form={form} setForm={setForm} errors={errors} saveError={saveError}
-          onClose={() => { setShowAdd(false); setSaveError('') }} onSave={handleAdd}
-          customers={customers} employees={employees} products={products} currentUser={currentUser} salesTeam={salesTeam} isAdmin={isAdmin} />
+        <OrderModal
+          title={t('orders.newOrder')}
+          form={form}
+          setForm={setForm}
+          errors={errors}
+          saveError={saveError}
+          onClose={() => { setShowAdd(false); setSaveError('') }}
+          onSave={handleAdd}
+          customers={customers}
+          employees={employees}
+          products={products}
+          currentUser={currentUser}
+          salesTeam={salesTeam}
+          isAdmin={isAdmin}
+          canAddNote={canAddNote}
+          canDeleteNote={canDeleteNote}
+          addOrderItemNote={addOrderItemNote}
+          deleteOrderItemNote={deleteOrderItemNote}
+        />
       )}
       {editItem && (
-        <OrderModal title={t('orders.editOrder')} form={form} setForm={setForm} errors={errors} saveError={saveError}
-          onClose={() => { setEditItem(null); setSaveError('') }} onSave={handleEdit}
-          customers={customers} employees={employees} products={products} currentUser={currentUser} salesTeam={salesTeam} isAdmin={isAdmin} />
+        <OrderModal
+          title={t('orders.editOrder')}
+          form={form}
+          setForm={setForm}
+          errors={errors}
+          saveError={saveError}
+          onClose={() => { setEditItem(null); setSaveError('') }}
+          onSave={handleEdit}
+          customers={customers}
+          employees={employees}
+          products={products}
+          currentUser={currentUser}
+          salesTeam={salesTeam}
+          isAdmin={isAdmin}
+          canAddNote={canAddNote}
+          canDeleteNote={canDeleteNote}
+          addOrderItemNote={addOrderItemNote}
+          deleteOrderItemNote={deleteOrderItemNote}
+        />
       )}
     </div>
   )

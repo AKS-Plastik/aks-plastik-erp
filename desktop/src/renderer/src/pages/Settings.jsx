@@ -558,7 +558,7 @@ function UserRolesTab() {
     if (current.includes(pageKey)) {
       // Unchecking a page — also strip any of its sub-permissions
       let subs = []
-      if (pageKey === 'orders') subs = ['orders-create']
+      if (pageKey === 'orders') subs = ['orders-create', 'orders-note-create', 'orders-note-delete']
       if (pageKey === 'purchasing') subs = ['purchasing:create']
       if (pageKey === 'production') subs = ['production-start']
       next = current.filter((p) => p !== pageKey && !subs.includes(p))
@@ -781,6 +781,10 @@ function UserRolesTab() {
                   const saving = !!permSaving[page.key]
                   const ordersSubEnabled = page.key === 'orders' && enabled && (permissions[viewDept] || []).includes('orders-create')
                   const ordersSubSaving = !!permSaving['orders-create']
+                  const ordersNoteCreateEnabled = page.key === 'orders' && enabled && (permissions[viewDept] || []).includes('orders-note-create')
+                  const ordersNoteCreateSaving = !!permSaving['orders-note-create']
+                  const ordersNoteDeleteEnabled = page.key === 'orders' && enabled && (permissions[viewDept] || []).includes('orders-note-delete')
+                  const ordersNoteDeleteSaving = !!permSaving['orders-note-delete']
                   const purchasingSubEnabled = page.key === 'purchasing' && enabled && (permissions[viewDept] || []).includes('purchasing:create')
                   const purchasingSubSaving = !!permSaving['purchasing:create']
                   const productionSubEnabled = page.key === 'production' && enabled && (permissions[viewDept] || []).includes('production-start')
@@ -823,22 +827,56 @@ function UserRolesTab() {
                         </button>
                       )}
                       {page.key === 'orders' && enabled && (
-                        <button
-                          onClick={() => togglePermission('orders-create')}
-                          disabled={ordersSubSaving}
-                          className={`ml-4 w-[calc(100%-1rem)] flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition text-[10px] md:text-xs ${
-                            ordersSubEnabled
-                              ? 'bg-primary/10 border-primary text-primary'
-                              : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
-                          }`}
-                        >
-                          <span className="material-symbols-outlined text-[12px]">add_circle</span>
-                          <span className="flex-1 text-left font-medium">{t('settings.canCreateOrders', 'Sipariş Oluştur/Düzenle')}</span>
-                          {ordersSubSaving
-                            ? <span className="material-symbols-outlined text-[12px] animate-spin">progress_activity</span>
-                            : <span className="material-symbols-outlined text-[12px]">{ordersSubEnabled ? 'check_box' : 'check_box_outline_blank'}</span>
-                          }
-                        </button>
+                        <>
+                          <button
+                            onClick={() => togglePermission('orders-create')}
+                            disabled={ordersSubSaving}
+                            className={`ml-4 w-[calc(100%-1rem)] flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition text-[10px] md:text-xs ${
+                              ordersSubEnabled
+                                ? 'bg-primary/10 border-primary text-primary'
+                                : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-[12px]">add_circle</span>
+                            <span className="flex-1 text-left font-medium">{t('settings.canCreateOrders', 'Sipariş Oluştur/Düzenle')}</span>
+                            {ordersSubSaving
+                              ? <span className="material-symbols-outlined text-[12px] animate-spin">progress_activity</span>
+                              : <span className="material-symbols-outlined text-[12px]">{ordersSubEnabled ? 'check_box' : 'check_box_outline_blank'}</span>
+                            }
+                          </button>
+                          <button
+                            onClick={() => togglePermission('orders-note-create')}
+                            disabled={ordersNoteCreateSaving}
+                            className={`ml-4 w-[calc(100%-1rem)] flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition text-[10px] md:text-xs ${
+                              ordersNoteCreateEnabled
+                                ? 'bg-primary/10 border-primary text-primary'
+                                : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-[12px]">note_add</span>
+                            <span className="flex-1 text-left font-medium">{t('settings.canAddOrderNotes', 'Kalem Notu Ekleyebilir')}</span>
+                            {ordersNoteCreateSaving
+                              ? <span className="material-symbols-outlined text-[12px] animate-spin">progress_activity</span>
+                              : <span className="material-symbols-outlined text-[12px]">{ordersNoteCreateEnabled ? 'check_box' : 'check_box_outline_blank'}</span>
+                            }
+                          </button>
+                          <button
+                            onClick={() => togglePermission('orders-note-delete')}
+                            disabled={ordersNoteDeleteSaving}
+                            className={`ml-4 w-[calc(100%-1rem)] flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition text-[10px] md:text-xs ${
+                              ordersNoteDeleteEnabled
+                                ? 'bg-primary/10 border-primary text-primary'
+                                : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-[12px]">delete</span>
+                            <span className="flex-1 text-left font-medium">{t('settings.canDeleteOrderNotes', 'Kalem Notu Silebilir')}</span>
+                            {ordersNoteDeleteSaving
+                              ? <span className="material-symbols-outlined text-[12px] animate-spin">progress_activity</span>
+                              : <span className="material-symbols-outlined text-[12px]">{ordersNoteDeleteEnabled ? 'check_box' : 'check_box_outline_blank'}</span>
+                            }
+                          </button>
+                        </>
                       )}
                       {page.key === 'purchasing' && enabled && (
                         <button

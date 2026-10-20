@@ -433,7 +433,15 @@
     "productionTasks": "PRODUCTION TASKS",
     "createProductionJob": "Create Production Job",
     "stockNo": "STOCK NO",
-    "vat200": "VAT (20%):"
+    "vat200": "VAT (20%):",
+    "itemNotes": "Line Item Notes",
+    "addNote": "Add Note",
+    "notePlaceholder": "Write a note about this item...",
+    "noItemNotes": "No notes for this item.",
+    "deleteNoteConfirm": "Are you sure you want to delete this note?",
+    "generalNote": "General Order Note",
+    "viewDetail": "Go to Order Details",
+    "orderNotes": "Order & Item Notes"
   },
   "workOrders": {
     "title": "Site Visits",
@@ -825,7 +833,9 @@
     "deleteDepartment": "Departmanı Sil",
     "manageMachinesMsg": "Fabrika makineleri ve bakım kayıtlarını yönetin.",
     "confirmAssignment": "Atamayı Onayla",
-    "canStartProduction": "Can Start Production"
+    "canStartProduction": "Can Start Production",
+    "canAddOrderNotes": "Can Add Item Notes",
+    "canDeleteOrderNotes": "Can Delete Item Notes"
   },
   "productionTasks": {
     "title": "Production Planning",

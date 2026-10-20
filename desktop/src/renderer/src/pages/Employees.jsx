@@ -190,7 +190,7 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
     }
   }
 
-  const PAGE_SUB_KEYS = { orders: ['orders-create'], purchasing: ['purchasing:create'], production: ['production-start'] }
+  const PAGE_SUB_KEYS = { orders: ['orders-create', 'orders-note-create', 'orders-note-delete'], purchasing: ['purchasing:create'], production: ['production-start'] }
 
   async function togglePermission(pageKey) {
     if (!employee?.id) return
@@ -618,6 +618,18 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
                           const ordersSubEnabled = empOrdersSubDeny ? false : (roleOrdersSub || empOrdersSubAllow)
                           const ordersSubSaving = !!permSaving['orders-create']
 
+                          const roleOrdersNoteCreate = page.key === 'orders' && roleEnabled && (permissions[dept] || []).includes('orders-note-create')
+                          const empOrdersNoteCreateDeny = page.key === 'orders' && (employeePermissions[employee?.id] || []).includes('-orders-note-create')
+                          const empOrdersNoteCreateAllow = page.key === 'orders' && (employeePermissions[employee?.id] || []).includes('orders-note-create')
+                          const ordersNoteCreateEnabled = empOrdersNoteCreateDeny ? false : (roleOrdersNoteCreate || empOrdersNoteCreateAllow)
+                          const ordersNoteCreateSaving = !!permSaving['orders-note-create']
+
+                          const roleOrdersNoteDelete = page.key === 'orders' && roleEnabled && (permissions[dept] || []).includes('orders-note-delete')
+                          const empOrdersNoteDeleteDeny = page.key === 'orders' && (employeePermissions[employee?.id] || []).includes('-orders-note-delete')
+                          const empOrdersNoteDeleteAllow = page.key === 'orders' && (employeePermissions[employee?.id] || []).includes('orders-note-delete')
+                          const ordersNoteDeleteEnabled = empOrdersNoteDeleteDeny ? false : (roleOrdersNoteDelete || empOrdersNoteDeleteAllow)
+                          const ordersNoteDeleteSaving = !!permSaving['orders-note-delete']
+
                           const rolePurchasingSub = page.key === 'purchasing' && roleEnabled && (permissions[dept] || []).includes('purchasing:create')
                           const empPurchasingSubDeny = page.key === 'purchasing' && (employeePermissions[employee?.id] || []).includes('-purchasing:create')
                           const empPurchasingSubAllow = page.key === 'purchasing' && (employeePermissions[employee?.id] || []).includes('purchasing:create')
@@ -660,26 +672,68 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
                                 }
                               </button>
                               {page.key === 'orders' && enabled && (
-                                <button
-                                  onClick={() => togglePermission('orders-create')}
-                                  disabled={ordersSubSaving}
-                                  className={`w-full flex items-center gap-2 md:gap-3 pl-6 md:pl-8 pr-2.5 md:pr-3 py-1.5 md:py-2 rounded-lg md:rounded-xl border transition text-[10px] md:text-sm mt-1 ${
-                                    empOrdersSubDeny
-                                      ? 'bg-error/10 border-error/30 text-error'
-                                      : ordersSubEnabled
-                                        ? 'bg-primary/10 border-primary text-primary'
-                                        : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
-                                  }`}
-                                >
-                                  <span className="material-symbols-outlined text-[14px] md:text-base">add_circle</span>
-                                  <span className={`flex-1 text-left font-medium ${empOrdersSubDeny ? 'line-through opacity-70' : ''}`}>Can create &amp; edit orders</span>
-                                  {roleOrdersSub && !empOrdersSubDeny && <span className="text-[9px] uppercase font-bold tracking-wider opacity-60 mr-2">Dept</span>}
-                                  {empOrdersSubDeny && <span className="text-[9px] uppercase font-bold tracking-wider text-error opacity-80 mr-2">Denied</span>}
-                                  {ordersSubSaving
-                                    ? <span className="material-symbols-outlined text-[12px] md:text-sm animate-spin">progress_activity</span>
-                                    : <span className="material-symbols-outlined text-[12px] md:text-sm">{empOrdersSubDeny ? 'block' : ordersSubEnabled ? 'check_circle' : 'radio_button_unchecked'}</span>
-                                  }
-                                </button>
+                                <>
+                                  <button
+                                    onClick={() => togglePermission('orders-create')}
+                                    disabled={ordersSubSaving}
+                                    className={`w-full flex items-center gap-2 md:gap-3 pl-6 md:pl-8 pr-2.5 md:pr-3 py-1.5 md:py-2 rounded-lg md:rounded-xl border transition text-[10px] md:text-sm mt-1 ${
+                                      empOrdersSubDeny
+                                        ? 'bg-error/10 border-error/30 text-error'
+                                        : ordersSubEnabled
+                                          ? 'bg-primary/10 border-primary text-primary'
+                                          : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
+                                    }`}
+                                  >
+                                    <span className="material-symbols-outlined text-[14px] md:text-base">add_circle</span>
+                                    <span className={`flex-1 text-left font-medium ${empOrdersSubDeny ? 'line-through opacity-70' : ''}`}>{t('settings.canCreateOrders', 'Sipariş Oluştur/Düzenle')}</span>
+                                    {roleOrdersSub && !empOrdersSubDeny && <span className="text-[9px] uppercase font-bold tracking-wider opacity-60 mr-2">Dept</span>}
+                                    {empOrdersSubDeny && <span className="text-[9px] uppercase font-bold tracking-wider text-error opacity-80 mr-2">Denied</span>}
+                                    {ordersSubSaving
+                                      ? <span className="material-symbols-outlined text-[12px] md:text-sm animate-spin">progress_activity</span>
+                                      : <span className="material-symbols-outlined text-[12px] md:text-sm">{empOrdersSubDeny ? 'block' : ordersSubEnabled ? 'check_circle' : 'radio_button_unchecked'}</span>
+                                    }
+                                  </button>
+                                  <button
+                                    onClick={() => togglePermission('orders-note-create')}
+                                    disabled={ordersNoteCreateSaving}
+                                    className={`w-full flex items-center gap-2 md:gap-3 pl-6 md:pl-8 pr-2.5 md:pr-3 py-1.5 md:py-2 rounded-lg md:rounded-xl border transition text-[10px] md:text-sm mt-1 ${
+                                      empOrdersNoteCreateDeny
+                                        ? 'bg-error/10 border-error/30 text-error'
+                                        : ordersNoteCreateEnabled
+                                          ? 'bg-primary/10 border-primary text-primary'
+                                          : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
+                                    }`}
+                                  >
+                                    <span className="material-symbols-outlined text-[14px] md:text-base">note_add</span>
+                                    <span className={`flex-1 text-left font-medium ${empOrdersNoteCreateDeny ? 'line-through opacity-70' : ''}`}>{t('settings.canAddOrderNotes', 'Kalem Notu Ekleyebilir')}</span>
+                                    {roleOrdersNoteCreate && !empOrdersNoteCreateDeny && <span className="text-[9px] uppercase font-bold tracking-wider opacity-60 mr-2">Dept</span>}
+                                    {empOrdersNoteCreateDeny && <span className="text-[9px] uppercase font-bold tracking-wider text-error opacity-80 mr-2">Denied</span>}
+                                    {ordersNoteCreateSaving
+                                      ? <span className="material-symbols-outlined text-[12px] md:text-sm animate-spin">progress_activity</span>
+                                      : <span className="material-symbols-outlined text-[12px] md:text-sm">{empOrdersNoteCreateDeny ? 'block' : ordersNoteCreateEnabled ? 'check_circle' : 'radio_button_unchecked'}</span>
+                                    }
+                                  </button>
+                                  <button
+                                    onClick={() => togglePermission('orders-note-delete')}
+                                    disabled={ordersNoteDeleteSaving}
+                                    className={`w-full flex items-center gap-2 md:gap-3 pl-6 md:pl-8 pr-2.5 md:pr-3 py-1.5 md:py-2 rounded-lg md:rounded-xl border transition text-[10px] md:text-sm mt-1 ${
+                                      empOrdersNoteDeleteDeny
+                                        ? 'bg-error/10 border-error/30 text-error'
+                                        : ordersNoteDeleteEnabled
+                                          ? 'bg-primary/10 border-primary text-primary'
+                                          : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
+                                    }`}
+                                  >
+                                    <span className="material-symbols-outlined text-[14px] md:text-base">delete</span>
+                                    <span className={`flex-1 text-left font-medium ${empOrdersNoteDeleteDeny ? 'line-through opacity-70' : ''}`}>{t('settings.canDeleteOrderNotes', 'Kalem Notu Silebilir')}</span>
+                                    {roleOrdersNoteDelete && !empOrdersNoteDeleteDeny && <span className="text-[9px] uppercase font-bold tracking-wider opacity-60 mr-2">Dept</span>}
+                                    {empOrdersNoteDeleteDeny && <span className="text-[9px] uppercase font-bold tracking-wider text-error opacity-80 mr-2">Denied</span>}
+                                    {ordersNoteDeleteSaving
+                                      ? <span className="material-symbols-outlined text-[12px] md:text-sm animate-spin">progress_activity</span>
+                                      : <span className="material-symbols-outlined text-[12px] md:text-sm">{empOrdersNoteDeleteDeny ? 'block' : ordersNoteDeleteEnabled ? 'check_circle' : 'radio_button_unchecked'}</span>
+                                    }
+                                  </button>
+                                </>
                               )}
                               {page.key === 'purchasing' && enabled && (
                                 <button

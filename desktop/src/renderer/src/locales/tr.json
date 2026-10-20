@@ -433,7 +433,15 @@
     "productionTasks": "ÜRETİM GÖREVLERİ",
     "createProductionJob": "Üretim İş Emri Oluştur",
     "stockNo": "STOK NO",
-    "vat200": "KDV (20%):"
+    "vat200": "KDV (20%):",
+    "itemNotes": "Kalem Notları",
+    "addNote": "Not Ekle",
+    "notePlaceholder": "Kalem ile ilgili bir not yazın...",
+    "noItemNotes": "Bu kaleme ait not bulunmamaktadır.",
+    "deleteNoteConfirm": "Bu notu silmek istediğinize emin misiniz?",
+    "generalNote": "Genel Sipariş Notu",
+    "viewDetail": "Sipariş Detayına Git",
+    "orderNotes": "Sipariş & Kalem Notları"
   },
   "workOrders": {
     "title": "Saha Ziyaretleri",
@@ -825,7 +833,9 @@
     "deleteDepartment": "Departmanı Sil",
     "manageMachinesMsg": "Fabrika makineleri ve bakım kayıtlarını yönetin.",
     "confirmAssignment": "Atamayı Onayla",
-    "canStartProduction": "Üretim Başlatabilir"
+    "canStartProduction": "Üretim Başlatabilir",
+    "canAddOrderNotes": "Kalem Notu Ekleyebilir",
+    "canDeleteOrderNotes": "Kalem Notu Silebilir"
   },
   "productionTasks": {
     "title": "Üretim Planlama",

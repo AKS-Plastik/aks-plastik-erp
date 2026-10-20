@@ -9,10 +9,41 @@ function fmtDate(d) {
   return new Date(d + 'T00:00:00').toLocaleDateString('tr-TR', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
+function getPlanningTaskNotes(task, productionTasks, orders) {
+  if (!task) return []
+  if (task.productionTask?.orderItem?.notes && task.productionTask.orderItem.notes.length > 0) {
+    return task.productionTask.orderItem.notes
+  }
+  if (task.productionTaskId && productionTasks) {
+    const pt = productionTasks.find(p => p.id === task.productionTaskId)
+    if (pt?.orderItem?.notes && pt.orderItem.notes.length > 0) {
+      return pt.orderItem.notes
+    }
+    if (pt?.orderItemId && orders) {
+      for (const order of orders) {
+        const it = (order.items || []).find(item => item.id === pt.orderItemId)
+        if (it?.notes && it.notes.length > 0) return it.notes
+      }
+    }
+  }
+  if (task.orderId && orders) {
+    const order = orders.find(o => o.id === task.orderId)
+    if (order?.items) {
+      if (task.productId) {
+        const it = order.items.find(item => item.productId === task.productId)
+        if (it?.notes && it.notes.length > 0) return it.notes
+      }
+      const allItemNotes = order.items.flatMap(it => it.notes || [])
+      if (allItemNotes.length > 0) return allItemNotes
+    }
+  }
+  return []
+}
+
 export default function ProductionPlanning() {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { employeeTasks: allTasks, employees, machines, products, isAdmin, moveEmployeeTask, createEmployeeTask, updateEmployeeTask, deleteEmployeeTask, rolloverEmployeeTasks, permissions, employeePermissions } = useData()
+  const { employeeTasks: allTasks, employees, machines, products, isAdmin, moveEmployeeTask, createEmployeeTask, updateEmployeeTask, deleteEmployeeTask, rolloverEmployeeTasks, permissions, employeePermissions, orders, productionTasks } = useData()
   const { user: currentUser } = useAuth()
   
   const empId = currentUser?.employeeId
@@ -439,6 +470,40 @@ export default function ProductionPlanning() {
                 })()}
               </div>
 
+              {(() => {
+                const lineItemNotes = getPlanningTaskNotes(detailTask, productionTasks, orders);
+                if (!lineItemNotes || lineItemNotes.length === 0) return null;
+                return (
+                  <div className="p-4 bg-red-50/70 dark:bg-red-950/20 border border-red-200/80 dark:border-red-900/40 rounded-xl mt-2">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="material-symbols-outlined text-[18px] text-red-600 dark:text-red-400">sticky_note_2</span>
+                      <p className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">
+                        Sipariş Kalem Notları ({lineItemNotes.length})
+                      </p>
+                      <span className="text-[10px] text-text-muted ml-auto font-medium">
+                        Ana sipariş kalemine ait notlar
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
+                      {lineItemNotes.map((n) => (
+                        <div key={n.id} className="bg-surface rounded-lg p-3 border border-theme-border/60">
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <span className="text-xs font-bold text-red-700 dark:text-red-300 flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[13px]">person</span>
+                              {n.authorName || 'Kullanıcı'}
+                            </span>
+                            <span className="text-[10px] text-text-muted font-mono">
+                              {new Date(n.createdAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-xs text-on-surface whitespace-pre-wrap leading-relaxed">{n.note}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
+
               {canViewAll && detailTask.taskNotes && detailTask.taskNotes.length > 0 && (
                 <div className="mt-2">
                   <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-3">Statü Değişiklik Notları</p>
@@ -796,6 +861,19 @@ export default function ProductionPlanning() {
                                       {task.order.customer?.name.substring(0,10)}...
                                     </span>
                                   )}
+                                  {(() => {
+                                    const lineItemNotes = getPlanningTaskNotes(task, productionTasks, orders);
+                                    if (lineItemNotes.length === 0) return null;
+                                    return (
+                                      <span
+                                        className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50"
+                                        title={`${lineItemNotes.length} sipariş kalemi notu`}
+                                      >
+                                        <span className="material-symbols-outlined text-[12px]">sticky_note_2</span>
+                                        {lineItemNotes.length}
+                                      </span>
+                                    );
+                                  })()}
                                 </div>
                                 
                                 {(task.quantity > 0) && (

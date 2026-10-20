@@ -415,6 +415,54 @@ export function DataProvider({ children }) {
     setOrders((prev) => prev.filter((o) => o.id !== id))
   }
 
+  async function addOrderItemNote(orderItemId, noteText) {
+    const res = await fetch(`${API_URL}/orders/items/${orderItemId}/notes`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ note: noteText }),
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Failed to add note')
+    setOrders((prev) => prev.map((o) => {
+      const hasItem = (o.items || []).some((it) => it.id === orderItemId)
+      if (!hasItem) return o
+      return {
+        ...o,
+        items: o.items.map((it) => {
+          if (it.id !== orderItemId) return it
+          return {
+            ...it,
+            notes: [...(it.notes || []), data],
+          }
+        }),
+      }
+    }))
+    return data
+  }
+
+  async function deleteOrderItemNote(orderItemId, noteId) {
+    const res = await fetch(`${API_URL}/orders/items/notes/${noteId}`, {
+      method: 'DELETE',
+      headers: authHeaders,
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Failed to delete note')
+    setOrders((prev) => prev.map((o) => {
+      const hasItem = (o.items || []).some((it) => it.id === orderItemId)
+      if (!hasItem) return o
+      return {
+        ...o,
+        items: o.items.map((it) => {
+          if (it.id !== orderItemId) return it
+          return {
+            ...it,
+            notes: (it.notes || []).filter((n) => n.id !== noteId),
+          }
+        }),
+      }
+    }))
+  }
+
   // ── Roles ──
   async function addRole(name) {
     const res = await fetch(`${API_URL}/roles`, { method: 'POST', headers, body: JSON.stringify({ name }) })
@@ -712,6 +760,7 @@ export function DataProvider({ children }) {
       products, addProduct, updateProduct, deleteProduct, refreshProducts, syncAndRefreshProducts,
       employees, addEmployee, updateEmployee, deleteEmployee, uploadEmployeePhoto,
       orders, addOrder, updateOrder, deleteOrder, refreshOrders, syncAndRefreshOrders,
+      addOrderItemNote, deleteOrderItemNote,
       financeRecords, addFinanceRecord, updateFinanceRecord, deleteFinanceRecord, refreshFinanceRecords,
       roles, addRole, renameRole, deleteRole,
       permissions, updateRolePermissions, refreshPermissions,

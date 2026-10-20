@@ -270,6 +270,34 @@ export default function CreateProductionTaskModal({
                                             </span>
                                         </div>
                                     )}
+                                    {selectedItem?.notes && selectedItem.notes.length > 0 && (
+                                        <div className="mt-2.5 bg-red-50/70 dark:bg-red-950/20 border border-red-200/80 dark:border-red-900/40 rounded-xl p-3">
+                                            <div className="flex items-center gap-1.5 mb-1.5">
+                                                <span className="material-symbols-outlined text-[15px] text-red-600 dark:text-red-400">
+                                                    sticky_note_2
+                                                </span>
+                                                <span className="text-[11px] font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">
+                                                    {t('orders.itemNotes', 'Kalem Notları')} ({selectedItem.notes.length})
+                                                </span>
+                                            </div>
+                                            <div className="space-y-1.5 max-h-28 overflow-y-auto pr-1">
+                                                {selectedItem.notes.map((n) => (
+                                                    <div 
+                                                        key={n.id} 
+                                                        className="bg-surface-container-lowest p-2 rounded-lg border border-theme-border/50 text-[11px]"
+                                                    >
+                                                        <div className="flex items-center justify-between text-[10px] text-red-700 dark:text-red-300 font-semibold mb-0.5">
+                                                            <span>{n.authorName || 'Kullanıcı'}</span>
+                                                            <span className="font-mono opacity-70">
+                                                                {new Date(n.createdAt).toLocaleDateString('tr-TR')}
+                                                            </span>
+                                                        </div>
+                                                        <p className="text-on-surface whitespace-pre-wrap">{n.note}</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
