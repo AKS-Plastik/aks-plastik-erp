@@ -1454,8 +1454,455 @@ function PurchasingStatusTab() {
   )
 }
 
+// ─── Backup Tab (Admin Only) ────────────────────────────────────────────────
+function BackupTab() {
+  const { t } = useTranslation()
+  const { getToken } = useAuth()
+  const [backups, setBackups] = useState([])
+  const [config, setConfig] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [creating, setCreating] = useState(false)
+  const [deleting, setDeleting] = useState(null)
+  const [error, setError] = useState(null)
+  const [successMsg, setSuccessMsg] = useState(null)
+  const [showRestoreModal, setShowRestoreModal] = useState(false)
+  const [copiedDir, setCopiedDir] = useState(false)
+
+  const fetchBackups = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/backup`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Yedek listesi alınamadı.')
+      }
+      const data = await res.json()
+      setBackups(data.backups || [])
+      setConfig(data.config || null)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [getToken])
+
+  useEffect(() => {
+    fetchBackups()
+  }, [fetchBackups])
+
+  const handleTakeBackup = async () => {
+    try {
+      setCreating(true)
+      setError(null)
+      setSuccessMsg(null)
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/backup`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Yedekleme oluşturulamadı.')
+      }
+      setSuccessMsg(`Yedekleme başarıyla tamamlandı: ${data.backup?.fileName} (${data.backup?.sizeFormatted})`)
+      await fetchBackups()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const handleDownload = async (fileName) => {
+    try {
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/backup/download/${encodeURIComponent(fileName)}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!res.ok) throw new Error('İndirme başarısız.')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = fileName
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setError('Yedek indirilemedi: ' + err.message)
+    }
+  }
+
+  const handleDelete = async (fileName) => {
+    if (!window.confirm(`"${fileName}" yedeğini kalıcı olarak silmek istediğinize emin misiniz?`)) return
+    try {
+      setDeleting(fileName)
+      setError(null)
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/backup/${encodeURIComponent(fileName)}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Silme işlemi başarısız.')
+      setSuccessMsg(`${fileName} başarıyla silindi.`)
+      await fetchBackups()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setDeleting(null)
+    }
+  }
+
+  const handleCopyDir = () => {
+    if (config?.backupDir) {
+      navigator.clipboard.writeText(config.backupDir)
+      setCopiedDir(true)
+      setTimeout(() => setCopiedDir(false), 2000)
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Alert Banners */}
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl p-3 md:p-4 text-xs md:text-sm flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-base md:text-lg">error</span>
+            <span>{error}</span>
+          </div>
+          <button onClick={() => setError(null)} className="hover:opacity-75">
+            <span className="material-symbols-outlined text-base">close</span>
+          </button>
+        </div>
+      )}
+
+      {successMsg && (
+        <div className="bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400 rounded-xl p-3 md:p-4 text-xs md:text-sm flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-base md:text-lg">check_circle</span>
+            <span>{successMsg}</span>
+          </div>
+          <button onClick={() => setSuccessMsg(null)} className="hover:opacity-75">
+            <span className="material-symbols-outlined text-base">close</span>
+          </button>
+        </div>
+      )}
+
+      {/* Top Action & Overview Card */}
+      <div className="bg-surface-container-lowest rounded-2xl border border-theme-border p-4 md:p-6 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="material-symbols-outlined text-primary text-xl md:text-2xl">database</span>
+              <h2 className="text-base md:text-lg font-bold text-on-surface">Sistem & Veritabanı Yedekleme</h2>
+              <span className="bg-primary/10 text-primary text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">Admin Özel</span>
+            </div>
+            <p className="text-xs md:text-sm text-text-muted max-w-2xl leading-relaxed">
+              PostgreSQL veri tabanı (<code className="bg-surface-container px-1 py-0.5 rounded text-[11px]">aks_erp</code>), Keycloak kimlik doğrulaması ve tüm AKS ERP kullanıcı/rol tanımlarını tek tuşla geri yüklenebilir <code className="bg-surface-container px-1 py-0.5 rounded text-[11px]">.zip</code> arşivi olarak yedekleyin.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setShowRestoreModal(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-theme-border text-xs font-semibold text-text-muted hover:text-on-surface hover:bg-surface-container transition"
+            >
+              <span className="material-symbols-outlined text-base">help</span>
+              Nasıl Geri Yüklenir?
+            </button>
+
+            <button
+              onClick={handleTakeBackup}
+              disabled={creating}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold text-white shadow-md transition ${
+                creating
+                  ? 'bg-primary/70 cursor-not-allowed'
+                  : 'primary-gradient hover:opacity-95 active:scale-95'
+              }`}
+            >
+              {creating ? (
+                <>
+                  <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
+                  <span>Yedek Alınıyor...</span>
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-base">backup</span>
+                  <span>Tek Tuşla Yedek Al</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Information Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Cron Job Info */}
+        <div className="bg-surface-container-lowest rounded-xl border border-theme-border p-3.5 flex flex-col justify-between">
+          <div className="flex items-start justify-between">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+              <span className="material-symbols-outlined text-base">schedule</span>
+            </div>
+            <span className="bg-emerald-500/10 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded-full">Aktif</span>
+          </div>
+          <div className="mt-3">
+            <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Otomatik Cronjob</p>
+            <p className="text-sm font-bold text-on-surface mt-0.5">Günde 4 Kez</p>
+            <p className="text-[11px] text-text-muted mt-1">Saat 00:00, 06:00, 12:00, 18:00 otomatik çalışır.</p>
+          </div>
+        </div>
+
+        {/* Retention Info */}
+        <div className="bg-surface-container-lowest rounded-xl border border-theme-border p-3.5 flex flex-col justify-between">
+          <div className="flex items-start justify-between">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center">
+              <span className="material-symbols-outlined text-base">history_toggle_off</span>
+            </div>
+            <span className="bg-amber-500/10 text-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full">{config?.retentionDays || 7} Gün</span>
+          </div>
+          <div className="mt-3">
+            <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Saklama Politikası</p>
+            <p className="text-sm font-bold text-on-surface mt-0.5">Maks. 1 Hafta (7 Gün)</p>
+            <p className="text-[11px] text-text-muted mt-1">7 günden eski yedekler diskten otomatik temizlenir.</p>
+          </div>
+        </div>
+
+        {/* Backup Directory Info */}
+        <div className="bg-surface-container-lowest rounded-xl border border-theme-border p-3.5 flex flex-col justify-between">
+          <div className="flex items-start justify-between">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center">
+              <span className="material-symbols-outlined text-base">folder_open</span>
+            </div>
+            <button
+              onClick={handleCopyDir}
+              title="Dizini Kopyala"
+              className="text-text-muted hover:text-on-surface p-1 rounded hover:bg-surface-container transition"
+            >
+              <span className="material-symbols-outlined text-sm">{copiedDir ? 'check' : 'content_copy'}</span>
+            </button>
+          </div>
+          <div className="mt-3">
+            <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Kayıt Dizini (.env)</p>
+            <p className="text-xs font-mono font-semibold text-on-surface mt-0.5 truncate" title={config?.backupDir || ''}>
+              {config?.backupDir ? config.backupDir.split('\\').slice(-2).join('\\') || config.backupDir : 'Yükleniyor...'}
+            </p>
+            <p className="text-[11px] text-text-muted mt-1 truncate">BACKUP_DIR ortam değişkeni</p>
+          </div>
+        </div>
+
+        {/* Scope Info */}
+        <div className="bg-surface-container-lowest rounded-xl border border-theme-border p-3.5 flex flex-col justify-between">
+          <div className="flex items-start justify-between">
+            <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center">
+              <span className="material-symbols-outlined text-base">inventory_2</span>
+            </div>
+            <span className="bg-purple-500/10 text-purple-600 text-[10px] font-bold px-2 py-0.5 rounded-full">Tam Kapsam</span>
+          </div>
+          <div className="mt-3">
+            <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Yedek Kapsamı</p>
+            <p className="text-sm font-bold text-on-surface mt-0.5">Postgre + Keycloak + ERP</p>
+            <p className="text-[11px] text-text-muted mt-1">SQL şema/veri + Realm & Kullanıcı JSON</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Backups List Table */}
+      <div className="bg-surface-container-lowest rounded-2xl border border-theme-border overflow-hidden shadow-sm">
+        <div className="px-4 py-3 md:px-6 md:py-4 border-b border-theme-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm md:text-base font-bold text-on-surface">Mevcut Yedekler</h3>
+            <span className="bg-surface-container px-2 py-0.5 rounded-full text-xs font-bold text-text-muted">
+              {backups.length}
+            </span>
+          </div>
+          <button
+            onClick={fetchBackups}
+            disabled={loading}
+            className="flex items-center gap-1 text-xs text-text-muted hover:text-on-surface p-1.5 rounded-lg hover:bg-surface-container transition"
+            title="Yenile"
+          >
+            <span className={`material-symbols-outlined text-base ${loading ? 'animate-spin' : ''}`}>refresh</span>
+            <span>Yenile</span>
+          </button>
+        </div>
+
+        {loading && backups.length === 0 ? (
+          <div className="p-8 text-center text-text-muted text-xs md:text-sm flex flex-col items-center gap-2">
+            <span className="material-symbols-outlined text-2xl animate-spin">progress_activity</span>
+            <span>Yedekler yükleniyor...</span>
+          </div>
+        ) : backups.length === 0 ? (
+          <div className="p-8 text-center text-text-muted text-xs md:text-sm flex flex-col items-center gap-2">
+            <span className="material-symbols-outlined text-3xl text-text-muted/60">cloud_off</span>
+            <p className="font-semibold text-on-surface">Henüz yedek dosyası bulunmuyor</p>
+            <p className="text-xs">Yukarıdaki &quot;Tek Tuşla Yedek Al&quot; butonunu kullanarak ilk yedeğinizi oluşturabilirsiniz.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-surface-container-low text-text-muted font-bold text-[10px] uppercase tracking-wider border-b border-theme-border">
+                <tr>
+                  <th className="px-4 py-3">Tür</th>
+                  <th className="px-4 py-3">Dosya Adı</th>
+                  <th className="px-4 py-3">Boyut</th>
+                  <th className="px-4 py-3">Tarih</th>
+                  <th className="px-4 py-3 text-right">İşlemler</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-theme-border">
+                {backups.map((b) => {
+                  const dateStr = new Date(b.createdAt).toLocaleString('tr-TR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                  const isDeletingThis = deleting === b.fileName
+
+                  return (
+                    <tr key={b.fileName} className="hover:bg-surface-container/50 transition">
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            b.isAutomatic
+                              ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                              : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-[12px]">
+                            {b.isAutomatic ? 'auto_mode' : 'touch_app'}
+                          </span>
+                          {b.type}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-mono font-medium text-on-surface flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-text-muted text-base">folder_zip</span>
+                        <span className="truncate max-w-xs">{b.fileName}</span>
+                      </td>
+                      <td className="px-4 py-3 text-text-muted font-mono">{b.sizeFormatted}</td>
+                      <td className="px-4 py-3 text-text-muted">{dateStr}</td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleDownload(b.fileName)}
+                            title="İndir (.zip)"
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-theme-border text-[11px] font-semibold text-text-muted hover:text-on-surface hover:bg-surface-container transition"
+                          >
+                            <span className="material-symbols-outlined text-sm">download</span>
+                            <span>İndir</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleDelete(b.fileName)}
+                            disabled={isDeletingThis}
+                            title="Yedeği Sil"
+                            className="p-1 rounded-lg text-red-500/80 hover:text-red-600 hover:bg-red-500/10 transition disabled:opacity-50"
+                          >
+                            <span className={`material-symbols-outlined text-base ${isDeletingThis ? 'animate-spin' : ''}`}>
+                              {isDeletingThis ? 'progress_activity' : 'delete'}
+                            </span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Restore Instructions Modal */}
+      {showRestoreModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowRestoreModal(false)}>
+          <div
+            className="bg-surface-container-lowest rounded-2xl shadow-2xl border border-theme-border w-full max-w-2xl max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-theme-border flex items-center justify-between primary-gradient rounded-t-2xl">
+              <div className="flex items-center gap-2 text-white">
+                <span className="material-symbols-outlined text-xl">restore_page</span>
+                <h3 className="font-bold text-sm md:text-base">AKS ERP Yedek Geri Yükleme Kılavuzu</h3>
+              </div>
+              <button onClick={() => setShowRestoreModal(false)} className="text-white/80 hover:text-white">
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-5 space-y-4 text-xs md:text-sm text-text-muted leading-relaxed">
+              <div className="bg-surface-container p-3.5 rounded-xl border border-theme-border">
+                <p className="font-bold text-on-surface mb-1 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-base text-primary">folder_zip</span>
+                  1. Adım: Yedek Arşivini Açın
+                </p>
+                <p className="text-[11px] mb-2">İndirdiğiniz veya sunucudaki .zip dosyasını dışa aktarın:</p>
+                <code className="block bg-surface-container-highest p-2 rounded text-[11px] font-mono text-on-surface overflow-x-auto">
+                  Expand-Archive aks_manual_backup_xxx.zip -DestinationPath .\aks_restore
+                </code>
+              </div>
+
+              <div className="bg-surface-container p-3.5 rounded-xl border border-theme-border">
+                <p className="font-bold text-on-surface mb-1 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-base text-emerald-600">terminal</span>
+                  2. Adım: PostgreSQL Veritabanını Geri Yükleyin
+                </p>
+                <p className="text-[11px] mb-2">
+                  Paket içerisindeki <code className="font-mono font-bold">aks_erp.sql</code> dosyası veritabanındaki tüm tabloları, verileri ve ilişkileri temizleyip yeniden kurmak için hazır SQL scriptidir:
+                </p>
+                <code className="block bg-surface-container-highest p-2 rounded text-[11px] font-mono text-on-surface overflow-x-auto">
+                  psql -U postgres -d aks_erp -f .\aks_restore\aks_erp.sql
+                </code>
+              </div>
+
+              <div className="bg-surface-container p-3.5 rounded-xl border border-theme-border">
+                <p className="font-bold text-on-surface mb-1 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-base text-amber-600">security</span>
+                  3. Adım: Keycloak Kimlik Doğrulama Verileri
+                </p>
+                <p className="text-[11px]">
+                  Keycloak kullanıcıları ve rolleri <code className="font-mono font-bold">keycloak_realm.json</code> ve <code className="font-mono font-bold">keycloak_users.json</code> dosyalarında yer almaktadır. Gerekirse Keycloak Admin Console &gt; Realm Settings &gt; Action &gt; <em>Partial Import</em> sekmesinden içeri aktarılabilir.
+                </p>
+              </div>
+
+              <div className="bg-surface-container p-3.5 rounded-xl border border-theme-border">
+                <p className="font-bold text-on-surface mb-1 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-base text-blue-600">check_circle</span>
+                  4. Adım: Servisleri Yeniden Başlatın
+                </p>
+                <p className="text-[11px]">
+                  Geri yükleme tamamlandıktan sonra AKS ERP backend servisini yeniden başlatarak son durumu doğrulayın.
+                </p>
+              </div>
+            </div>
+
+            <div className="px-5 py-3 border-t border-theme-border flex justify-end">
+              <button
+                onClick={() => setShowRestoreModal(false)}
+                className="px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:opacity-90 transition"
+              >
+                Anladım
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Settings() {
   const { t } = useTranslation()
+  const { isAdmin } = useAuth()
   const [tab, setTab] = useState('roles')
 
   const TABS = [
@@ -1464,6 +1911,7 @@ export default function Settings() {
     { key: 'order-status',        label: t('settings.orderStatus', 'Order Status'), icon: 'swap_horiz' },
     { key: 'purchasing-status',   label: t('settings.purchasingStatus', 'Purchasing Status'), icon: 'shopping_cart' },
     { key: 'machines',            label: t('settings.machines'), icon: 'precision_manufacturing' },
+    ...(isAdmin ? [{ key: 'backup', label: t('settings.backup', 'Yedekleme & Kurtarma'), icon: 'database' }] : []),
   ]
 
   return (
@@ -1496,6 +1944,15 @@ export default function Settings() {
       {tab === 'order-status'      && <OrderStatusTab />}
       {tab === 'purchasing-status' && <PurchasingStatusTab />}
       {tab === 'machines'          && <MachinesTab />}
+      {tab === 'backup' && (
+        isAdmin ? <BackupTab /> : (
+          <div className="p-8 text-center text-text-muted">
+            <span className="material-symbols-outlined text-4xl text-red-500 mb-2">lock</span>
+            <p className="font-bold text-on-surface">Erişim Reddedildi</p>
+            <p className="text-xs">Yedekleme yönetimi sadece sistem yöneticileri (admin) tarafından görüntülenebilir.</p>
+          </div>
+        )
+      )}
     </div>
   )
 }
