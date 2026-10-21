@@ -39,20 +39,20 @@ const statusColor = {
 };
 
 const normalizeStatus = (status) => {
-    if(!status) {
+    if (!status) {
         return 'completed';
     }
     const lower = String(status).trim().toLowerCase();
-    if(lower === 'completed' || lower === 'production completed' || lower === 'tamamlandı' || lower === 'üretim tamamlandı') {
+    if (lower === 'completed' || lower === 'production completed' || lower === 'tamamlandı' || lower === 'üretim tamamlandı') {
         return 'completed';
     }
-    if(lower === 'in delivery' || lower === 'in_delivery' || lower === 'teslimatta') {
+    if (lower === 'in delivery' || lower === 'in_delivery' || lower === 'teslimatta') {
         return 'In Delivery';
     }
-    if(lower === 'invoiced' || lower === 'in_voiced' || lower === 'fatura kesildi' || lower === 'e-invoice' || lower === 'e-fatura') {
+    if (lower === 'invoiced' || lower === 'in_voiced' || lower === 'fatura kesildi' || lower === 'e-invoice' || lower === 'e-fatura') {
         return 'Invoiced';
     }
-    if(lower === 'delivered' || lower === 'teslim edildi') {
+    if (lower === 'delivered' || lower === 'teslim edildi') {
         return 'Delivered';
     }
     return status;
@@ -60,26 +60,26 @@ const normalizeStatus = (status) => {
 
 const getStatusLabel = (status, t) => {
     const norm = normalizeStatus(status);
-    if(norm === 'completed') {
+    if (norm === 'completed') {
         return t('logistics.statusCompleted', 'Tamamlandı');
     }
-    if(norm === 'In Delivery') {
+    if (norm === 'In Delivery') {
         return t('logistics.statusInDelivery', 'Teslimatta');
     }
-    if(norm === 'Invoiced') {
+    if (norm === 'Invoiced') {
         return t('logistics.statusInvoiced', 'Fatura kesildi');
     }
-    if(norm === 'Delivered') {
+    if (norm === 'Delivered') {
         return t('logistics.statusDelivered', 'Teslim Edildi');
     }
     return norm;
 };
 
 const getPhotoFullUrl = (url) => {
-    if(!url) {
+    if (!url) {
         return '';
     }
-    if(url.startsWith('http://') || url.startsWith('https://')) {
+    if (url.startsWith('http://') || url.startsWith('https://')) {
         return url;
     }
     const base = API_URL.replace(/\/api\/?$/, '');
@@ -154,7 +154,7 @@ const DeliveryDispatchModal = ({
             const stream = await navigator.mediaDevices.getUserMedia({
                 video: { facingMode: 'environment' }
             });
-            if(videoRef.current) {
+            if (videoRef.current) {
                 videoRef.current.srcObject = stream;
             }
         } catch (err) {
@@ -164,7 +164,7 @@ const DeliveryDispatchModal = ({
     };
 
     const stopCamera = () => {
-        if(videoRef.current && videoRef.current.srcObject) {
+        if (videoRef.current && videoRef.current.srcObject) {
             const stream = videoRef.current.srcObject;
             const tracks = stream.getTracks();
             tracks.forEach((track) => track.stop());
@@ -180,7 +180,7 @@ const DeliveryDispatchModal = ({
     }, []);
 
     const capturePhoto = () => {
-        if(!videoRef.current || !canvasRef.current) {
+        if (!videoRef.current || !canvasRef.current) {
             return;
         }
         const video = videoRef.current;
@@ -190,7 +190,7 @@ const DeliveryDispatchModal = ({
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
         canvas.toBlob((blob) => {
-            if(blob) {
+            if (blob) {
                 setPhotoBlob(blob);
                 setPhotoPreview(URL.createObjectURL(blob));
                 stopCamera();
@@ -200,7 +200,7 @@ const DeliveryDispatchModal = ({
 
     const handleFileChange = (e) => {
         const file = e.target.files?.[0];
-        if(file) {
+        if (file) {
             setPhotoBlob(file);
             setPhotoPreview(URL.createObjectURL(file));
             stopCamera();
@@ -208,25 +208,32 @@ const DeliveryDispatchModal = ({
     };
 
     const handleSubmit = async (e) => {
-        if(e) {
+        if (e) {
             e.preventDefault();
         }
         setFormError(null);
 
-        if(!isOutsource && !carrierEmployeeId) {
+        if (!isOutsource && !carrierEmployeeId) {
             setFormError('Lütfen sevkiyatı yapacak şirket personelini seçiniz.');
             return;
         }
-        if(isOutsource && !carrierName.trim()) {
+        if (isOutsource && !carrierName.trim()) {
             setFormError('Lütfen outsource sevkiyat sorumlusu / firma adını giriniz.');
             return;
         }
-        if(!isOutsource && !vehicleId) {
+
+        if (!isOutsource && !vehicleId) {
             setFormError('Lütfen sevkiyat aracını seçiniz.');
             return;
         }
-        if(isOutsource && !vehicleInfo.trim()) {
+
+        if (isOutsource && !vehicleInfo.trim()) {
             setFormError('Lütfen araç / plaka bilgisini giriniz.');
+            return;
+        }
+
+        if (!photoBlob) {
+            setFormError('Lütfen araca yükleme / sevkiyat fotoğrafını ekleyiniz. Fotoğraf eklenmesi zorunludur.');
             return;
         }
 
@@ -234,31 +241,31 @@ const DeliveryDispatchModal = ({
             setSubmitting(true);
             const formData = new FormData();
             formData.append('isOutsource', String(isOutsource));
-            if(!isOutsource) {
+            if (!isOutsource) {
                 formData.append('carrierEmployeeId', carrierEmployeeId);
                 const emp = (employees || []).find((e) => e.id === carrierEmployeeId);
-                if(emp) {
+                if (emp) {
                     formData.append('carrierName', emp.name);
                 }
                 formData.append('vehicleId', vehicleId);
                 const veh = (vehicles || []).find((v) => v.id === vehicleId);
-                if(veh) {
+                if (veh) {
                     formData.append('vehicleInfo', `${veh.name} (${veh.brand} ${veh.model})`);
                 }
             } else {
                 formData.append('carrierName', carrierName.trim());
                 formData.append('vehicleInfo', vehicleInfo.trim());
             }
-            if(notes.trim()) {
+            if (notes.trim()) {
                 formData.append('notes', notes.trim());
             }
-            if(photoBlob) {
+            if (photoBlob) {
                 formData.append('photo', photoBlob, 'delivery_cargo.jpg');
             }
 
             await createProductionTaskDelivery(task.id, formData);
             stopCamera();
-            if(onSuccess) {
+            if (onSuccess) {
                 onSuccess();
             }
         } catch (err) {
@@ -339,11 +346,10 @@ const DeliveryDispatchModal = ({
                                     setCarrierName('');
                                     setVehicleInfo('');
                                 }}
-                                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                                    !isOutsource
+                                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${!isOutsource
                                         ? 'bg-surface-container-lowest text-on-surface shadow-xs'
                                         : 'text-text-muted hover:text-on-surface'
-                                }`}
+                                    }`}
                             >
                                 {t('logistics.companyStaff', 'Şirket Personeli')}
                             </button>
@@ -354,11 +360,10 @@ const DeliveryDispatchModal = ({
                                     setCarrierEmployeeId('');
                                     setVehicleId('');
                                 }}
-                                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
-                                    isOutsource
+                                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${isOutsource
                                         ? 'bg-surface-container-lowest text-on-surface shadow-xs'
                                         : 'text-text-muted hover:text-on-surface'
-                                }`}
+                                    }`}
                             >
                                 {t('logistics.outsource', 'Outsource (Dış Nakliye / Kargo)')}
                             </button>
@@ -443,9 +448,16 @@ const DeliveryDispatchModal = ({
 
                     {/* Photo Capture & Upload */}
                     <div>
-                        <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
-                            {t('logistics.deliveryPhoto', 'Araca Yükleme Fotoğrafı')}
-                        </label>
+                        <div className="flex items-center justify-between mb-1.5">
+                            <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider">
+                                {t('logistics.deliveryPhoto', 'Araca Yükleme Fotoğrafı')} <span className="text-red-500">*</span>
+                            </label>
+                            {!photoPreview && (
+                                <span className="text-[10px] font-bold text-red-500 bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-full">
+                                    Zorunlu
+                                </span>
+                            )}
+                        </div>
 
                         {/* Hidden canvas for snapshot */}
                         <canvas ref={canvasRef} className="hidden" />
@@ -510,27 +522,32 @@ const DeliveryDispatchModal = ({
 
                         {/* Buttons to trigger Camera or File Picker */}
                         {!photoPreview && !cameraActive && (
-                            <div className="grid grid-cols-2 gap-2">
-                                <button
-                                    type="button"
-                                    onClick={startCamera}
-                                    className="flex items-center justify-center gap-1.5 border border-theme-border bg-surface-container hover:bg-surface-container-high p-2.5 rounded-xl text-xs font-semibold text-on-surface transition cursor-pointer"
-                                >
-                                    <span className="material-symbols-outlined text-base text-primary">photo_camera</span>
-                                    <span>{t('logistics.takePhoto', 'Kameradan Çek')}</span>
-                                </button>
+                            <div className="space-y-1.5">
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={startCamera}
+                                        className="flex items-center justify-center gap-1.5 border border-theme-border bg-surface-container hover:bg-surface-container-high p-2.5 rounded-xl text-xs font-semibold text-on-surface transition cursor-pointer"
+                                    >
+                                        <span className="material-symbols-outlined text-base text-primary">photo_camera</span>
+                                        <span>{t('logistics.takePhoto', 'Kameradan Çek')}</span>
+                                    </button>
 
-                                <label className="flex items-center justify-center gap-1.5 border border-theme-border bg-surface-container hover:bg-surface-container-high p-2.5 rounded-xl text-xs font-semibold text-on-surface transition cursor-pointer">
-                                    <span className="material-symbols-outlined text-base text-blue-500">upload_file</span>
-                                    <span>{t('logistics.selectFile', 'Dosyadan Seç')}</span>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        capture="environment"
-                                        onChange={handleFileChange}
-                                        className="hidden"
-                                    />
-                                </label>
+                                    <label className="flex items-center justify-center gap-1.5 border border-theme-border bg-surface-container hover:bg-surface-container-high p-2.5 rounded-xl text-xs font-semibold text-on-surface transition cursor-pointer">
+                                        <span className="material-symbols-outlined text-base text-blue-500">upload_file</span>
+                                        <span>{t('logistics.selectFile', 'Dosyadan Seç')}</span>
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            capture="environment"
+                                            onChange={handleFileChange}
+                                            className="hidden"
+                                        />
+                                    </label>
+                                </div>
+                                <p className="text-[10px] text-text-muted italic text-center">
+                                    * Sevkiyatı yapan personel ve araca yüklenen ürünün görselini kameradan çekin veya dosyadan yükleyin (Zorunludur).
+                                </p>
                             </div>
                         )}
                     </div>
@@ -597,12 +614,17 @@ const TaskDetailModal = ({
     const { t } = useTranslation();
     const {
         deleteProductionTaskDelivery,
+        toggleProductionTaskInvoice,
         refreshProductionTasks
     } = useData();
 
     const [
         confirming,
         setConfirming
+    ] = useState(false);
+    const [
+        togglingInvoice,
+        setTogglingInvoice
     ] = useState(false);
     const [
         selectedStatus,
@@ -636,6 +658,28 @@ const TaskDetailModal = ({
 
     const percentage = parentQuantity > 0 ? Math.min(100, Math.round((taskQuantity / parentQuantity) * 100)) : 100;
 
+    const handleToggleInvoice = async (targetInvoiced) => {
+        try {
+            setTogglingInvoice(true);
+            await toggleProductionTaskInvoice(task.id, targetInvoiced);
+        } catch (err) {
+            alert(t('common.error', 'Hata') + ': ' + (err.message || 'Fatura durumu güncellenemedi'));
+        } finally {
+            setTogglingInvoice(false);
+        }
+    };
+
+    const handleAdvanceDeliveredWithInvoice = async () => {
+        try {
+            if(!task.isInvoiced) {
+                await toggleProductionTaskInvoice(task.id, true);
+            }
+            await onAdvance(task.id, 'Delivered');
+        } catch (err) {
+            alert(t('common.error', 'Hata') + ': ' + (err.message || 'İşlem tamamlanamadı'));
+        }
+    };
+
     const handleConfirmAdvance = async () => {
         if(!next) {
             return;
@@ -653,7 +697,7 @@ const TaskDetailModal = ({
         if(!selectedStatus || selectedStatus === currentStatus) {
             return;
         }
-        if(selectedStatus === 'In Delivery') {
+        if(selectedStatus === 'In Delivery' && (!task.deliveryRecords || task.deliveryRecords.length === 0)) {
             setShowDispatchModal(true);
             return;
         }
@@ -661,11 +705,11 @@ const TaskDetailModal = ({
     };
 
     const handleDeleteDeliveryRecord = async (deliveryId) => {
-        if(!isAdmin) {
+        if (!isAdmin) {
             alert('Teslimat kayıtlarını yalnızca sistem yöneticisi (admin) silebilir.');
             return;
         }
-        if(!window.confirm(t('logistics.deleteDeliveryConfirm', 'Bu teslimat kaydını silmek istediğinize emin misiniz?'))) {
+        if (!window.confirm(t('logistics.deleteDeliveryConfirm', 'Bu teslimat kaydını silmek istediğinize emin misiniz?'))) {
             return;
         }
         try {
@@ -726,9 +770,23 @@ const TaskDetailModal = ({
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${statusStyle[currentStatus] || 'bg-surface-container-high text-text-muted'}`}>
-                            {getStatusLabel(currentStatus, t)}
-                        </span>
+                        {currentStatus === 'Delivered' ? (
+                            task.isInvoiced ? (
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+                                    <span className="material-symbols-outlined text-xs">verified</span>
+                                    <span>{t('logistics.statusDeliveredInvoiced', 'Teslim Edildi (Faturalı)')}</span>
+                                </span>
+                            ) : (
+                                <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-300 dark:border-amber-800">
+                                    <span className="material-symbols-outlined text-xs">receipt_long</span>
+                                    <span>{t('logistics.statusDeliveredNotInvoiced', 'Teslim Edildi (Faturasız)')}</span>
+                                </span>
+                            )
+                        ) : (
+                            <span className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${statusStyle[currentStatus] || 'bg-surface-container-high text-text-muted'}`}>
+                                {getStatusLabel(currentStatus, t)}
+                            </span>
+                        )}
                         <button
                             onClick={onClose}
                             className="text-text-muted hover:text-error transition cursor-pointer"
@@ -740,45 +798,122 @@ const TaskDetailModal = ({
 
                 {/* Lojistik Süreci (Clean Flat Stepper without nested borders) */}
                 <div className="mb-5">
-                    <p className="text-[10px] md:text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
-                        {t('logistics.processStatus', 'Lojistik Süreci')}
-                    </p>
+                    <div className="flex items-center justify-between mb-2">
+                        <p className="text-[10px] md:text-xs font-semibold text-text-muted uppercase tracking-wider">
+                            {t('logistics.processStatus', 'Lojistik Süreci')}
+                        </p>
+                        <span className="text-[10px] text-text-muted italic">
+                            * Aşamaları değiştirmek veya geri almak için tıklayabilirsiniz
+                        </span>
+                    </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                         {LOGISTIC_STATUSES.map((stepKey, idx) => {
-                            const isCurrent = currentStatus === stepKey;
-                            const currentIndex = LOGISTIC_STATUSES.indexOf(currentStatus);
-                            const isPassed = currentIndex > idx;
+                            let isDone = false;
+                            let isCurrent = false;
+                            let stepTitle = getStatusLabel(stepKey, t);
+                            let subBadge = '';
+
+                            if(stepKey === 'completed') {
+                                isDone = currentStatus !== 'completed';
+                                isCurrent = currentStatus === 'completed';
+                            } else if(stepKey === 'In Delivery') {
+                                isDone = currentStatus === 'Delivered';
+                                isCurrent = currentStatus === 'In Delivery';
+                            } else if(stepKey === 'Invoiced') {
+                                // Fatura kesildi ONLY if task.isInvoiced is true!
+                                isDone = Boolean(task.isInvoiced);
+                                isCurrent = false;
+                                stepTitle = isDone ? t('logistics.invoiceDone', 'Fatura Kesildi') : t('logistics.invoicePending', 'Fatura Kesilmedi');
+                                subBadge = isDone ? 'Tamamlandı' : 'Boşta / Bekliyor';
+                            } else if(stepKey === 'Delivered') {
+                                isDone = currentStatus === 'Delivered';
+                                isCurrent = currentStatus === 'Delivered';
+                                subBadge = isDone ? (task.isInvoiced ? 'Faturalı' : 'Faturasız') : '';
+                            }
 
                             let bgClass = 'bg-surface-container-high/60 text-text-muted hover:bg-surface-container-high';
-                            if(isCurrent) {
-                                bgClass = 'bg-primary text-white shadow-xs';
-                            } else if(isPassed) {
+                            let iconName = statusIcon[stepKey];
+
+                            if(stepKey === 'Invoiced') {
+                                if(isDone) {
+                                    bgClass = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800';
+                                    iconName = 'check_circle';
+                                } else {
+                                    // Fatura kesilmediğinde BOŞTA OLMALI, YEŞİL OLMAMALI!
+                                    bgClass = 'bg-surface-container-high/40 text-text-muted hover:bg-surface-container-high border border-dashed border-theme-border/80';
+                                    iconName = 'receipt_long';
+                                }
+                            } else if(isCurrent) {
+                                if(stepKey === 'Delivered') {
+                                    bgClass = task.isInvoiced
+                                        ? 'bg-emerald-600 text-white shadow-xs'
+                                        : 'bg-amber-600 text-white shadow-xs';
+                                } else {
+                                    bgClass = 'bg-primary text-white shadow-xs';
+                                }
+                            } else if(isDone) {
                                 bgClass = 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400';
+                                iconName = 'check_circle';
                             }
 
                             return (
                                 <div
                                     key={stepKey}
                                     onClick={() => {
-                                        if(canAct) {
-                                            if(stepKey === 'In Delivery' && currentStatus !== 'In Delivery') {
-                                                setShowDispatchModal(true);
+                                        if(!canAct) {
+                                            return;
+                                        }
+                                        if(stepKey === 'Invoiced') {
+                                            if(task.isInvoiced) {
+                                                if(window.confirm('Fatura kesildi işaretini geri almak (faturasız duruma çevirmek) istiyor musunuz?')) {
+                                                    handleToggleInvoice(false);
+                                                }
                                             } else {
-                                                setSelectedStatus(stepKey);
+                                                if(window.confirm('Bu teslimatı Fatura Kesildi olarak işaretlemek istiyor musunuz?')) {
+                                                    handleToggleInvoice(true);
+                                                }
+                                            }
+                                        } else if(stepKey === 'In Delivery') {
+                                            if(currentStatus === 'Delivered') {
+                                                if(window.confirm('Aşamayı geri alıp tekrar "Teslimatta" durumuna getirmek istiyor musunuz?')) {
+                                                    onAdvance(task.id, 'In Delivery');
+                                                }
+                                            } else if(currentStatus === 'completed') {
+                                                setShowDispatchModal(true);
+                                            }
+                                        } else if(stepKey === 'completed') {
+                                            if(currentStatus !== 'completed') {
+                                                if(window.confirm('Aşamayı geri alıp tekrar "Tamamlandı" (Üretim bitti) durumuna getirmek istiyor musunuz?')) {
+                                                    onAdvance(task.id, 'completed');
+                                                }
+                                            }
+                                        } else if(stepKey === 'Delivered') {
+                                            if(currentStatus !== 'Delivered') {
+                                                if(window.confirm('Teslimatı tamamlandı (Teslim Edildi) olarak işaretlemek istiyor musunuz?')) {
+                                                    onAdvance(task.id, 'Delivered');
+                                                }
                                             }
                                         }
                                     }}
                                     className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition cursor-pointer ${bgClass}`}
+                                    title={stepKey === 'Invoiced' ? (task.isInvoiced ? 'Fatura Kesildi (Geri almak için tıklayın)' : 'Fatura Kesilmedi (İşaretlemek için tıklayın)') : `${idx + 1}. Aşama`}
                                 >
                                     <span className="material-symbols-outlined text-base shrink-0">
-                                        {isPassed ? 'check_circle' : statusIcon[stepKey]}
+                                        {iconName}
                                     </span>
-                                    <div className="min-w-0">
-                                        <p className="text-[9px] uppercase font-semibold opacity-75 leading-tight">
-                                            {idx + 1}. Aşama
-                                        </p>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center justify-between">
+                                            <p className="text-[9px] uppercase font-semibold opacity-75 leading-tight">
+                                                {idx + 1}. Aşama
+                                            </p>
+                                            {subBadge && (
+                                                <span className="text-[8px] font-bold uppercase tracking-wider opacity-85 px-1 rounded bg-black/10 dark:bg-white/10">
+                                                    {subBadge}
+                                                </span>
+                                            )}
+                                        </div>
                                         <p className="text-xs font-bold truncate leading-tight mt-0.5">
-                                            {getStatusLabel(stepKey, t)}
+                                            {stepTitle}
                                         </p>
                                     </div>
                                 </div>
@@ -1046,79 +1181,234 @@ const TaskDetailModal = ({
                     )}
                 </div>
 
+                {/* Lojistik İşlem Geçmişi (Loglar) */}
+                <div className="bg-surface-container-high rounded-xl p-3.5 mb-4 text-xs">
+                    <div className="flex items-center justify-between mb-2.5">
+                        <p className="font-semibold text-on-surface flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-sm text-blue-500">history</span>
+                            {t('logistics.logsTitle', 'Lojistik Logları (İşlem Geçmişi)')}
+                            {task.logisticsLogs?.length > 0 && (
+                                <span className="bg-surface-container text-text-muted text-[10px] font-bold px-2 py-0.5 rounded-full ml-1">
+                                    {task.logisticsLogs.length}
+                                </span>
+                            )}
+                        </p>
+                    </div>
+
+                    {(!task.logisticsLogs || task.logisticsLogs.length === 0) ? (
+                        <p className="text-text-muted text-[11px] py-1 italic">
+                            {t('logistics.noLogs', 'Henüz lojistik işlem geçmişi bulunmuyor.')}
+                        </p>
+                    ) : (
+                        <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                            {task.logisticsLogs.map((log) => {
+                                const dateFormatted = log.createdAt ? new Date(log.createdAt).toLocaleString('tr-TR', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                }) : '—';
+
+                                let badgeColor = 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20';
+                                let icon = 'swap_horiz';
+                                let actionLabel = 'Aşama Değişimi';
+
+                                if(log.action === 'ROLLBACK') {
+                                    badgeColor = 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20';
+                                    icon = 'undo';
+                                    actionLabel = 'Geri Alma';
+                                } else if(log.action === 'INVOICE_TOGGLE') {
+                                    badgeColor = log.isInvoiced
+                                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                                        : 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20';
+                                    icon = 'receipt_long';
+                                    actionLabel = log.isInvoiced ? 'Fatura Kesildi' : 'Fatura İptal';
+                                } else if(log.action === 'DELIVERY_DISPATCH') {
+                                    badgeColor = 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20';
+                                    icon = 'local_shipping';
+                                    actionLabel = 'Sevkiyat Çıkışı';
+                                } else if(log.action === 'DELIVERY_DELETE') {
+                                    badgeColor = 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20';
+                                    icon = 'delete';
+                                    actionLabel = 'Sevkiyat Silindi';
+                                }
+
+                                return (
+                                    <div
+                                        key={log.id}
+                                        className="p-2.5 rounded-xl bg-surface-container-lowest flex items-start gap-2.5 border border-theme-border/30 text-xs"
+                                    >
+                                        <div className="w-7 h-7 rounded-lg bg-surface-container flex items-center justify-center shrink-0 text-text-muted mt-0.5">
+                                            <span className="material-symbols-outlined text-sm">{icon}</span>
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                                                <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded-md border ${badgeColor}`}>
+                                                    {actionLabel}
+                                                </span>
+                                                <span className="font-semibold text-on-surface text-xs">
+                                                    {log.userName || 'Kullanıcı'}
+                                                </span>
+                                                <span className="text-[10px] text-text-muted font-mono ml-auto">
+                                                    {dateFormatted}
+                                                </span>
+                                            </div>
+                                            <p className="text-on-surface text-[11px] leading-relaxed">
+                                                {log.description}
+                                            </p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
                 {/* Footer Status Controls (Matching Orders.jsx style) */}
                 {canAct && (
                     <div className="pt-4 mt-1 border-t border-theme-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
-                        {/* Direct Status Selector */}
-                        <div className="flex items-center gap-2">
-                            <span className="material-symbols-outlined text-text-muted text-sm">swap_horiz</span>
-                            <label className="text-xs font-semibold text-text-muted whitespace-nowrap">
-                                {t('logistics.changeStatus', 'Aşama')}:
-                            </label>
-                            <select
-                                value={selectedStatus}
-                                onChange={(e) => setSelectedStatus(e.target.value)}
-                                className="bg-surface-container-lowest border border-theme-border rounded-lg px-2.5 py-1.5 text-xs text-on-surface outline-none focus:border-primary cursor-pointer"
-                            >
-                                {LOGISTIC_STATUSES.map((st) => (
-                                    <option
-                                        key={st}
-                                        value={st}
-                                    >
-                                        {getStatusLabel(st, t)}
-                                    </option>
-                                ))}
-                            </select>
-                            {selectedStatus !== currentStatus && (
-                                <button
-                                    onClick={handleDirectChange}
-                                    className="bg-primary hover:opacity-90 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer"
-                                >
-                                    {t('common.save', 'Uygula')}
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Next Stage Button or Confirmation */}
-                        {next && !confirming && (
+                        {/* Left Side: Fatura Durumu Toggle & Direct Selector */}
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                            {/* Fatura Durumu Butonu */}
                             <button
+                                type="button"
+                                disabled={togglingInvoice}
                                 onClick={() => {
-                                    if(next === 'In Delivery') {
-                                        setShowDispatchModal(true);
+                                    if(task.isInvoiced) {
+                                        if(window.confirm('Fatura kesildi işaretini geri almak (faturasız duruma çevirmek) istiyor musunuz?')) {
+                                            handleToggleInvoice(false);
+                                        }
                                     } else {
-                                        setConfirming(true);
+                                        if(window.confirm('Bu teslimatı Fatura Kesildi olarak işaretlemek istiyor musunuz?')) {
+                                            handleToggleInvoice(true);
+                                        }
                                     }
                                 }}
-                                className="flex items-center justify-center gap-1.5 bg-primary hover:opacity-90 text-white px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition cursor-pointer shadow-xs"
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer border ${
+                                    task.isInvoiced
+                                        ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20'
+                                        : 'bg-surface-container hover:bg-surface-container-high text-on-surface border-theme-border'
+                                }`}
+                                title={task.isInvoiced ? 'Fatura Kesildi (İptal etmek için tıklayın)' : 'Fatura Kesildi Olarak İşaretle'}
                             >
-                                <span>{t('logistics.advanceTo', {
-                                    defaultValue: `${getStatusLabel(next, t)} aşamasına geç`,
-                                    status: getStatusLabel(next, t)
-                                })}</span>
-                                <span className="material-symbols-outlined text-sm">arrow_forward</span>
-                            </button>
-                        )}
-
-                        {next && confirming && (
-                            <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-900/60 rounded-xl px-3 py-1.5 text-xs">
-                                <span className="material-symbols-outlined text-amber-500 text-sm">warning</span>
-                                <span className="text-amber-700 dark:text-amber-300">
-                                    <strong>{getStatusLabel(next, t)}</strong> aşamasına geçilsin mi?
+                                <span className={`material-symbols-outlined text-sm ${togglingInvoice ? 'animate-spin' : ''}`}>
+                                    {togglingInvoice ? 'progress_activity' : (task.isInvoiced ? 'verified' : 'receipt_long')}
                                 </span>
-                                <button
-                                    onClick={() => setConfirming(false)}
-                                    className="text-text-muted hover:text-on-surface px-1.5 py-0.5 rounded transition cursor-pointer ml-1"
+                                <span>
+                                    {task.isInvoiced
+                                        ? t('logistics.invoiceDone', 'Fatura Kesildi (Geri Al)')
+                                        : t('logistics.markInvoice', 'Fatura Kesildi İşaretle')}
+                                </span>
+                            </button>
+
+                            {/* Direct Status Selector */}
+                            <div className="flex items-center gap-1.5">
+                                <span className="material-symbols-outlined text-text-muted text-sm">swap_horiz</span>
+                                <select
+                                    value={selectedStatus}
+                                    onChange={(e) => setSelectedStatus(e.target.value)}
+                                    className="bg-surface-container-lowest border border-theme-border rounded-lg px-2.5 py-1.5 text-xs text-on-surface outline-none focus:border-primary cursor-pointer"
                                 >
-                                    {t('common.cancel', 'Vazgeç')}
-                                </button>
-                                <button
-                                    onClick={handleConfirmAdvance}
-                                    className="font-semibold text-white bg-primary hover:opacity-90 px-2.5 py-1 rounded-lg transition cursor-pointer"
-                                >
-                                    {t('common.confirm', 'Onayla')}
-                                </button>
+                                    <option value="completed">{getStatusLabel('completed', t)}</option>
+                                    <option value="In Delivery">{getStatusLabel('In Delivery', t)}</option>
+                                    <option value="Delivered">{getStatusLabel('Delivered', t)}</option>
+                                </select>
+                                {selectedStatus !== currentStatus && (
+                                    <button
+                                        onClick={handleDirectChange}
+                                        className="bg-primary hover:opacity-90 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition cursor-pointer"
+                                    >
+                                        {t('common.save', 'Uygula')}
+                                    </button>
+                                )}
                             </div>
-                        )}
+                        </div>
+
+                        {/* Right Side: Primary Advance / Rollback Buttons */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                            {currentStatus === 'completed' && (
+                                <button
+                                    onClick={() => setShowDispatchModal(true)}
+                                    className="flex items-center justify-center gap-1.5 bg-primary hover:opacity-90 text-white px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition cursor-pointer shadow-xs"
+                                >
+                                    <span>{t('logistics.advanceTo', { defaultValue: 'Teslimatta aşamasına geç', status: 'Teslimatta' })}</span>
+                                    <span className="material-symbols-outlined text-sm">arrow_forward</span>
+                                </button>
+                            )}
+
+                            {currentStatus === 'In Delivery' && (
+                                <>
+                                    {!task.isInvoiced ? (
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <button
+                                                onClick={() => {
+                                                    if(window.confirm('Fatura kesilmeden "Teslim Edildi" olarak tamamlanacak. Onaylıyor musunuz?')) {
+                                                        onAdvance(task.id, 'Delivered');
+                                                    }
+                                                }}
+                                                className="flex items-center justify-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer shadow-xs"
+                                                title="Fatura kesmeden doğrudan teslim edildi yap"
+                                            >
+                                                <span className="material-symbols-outlined text-sm">local_shipping</span>
+                                                <span>Faturasız Teslim Et</span>
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    if(window.confirm('Fatura kesildi olarak işaretlenip "Teslim Edildi" yapılacak. Onaylıyor musunuz?')) {
+                                                        handleAdvanceDeliveredWithInvoice();
+                                                    }
+                                                }}
+                                                className="flex items-center justify-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-xl text-xs font-semibold transition cursor-pointer shadow-xs"
+                                                title="Fatura kesildi ve teslim edildi olarak tamamla"
+                                            >
+                                                <span className="material-symbols-outlined text-sm">verified</span>
+                                                <span>Faturalı Teslim Et</span>
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button
+                                            onClick={() => {
+                                                if(window.confirm('Teslimat tamamlandı (Teslim Edildi) olarak işaretlensin mi?')) {
+                                                    onAdvance(task.id, 'Delivered');
+                                                }
+                                            }}
+                                            className="flex items-center justify-center gap-1.5 bg-primary hover:opacity-90 text-white px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition cursor-pointer shadow-xs"
+                                        >
+                                            <span>Teslim Edildi Olarak Tamamla</span>
+                                            <span className="material-symbols-outlined text-sm">check</span>
+                                        </button>
+                                    )}
+                                </>
+                            )}
+
+                            {currentStatus === 'Delivered' && (
+                                <div className="flex items-center gap-2">
+                                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border ${
+                                        task.isInvoiced
+                                            ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                                            : 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30'
+                                    }`}>
+                                        <span className="material-symbols-outlined text-sm">
+                                            {task.isInvoiced ? 'verified' : 'receipt_long'}
+                                        </span>
+                                        <span>{task.isInvoiced ? 'Teslim Edildi (Faturalı)' : 'Teslim Edildi (Faturasız)'}</span>
+                                    </div>
+                                    <button
+                                        onClick={() => {
+                                            if(window.confirm('Aşamayı geri alıp tekrar "Teslimatta" durumuna getirmek istiyor musunuz?')) {
+                                                onAdvance(task.id, 'In Delivery');
+                                            }
+                                        }}
+                                        className="flex items-center gap-1 bg-surface-container hover:bg-surface-container-high text-on-surface border border-theme-border px-3 py-1.5 rounded-xl text-xs font-semibold transition cursor-pointer"
+                                        title="Yanlışlıkla tıklandıysa aşamayı geri alın"
+                                    >
+                                        <span className="material-symbols-outlined text-sm text-amber-500">undo</span>
+                                        <span>{t('logistics.revertStage', 'Aşamayı Geri Al')}</span>
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
 
@@ -1236,20 +1526,62 @@ export default function Logistics() {
 
     // Keep detailTask updated if productionTasks refreshed
     useEffect(() => {
-        if(!detailTask) {
+        if (!detailTask) {
             return;
         }
         const updated = (productionTasks || []).find((t) => t.id === detailTask.id);
-        if(updated) {
+        if (updated) {
             setDetailTask(updated);
         }
     }, [productionTasks]);
 
+    const counts = useMemo(() => {
+        const c = {
+            'completed': 0,
+            'In Delivery': 0,
+            'Invoiced': 0,
+            'Delivered': 0,
+            'deliveredInvoiced': 0,
+            'deliveredNotInvoiced': 0
+        };
+        (logisticTasks || []).forEach((task) => {
+            const norm = normalizeStatus(task.status);
+            if(c[norm] !== undefined) {
+                c[norm]++;
+            }
+            if(task.isInvoiced) {
+                c['Invoiced']++;
+            }
+            if(norm === 'Delivered') {
+                if(task.isInvoiced) {
+                    c['deliveredInvoiced']++;
+                } else {
+                    c['deliveredNotInvoiced']++;
+                }
+            }
+        });
+        return c;
+    }, [logisticTasks]);
+
     const filteredTasks = useMemo(() => {
         return logisticTasks.filter((task) => {
             const norm = normalizeStatus(task.status);
-            if(filterStatus && norm !== filterStatus) {
-                return false;
+            if(filterStatus) {
+                if(filterStatus === 'Invoiced') {
+                    if(!task.isInvoiced) {
+                        return false;
+                    }
+                } else if(filterStatus === 'Delivered_Invoiced') {
+                    if(norm !== 'Delivered' || !task.isInvoiced) {
+                        return false;
+                    }
+                } else if(filterStatus === 'Delivered_NotInvoiced') {
+                    if(norm !== 'Delivered' || task.isInvoiced) {
+                        return false;
+                    }
+                } else if(norm !== filterStatus) {
+                    return false;
+                }
             }
             if(!search) {
                 return true;
@@ -1273,18 +1605,11 @@ export default function Logistics() {
         });
     }, [logisticTasks, filterStatus, search]);
 
-    const counts = useMemo(() => {
-        return LOGISTIC_STATUSES.reduce((acc, s) => {
-            acc[s] = logisticTasks.filter((task) => normalizeStatus(task.status) === s).length;
-            return acc;
-        }, {});
-    }, [logisticTasks]);
-
     const handleAdvance = async (taskId, nextStatus) => {
         try {
             await moveProductionTask(taskId, nextStatus);
             setDetailTask((prev) => {
-                if(!prev || prev.id !== taskId) {
+                if (!prev || prev.id !== taskId) {
                     return prev;
                 }
                 return {
@@ -1327,27 +1652,38 @@ export default function Logistics() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6">
                 {LOGISTIC_STATUSES.map((statusKey) => {
                     const isSelected = filterStatus === statusKey;
+                    let countNum = counts[statusKey] || 0;
+                    let extraInfo = '';
+                    if(statusKey === 'Invoiced') {
+                        countNum = counts['Invoiced'] || 0;
+                    } else if(statusKey === 'Delivered') {
+                        extraInfo = `${counts['deliveredInvoiced'] || 0} Faturalı • ${counts['deliveredNotInvoiced'] || 0} Faturasız`;
+                    }
                     return (
                         <div
                             key={statusKey}
                             onClick={() => setFilterStatus(isSelected ? '' : statusKey)}
-                            className={`rounded-xl md:rounded-2xl border border-theme-border bg-surface-container-lowest p-3 md:p-4 transition cursor-pointer ${
-                                isSelected
+                            className={`rounded-xl md:rounded-2xl border border-theme-border bg-surface-container-lowest p-3 md:p-4 transition cursor-pointer ${isSelected
                                     ? 'border-primary ring-1 ring-primary'
                                     : 'hover:border-primary/40'
-                            }`}
+                                }`}
                         >
                             <div className="flex items-center justify-between mb-1.5 md:mb-2">
                                 <span className={`material-symbols-outlined text-xl md:text-2xl ${statusColor[statusKey]}`}>
                                     {statusIcon[statusKey]}
                                 </span>
                                 <span className="text-lg md:text-2xl font-bold text-on-surface">
-                                    {counts[statusKey] || 0}
+                                    {countNum}
                                 </span>
                             </div>
                             <p className="text-[10px] md:text-xs font-semibold text-text-muted uppercase tracking-wide md:tracking-wider leading-tight">
-                                {getStatusLabel(statusKey, t)}
+                                {statusKey === 'Invoiced' ? 'Fatura Kesilenler' : getStatusLabel(statusKey, t)}
                             </p>
+                            {extraInfo && (
+                                <p className="text-[10px] text-text-muted mt-1 font-mono font-medium">
+                                    {extraInfo}
+                                </p>
+                            )}
                         </div>
                     );
                 })}
@@ -1381,14 +1717,12 @@ export default function Logistics() {
                     onChange={(e) => setFilterStatus(e.target.value)}
                 >
                     <option value="">{t('orders.allStatuses', 'Tüm Durumlar')}</option>
-                    {LOGISTIC_STATUSES.map((statusKey) => (
-                        <option
-                            key={statusKey}
-                            value={statusKey}
-                        >
-                            {getStatusLabel(statusKey, t)}
-                        </option>
-                    ))}
+                    <option value="completed">{getStatusLabel('completed', t)}</option>
+                    <option value="In Delivery">{getStatusLabel('In Delivery', t)}</option>
+                    <option value="Invoiced">Fatura Kesilenler (Faturalı)</option>
+                    <option value="Delivered">Teslim Edildi (Tümü)</option>
+                    <option value="Delivered_Invoiced">Teslim Edildi (Faturalı)</option>
+                    <option value="Delivered_NotInvoiced">Teslim Edildi (Faturasız)</option>
                 </select>
             </div>
 
@@ -1529,13 +1863,33 @@ export default function Logistics() {
 
                                         {/* Status */}
                                         <td className="block xl:table-cell px-2 xl:px-4 py-1 xl:py-3.5">
-                                            <div className="flex items-center justify-between xl:justify-start">
+                                            <div className="flex items-center justify-between xl:justify-start gap-1.5 flex-wrap">
                                                 <span className="xl:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">
                                                     {t('common.status', 'Durum')}
                                                 </span>
-                                                <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusStyle[currentStatus] || 'bg-surface-container-high text-text-muted'}`}>
-                                                    {getStatusLabel(currentStatus, t)}
-                                                </span>
+                                                {currentStatus === 'Delivered' ? (
+                                                    task.isInvoiced ? (
+                                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800">
+                                                            <span className="material-symbols-outlined text-xs">verified</span>
+                                                            <span>{t('logistics.deliveredInvoiced', 'Teslim Edildi (Faturalı)')}</span>
+                                                        </span>
+                                                    ) : (
+                                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-300 dark:border-amber-800">
+                                                            <span className="material-symbols-outlined text-xs">receipt_long</span>
+                                                            <span>{t('logistics.deliveredNotInvoiced', 'Teslim Edildi (Faturasız)')}</span>
+                                                        </span>
+                                                    )
+                                                ) : (
+                                                    <span className={`inline-flex px-2.5 py-0.5 rounded-full text-xs font-semibold ${statusStyle[currentStatus] || 'bg-surface-container-high text-text-muted'}`}>
+                                                        {getStatusLabel(currentStatus, t)}
+                                                    </span>
+                                                )}
+                                                {currentStatus !== 'Delivered' && task.isInvoiced && (
+                                                    <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border border-purple-200 dark:border-purple-800">
+                                                        <span className="material-symbols-outlined text-[11px]">receipt_long</span>
+                                                        <span>Fatura Kesildi</span>
+                                                    </span>
+                                                )}
                                             </div>
                                         </td>
 

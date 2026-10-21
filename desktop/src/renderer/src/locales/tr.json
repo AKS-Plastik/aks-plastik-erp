@@ -617,7 +617,18 @@
     "deleteDeliveryConfirm": "Bu teslimat kaydını silmek istediğinize emin misiniz?",
     "adminOnlyDelete": "Sadece admin silebilir",
     "viewPhoto": "Fotoğrafı İncele",
-    "recordedBy": "Kaydeden"
+    "recordedBy": "Kaydeden",
+    "statusDeliveredInvoiced": "Teslim Edildi (Faturalı)",
+    "statusDeliveredNotInvoiced": "Teslim Edildi (Faturasız)",
+    "deliveredInvoiced": "Teslim Edildi (Faturalı)",
+    "deliveredNotInvoiced": "Teslim Edildi (Faturasız)",
+    "logsTitle": "Lojistik Logları (İşlem Geçmişi)",
+    "noLogs": "Henüz lojistik işlem geçmişi bulunmuyor.",
+    "invoiceDone": "Fatura Kesildi",
+    "invoicePending": "Fatura Kesilmedi",
+    "markInvoice": "Fatura Kesildi İşaretle",
+    "revertInvoice": "Fatura İşaretini Geri Al",
+    "revertStage": "Aşamayı Geri Al"
   },
   "purchasing": {
     "title": "Satın Alma",

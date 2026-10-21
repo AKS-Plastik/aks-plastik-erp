@@ -380,9 +380,15 @@ model ProductionTask {
   operator   Employee? @relation(fields: [operatorId], references: [id])
   operatorId String?
 
-  logs          ProductionLog[]
-  employeeTasks EmployeeTask[]
+  isInvoiced     Boolean          @default(false)
+  invoicedAt     DateTime?
+  invoicedById   String?
+  invoicedByName String?
+
+  logs            ProductionLog[]
+  employeeTasks   EmployeeTask[]
   deliveryRecords DeliveryRecord[]
+  logisticsLogs   LogisticsLog[]
 }
 
 model MachineMaintenanceRecord {
@@ -694,4 +700,19 @@ model DeliveryRecord {
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
 }
+
+model LogisticsLog {
+  id               String          @id @default(cuid())
+  productionTaskId String
+  productionTask   ProductionTask  @relation(fields: [productionTaskId], references: [id], onDelete: Cascade)
+  action           String          // STATUS_CHANGE, INVOICE_TOGGLE, DELIVERY_DISPATCH, DELIVERY_DELETE, ROLLBACK
+  fromStatus       String?
+  toStatus         String?
+  isInvoiced       Boolean?
+  description      String          @db.Text
+  userId           String?
+  userName         String?
+  createdAt        DateTime        @default(now())
+}
+
 
