@@ -1,8 +1,30 @@
 const { Router } = require('express')
 const { PrismaClient } = require('@prisma/client')
+const multer = require('multer')
+const path = require('path')
+const fs = require('fs')
+const { adminOnly } = require('../middleware/auth')
 
 const prisma = new PrismaClient()
 const router = Router()
+
+// Ensure deliveries upload folder exists
+const deliveriesDir = path.join(__dirname, '..', '..', 'uploads', 'deliveries')
+if (!fs.existsSync(deliveriesDir)) {
+  fs.mkdirSync(deliveriesDir, { recursive: true })
+}
+
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, deliveriesDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || '.jpg'
+    cb(null, `delivery-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`)
+  }
+})
+const upload = multer({
+  storage,
+  limits: { fileSize: 25 * 1024 * 1024 }
+})
 
 // Helper to check if a task is in completed production or post-production logistics
 const LOGISTIC_STATUS_SET = new Set([
@@ -29,6 +51,7 @@ router.get('/', async (req, res) => {
         product: true,
         machine: true,
         operator: true,
+        deliveryRecords: { orderBy: { createdAt: 'desc' } }
       }
     })
     res.json(tasks)
@@ -210,6 +233,7 @@ router.patch('/:id/move', async (req, res) => {
           product: true,
           machine: true,
           operator: true,
+          deliveryRecords: { orderBy: { createdAt: 'desc' } }
         }
       }))
 
@@ -564,4 +588,169 @@ router.post('/rollover', async (req, res) => {
   }
 })
 
+// ── Create delivery record & transition to In Delivery ───────────────────────
+router.post('/:id/deliveries', upload.single('photo'), async (req, res) => {
+  try {
+    const { id } = req.params
+    const {
+      isOutsource,
+      carrierEmployeeId,
+      carrierName: reqCarrierName,
+      vehicleId,
+      vehicleInfo: reqVehicleInfo,
+      notes,
+      photoBase64,
+      targetStatus
+    } = req.body
+
+    const task = await prisma.productionTask.findUnique({
+      where: { id },
+      include: { orderItem: true }
+    })
+
+    if (!task) {
+      return res.status(404).json({ error: 'Görev bulunamadı' })
+    }
+
+    const outsource = Boolean(isOutsource === true || isOutsource === 'true')
+
+    let carrierName = (reqCarrierName || '').trim()
+    let carrierEmpId = carrierEmployeeId || null
+
+    if (!outsource) {
+      if (!carrierEmpId) {
+        return res.status(400).json({ error: 'Sevkiyatı yapacak personel seçilmelidir.' })
+      }
+      if (!carrierName) {
+        const emp = await prisma.employee.findUnique({ where: { id: carrierEmpId } })
+        carrierName = emp ? emp.name : 'Şirket Personeli'
+      }
+    } else {
+      if (!carrierName) {
+        return res.status(400).json({ error: 'Outsource sevkiyat sorumlusu / firma adı girilmelidir.' })
+      }
+      carrierEmpId = null
+    }
+
+    let vehicleInfo = (reqVehicleInfo || '').trim()
+    let vehId = vehicleId || null
+
+    if (!outsource) {
+      if (!vehId) {
+        return res.status(400).json({ error: 'Sevkiyat aracı seçilmelidir.' })
+      }
+      if (!vehicleInfo) {
+        const v = await prisma.vehicle.findUnique({ where: { id: vehId } })
+        vehicleInfo = v ? `${v.name} (${v.brand} ${v.model})` : 'Şirket Aracı'
+      }
+    } else {
+      if (!vehicleInfo) {
+        return res.status(400).json({ error: 'Outsource araç / plaka bilgisi girilmelidir.' })
+      }
+      vehId = null
+    }
+
+    let photoUrl = null
+    if (req.file) {
+      photoUrl = `/uploads/deliveries/${req.file.filename}`
+    } else if (photoBase64 && typeof photoBase64 === 'string') {
+      const matches = photoBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/)
+      if (matches && matches.length === 3) {
+        const ext = matches[1].includes('png') ? '.png' : matches[1].includes('webp') ? '.webp' : '.jpg'
+        const fileName = `delivery-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`
+        const filePath = path.join(deliveriesDir, fileName)
+        fs.writeFileSync(filePath, Buffer.from(matches[2], 'base64'))
+        photoUrl = `/uploads/deliveries/${fileName}`
+      }
+    }
+
+    // Create the delivery record
+    const deliveryRecord = await prisma.deliveryRecord.create({
+      data: {
+        productionTaskId: task.id,
+        orderItemId: task.orderItemId || null,
+        isOutsource: outsource,
+        carrierEmployeeId: carrierEmpId,
+        carrierName,
+        vehicleId: vehId,
+        vehicleInfo,
+        photoUrl,
+        notes: notes ? String(notes).trim() : '',
+        createdById: req.user?.id || null,
+        createdByName: req.user?.name || req.user?.email || 'Kullanıcı',
+      }
+    })
+
+    // Advance task status to 'In Delivery'
+    const nextStatus = targetStatus || 'In Delivery'
+    const updatedTask = await prisma.productionTask.update({
+      where: { id: task.id },
+      data: { status: nextStatus },
+      include: {
+        orderItem: {
+          include: {
+            order: { select: { id: true, code: true, customer: true, salesRep: true, employee: true } },
+            product: true,
+            notes: { orderBy: { createdAt: 'asc' } }
+          }
+        },
+        product: true,
+        machine: true,
+        operator: true,
+        deliveryRecords: { orderBy: { createdAt: 'desc' } }
+      }
+    })
+
+    res.status(201).json({
+      success: true,
+      delivery: deliveryRecord,
+      task: updatedTask
+    })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── Get delivery records for a task ──────────────────────────────────────────
+router.get('/:id/deliveries', async (req, res) => {
+  try {
+    const deliveries = await prisma.deliveryRecord.findMany({
+      where: { productionTaskId: req.params.id },
+      orderBy: { createdAt: 'desc' }
+    })
+    res.json(deliveries)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── Delete delivery record (Admin Only) ──────────────────────────────────────
+router.delete('/:taskId/deliveries/:deliveryId', adminOnly, async (req, res) => {
+  try {
+    const { taskId, deliveryId } = req.params
+    const delivery = await prisma.deliveryRecord.findUnique({
+      where: { id: deliveryId }
+    })
+    if (!delivery) {
+      return res.status(404).json({ error: 'Teslimat kaydı bulunamadı' })
+    }
+
+    if (delivery.photoUrl) {
+      const filePath = path.join(__dirname, '..', '..', delivery.photoUrl.replace(/^\//, ''))
+      if (fs.existsSync(filePath)) {
+        try { fs.unlinkSync(filePath) } catch (e) { /* ignore */ }
+      }
+    }
+
+    await prisma.deliveryRecord.delete({
+      where: { id: deliveryId }
+    })
+
+    res.json({ success: true, message: 'Teslimat kaydı silindi' })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 module.exports = router
+

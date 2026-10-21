@@ -22,6 +22,7 @@ export function DataProvider({ children }) {
   const [userStatusPermissions, setUserStatusPermissions] = useState({})
   const [userPurchasingStatusPermissions, setUserPurchasingStatusPermissions] = useState({})
   const [machines, setMachines] = useState([])
+  const [vehicles, setVehicles] = useState([])
   const [ready, setReady] = useState(false)
   const [reportsReady, setReportsReady] = useState(false)
   const [visitsReady, setVisitsReady] = useState(false)
@@ -37,6 +38,15 @@ export function DataProvider({ children }) {
   }, [token])
 
   useEffect(() => { refreshCustomerTags() }, [token])
+
+  const refreshVehicles = useCallback(() => {
+    fetch(`${API_URL}/vehicles`, { headers: authHeaders })
+      .then((r) => r.json())
+      .then((data) => setVehicles(Array.isArray(data) ? data : []))
+      .catch(() => {})
+  }, [token])
+
+  useEffect(() => { refreshVehicles() }, [token])
 
   const refreshCustomers = useCallback(() => {
     fetch(`${API_URL}/customers`, { headers: authHeaders })
@@ -681,6 +691,31 @@ export function DataProvider({ children }) {
     refreshOrders()
   }
 
+  async function createProductionTaskDelivery(taskId, payload) {
+    const isFormData = payload instanceof FormData
+    const res = await fetch(`${API_URL}/production-tasks/${taskId}/deliveries`, {
+      method: 'POST',
+      headers: isFormData ? authHeaders : headers,
+      body: isFormData ? payload : JSON.stringify(payload)
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Teslimat kaydı oluşturulamadı')
+    refreshProductionTasks()
+    refreshOrders()
+    return data
+  }
+
+  async function deleteProductionTaskDelivery(taskId, deliveryId) {
+    const res = await fetch(`${API_URL}/production-tasks/${taskId}/deliveries/${deliveryId}`, {
+      method: 'DELETE',
+      headers: authHeaders
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Teslimat kaydı silinemedi')
+    refreshProductionTasks()
+    return data
+  }
+
   const refreshEmployeeTasks = useCallback(() => {
     fetch(`${API_URL}/employee-tasks`, { headers: authHeaders })
       .then((r) => r.json())
@@ -772,7 +807,9 @@ export function DataProvider({ children }) {
       uploadMachineManual, downloadMachineManual, deleteMachineManual,
       addMaintenanceRecord, deleteMaintenanceRecord,
       addMonthlyTask, updateMonthlyTask, deleteMonthlyTask,
+      vehicles, refreshVehicles,
       productionTasks, addProductionTask, updateProductionTask, moveProductionTask, deleteProductionTask, rolloverProductionTask, refreshProductionTasks,
+      createProductionTaskDelivery, deleteProductionTaskDelivery,
       employeeTasks, refreshEmployeeTasks, createEmployeeTask, updateEmployeeTask, moveEmployeeTask, deleteEmployeeTask, rolloverEmployeeTasks,
       isAdmin,
     }}>

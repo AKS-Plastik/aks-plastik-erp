@@ -1,7 +1,8 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useData } from '../context/DataContext';
 import { useAuth } from '../context/AuthContext';
+import { API_URL } from '../config';
 
 const LOGISTIC_STATUSES = [
     'completed',
@@ -74,14 +75,531 @@ const getStatusLabel = (status, t) => {
     return norm;
 };
 
+const getPhotoFullUrl = (url) => {
+    if(!url) {
+        return '';
+    }
+    if(url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+    }
+    const base = API_URL.replace(/\/api\/?$/, '');
+    return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
+// ─── Delivery Dispatch Modal ─────────────────────────────────────────────────
+const DeliveryDispatchModal = ({
+    task,
+    onClose,
+    onSuccess
+}) => {
+    const { t } = useTranslation();
+    const {
+        employees,
+        vehicles,
+        createProductionTaskDelivery
+    } = useData();
+
+    const [
+        isOutsource,
+        setIsOutsource
+    ] = useState(false);
+    const [
+        carrierEmployeeId,
+        setCarrierEmployeeId
+    ] = useState('');
+    const [
+        carrierName,
+        setCarrierName
+    ] = useState('');
+    const [
+        vehicleId,
+        setVehicleId
+    ] = useState('');
+    const [
+        vehicleInfo,
+        setVehicleInfo
+    ] = useState('');
+    const [
+        notes,
+        setNotes
+    ] = useState('');
+    const [
+        photoBlob,
+        setPhotoBlob
+    ] = useState(null);
+    const [
+        photoPreview,
+        setPhotoPreview
+    ] = useState(null);
+    const [
+        cameraActive,
+        setCameraActive
+    ] = useState(false);
+    const [
+        submitting,
+        setSubmitting
+    ] = useState(false);
+    const [
+        formError,
+        setFormError
+    ] = useState(null);
+
+    const videoRef = useRef(null);
+    const canvasRef = useRef(null);
+
+    const startCamera = async () => {
+        try {
+            setFormError(null);
+            setCameraActive(true);
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: { facingMode: 'environment' }
+            });
+            if(videoRef.current) {
+                videoRef.current.srcObject = stream;
+            }
+        } catch (err) {
+            setFormError('Kamera açılamadı: ' + (err.message || 'Erişim izni verilmedi.'));
+            setCameraActive(false);
+        }
+    };
+
+    const stopCamera = () => {
+        if(videoRef.current && videoRef.current.srcObject) {
+            const stream = videoRef.current.srcObject;
+            const tracks = stream.getTracks();
+            tracks.forEach((track) => track.stop());
+            videoRef.current.srcObject = null;
+        }
+        setCameraActive(false);
+    };
+
+    useEffect(() => {
+        return () => {
+            stopCamera();
+        };
+    }, []);
+
+    const capturePhoto = () => {
+        if(!videoRef.current || !canvasRef.current) {
+            return;
+        }
+        const video = videoRef.current;
+        const canvas = canvasRef.current;
+        canvas.width = video.videoWidth || 640;
+        canvas.height = video.videoHeight || 480;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob((blob) => {
+            if(blob) {
+                setPhotoBlob(blob);
+                setPhotoPreview(URL.createObjectURL(blob));
+                stopCamera();
+            }
+        }, 'image/jpeg', 0.85);
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files?.[0];
+        if(file) {
+            setPhotoBlob(file);
+            setPhotoPreview(URL.createObjectURL(file));
+            stopCamera();
+        }
+    };
+
+    const handleSubmit = async (e) => {
+        if(e) {
+            e.preventDefault();
+        }
+        setFormError(null);
+
+        if(!isOutsource && !carrierEmployeeId) {
+            setFormError('Lütfen sevkiyatı yapacak şirket personelini seçiniz.');
+            return;
+        }
+        if(isOutsource && !carrierName.trim()) {
+            setFormError('Lütfen outsource sevkiyat sorumlusu / firma adını giriniz.');
+            return;
+        }
+        if(!isOutsource && !vehicleId) {
+            setFormError('Lütfen sevkiyat aracını seçiniz.');
+            return;
+        }
+        if(isOutsource && !vehicleInfo.trim()) {
+            setFormError('Lütfen araç / plaka bilgisini giriniz.');
+            return;
+        }
+
+        try {
+            setSubmitting(true);
+            const formData = new FormData();
+            formData.append('isOutsource', String(isOutsource));
+            if(!isOutsource) {
+                formData.append('carrierEmployeeId', carrierEmployeeId);
+                const emp = (employees || []).find((e) => e.id === carrierEmployeeId);
+                if(emp) {
+                    formData.append('carrierName', emp.name);
+                }
+                formData.append('vehicleId', vehicleId);
+                const veh = (vehicles || []).find((v) => v.id === vehicleId);
+                if(veh) {
+                    formData.append('vehicleInfo', `${veh.name} (${veh.brand} ${veh.model})`);
+                }
+            } else {
+                formData.append('carrierName', carrierName.trim());
+                formData.append('vehicleInfo', vehicleInfo.trim());
+            }
+            if(notes.trim()) {
+                formData.append('notes', notes.trim());
+            }
+            if(photoBlob) {
+                formData.append('photo', photoBlob, 'delivery_cargo.jpg');
+            }
+
+            await createProductionTaskDelivery(task.id, formData);
+            stopCamera();
+            if(onSuccess) {
+                onSuccess();
+            }
+        } catch (err) {
+            setFormError(err.message || 'Teslimat kaydedilemedi.');
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const orderItem = task.orderItem;
+    const parentOrder = orderItem?.order;
+    const unit = orderItem?.product?.unit || task.product?.unit || 'adet';
+
+    return (
+        <div
+            className="fixed inset-0 z-60 flex items-center justify-center bg-black/60 p-3 md:p-6"
+            onClick={() => !submitting && onClose()}
+        >
+            <div
+                className="bg-surface-container-lowest rounded-2xl shadow-2xl border border-theme-border w-full max-w-lg overflow-hidden flex flex-col max-h-[92vh]"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="primary-gradient text-white px-5 py-3.5 flex items-center justify-between shrink-0">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
+                            <span className="material-symbols-outlined text-white text-lg">local_shipping</span>
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-sm md:text-base leading-tight">
+                                {t('logistics.dispatchTitle', 'Teslimat Çıkışı (Teslimatta)')}
+                            </h3>
+                            <div className="flex items-center gap-2 text-[10px] md:text-xs text-white/80 mt-0.5">
+                                <span className="font-mono">{task.code}</span>
+                                {parentOrder?.code && <span>• #{parentOrder.code}</span>}
+                                <span>• {task.quantity} {unit}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => !submitting && onClose()}
+                        className="text-white/80 hover:text-white transition p-1 cursor-pointer"
+                    >
+                        <span className="material-symbols-outlined text-base">close</span>
+                    </button>
+                </div>
+
+                {/* Body Form */}
+                <form onSubmit={handleSubmit} className="p-4 md:p-5 overflow-y-auto space-y-4 text-xs">
+                    {/* Error Banner */}
+                    {formError && (
+                        <div className="bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl p-3 text-xs flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <span className="material-symbols-outlined text-base">error</span>
+                                <span>{formError}</span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setFormError(null)}
+                                className="hover:opacity-75 cursor-pointer"
+                            >
+                                <span className="material-symbols-outlined text-base">close</span>
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Carrier Type Toggle */}
+                    <div>
+                        <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
+                            {t('logistics.carrierType', 'Sevkiyat Türü')}
+                        </label>
+                        <div className="flex p-1 bg-surface-container rounded-xl border border-theme-border/50">
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsOutsource(false);
+                                    setCarrierName('');
+                                    setVehicleInfo('');
+                                }}
+                                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+                                    !isOutsource
+                                        ? 'bg-surface-container-lowest text-on-surface shadow-xs'
+                                        : 'text-text-muted hover:text-on-surface'
+                                }`}
+                            >
+                                {t('logistics.companyStaff', 'Şirket Personeli')}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsOutsource(true);
+                                    setCarrierEmployeeId('');
+                                    setVehicleId('');
+                                }}
+                                className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition cursor-pointer ${
+                                    isOutsource
+                                        ? 'bg-surface-container-lowest text-on-surface shadow-xs'
+                                        : 'text-text-muted hover:text-on-surface'
+                                }`}
+                            >
+                                {t('logistics.outsource', 'Outsource (Dış Nakliye / Kargo)')}
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Carrier Person (Mandatory) */}
+                    <div>
+                        {!isOutsource ? (
+                            <div>
+                                <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
+                                    {t('logistics.selectStaff', 'Sevkiyatı Yapacak Personel')} <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    required
+                                    value={carrierEmployeeId}
+                                    onChange={(e) => setCarrierEmployeeId(e.target.value)}
+                                    className="w-full bg-surface-container border border-theme-border rounded-xl px-3 py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary transition cursor-pointer"
+                                >
+                                    <option value="">— Personel Seçiniz —</option>
+                                    {(employees || []).map((emp) => (
+                                        <option key={emp.id} value={emp.id}>
+                                            {emp.name} {emp.department ? `(${emp.department})` : ''}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        ) : (
+                            <div>
+                                <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
+                                    {t('logistics.outsourceCarrierName', 'Sevkiyat Sorumlusu / Firma Adı')} <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder={t('logistics.outsourceCarrierPlaceholder', 'örn: Aras Kargo, Mehmet Bey veya Dadaş Nakliyat')}
+                                    value={carrierName}
+                                    onChange={(e) => setCarrierName(e.target.value)}
+                                    className="w-full bg-surface-container border border-theme-border rounded-xl px-3 py-2 text-xs md:text-sm text-on-surface placeholder:text-text-muted outline-none focus:border-primary transition"
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Vehicle Selection or Input (Mandatory) */}
+                    <div>
+                        {!isOutsource ? (
+                            <div>
+                                <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
+                                    {t('logistics.selectVehicle', 'Sevkiyat Aracı')} <span className="text-red-500">*</span>
+                                </label>
+                                <select
+                                    required
+                                    value={vehicleId}
+                                    onChange={(e) => setVehicleId(e.target.value)}
+                                    className="w-full bg-surface-container border border-theme-border rounded-xl px-3 py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary transition cursor-pointer"
+                                >
+                                    <option value="">— Araç Seçiniz —</option>
+                                    {(vehicles || []).map((v) => (
+                                        <option key={v.id} value={v.id}>
+                                            {v.name} ({v.brand} {v.model})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        ) : (
+                            <div>
+                                <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
+                                    {t('logistics.outsourceVehicle', 'Araç / Plaka / Sevkiyat Bilgisi')} <span className="text-red-500">*</span>
+                                </label>
+                                <input
+                                    type="text"
+                                    required
+                                    placeholder={t('logistics.outsourceVehiclePlaceholder', 'örn: 34 XYZ 99 veya Kiralık Kamyonet')}
+                                    value={vehicleInfo}
+                                    onChange={(e) => setVehicleInfo(e.target.value)}
+                                    className="w-full bg-surface-container border border-theme-border rounded-xl px-3 py-2 text-xs md:text-sm text-on-surface placeholder:text-text-muted outline-none focus:border-primary transition"
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Photo Capture & Upload */}
+                    <div>
+                        <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
+                            {t('logistics.deliveryPhoto', 'Araca Yükleme Fotoğrafı')}
+                        </label>
+
+                        {/* Hidden canvas for snapshot */}
+                        <canvas ref={canvasRef} className="hidden" />
+
+                        {/* Live Camera View */}
+                        {cameraActive && (
+                            <div className="bg-black rounded-xl overflow-hidden mb-3 relative flex flex-col items-center border border-theme-border">
+                                <video
+                                    ref={videoRef}
+                                    autoPlay
+                                    playsInline
+                                    className="w-full max-h-52 object-contain"
+                                />
+                                <div className="p-2.5 w-full flex items-center justify-center gap-3 bg-surface-container-high/90">
+                                    <button
+                                        type="button"
+                                        onClick={capturePhoto}
+                                        className="flex items-center gap-1.5 bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:opacity-90 transition cursor-pointer"
+                                    >
+                                        <span className="material-symbols-outlined text-base">photo_camera</span>
+                                        <span>{t('logistics.captureSnapshot', 'Fotoğrafı Yakala')}</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={stopCamera}
+                                        className="flex items-center gap-1 border border-theme-border text-text-muted px-2.5 py-1.5 rounded-lg text-xs font-semibold hover:text-on-surface transition cursor-pointer"
+                                    >
+                                        <span className="material-symbols-outlined text-sm">close</span>
+                                        <span>{t('logistics.closeCamera', 'Kapat')}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Photo Preview Card */}
+                        {photoPreview && !cameraActive && (
+                            <div className="relative rounded-xl overflow-hidden border border-theme-border bg-surface-container p-2.5 flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-3">
+                                    <img
+                                        src={photoPreview}
+                                        alt="Önizleme"
+                                        className="w-16 h-16 object-cover rounded-lg border border-theme-border/60"
+                                    />
+                                    <div>
+                                        <p className="text-xs font-bold text-on-surface">Fotoğraf Eklendi</p>
+                                        <p className="text-[10px] text-text-muted">Araca yüklenen durumun görseli kaydedilecektir.</p>
+                                    </div>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setPhotoBlob(null);
+                                        setPhotoPreview(null);
+                                    }}
+                                    className="p-1.5 text-red-500 hover:text-red-600 hover:bg-red-500/10 rounded-lg transition cursor-pointer"
+                                    title={t('logistics.removePhoto', 'Fotoğrafı Kaldır')}
+                                >
+                                    <span className="material-symbols-outlined text-lg">delete</span>
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Buttons to trigger Camera or File Picker */}
+                        {!photoPreview && !cameraActive && (
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    type="button"
+                                    onClick={startCamera}
+                                    className="flex items-center justify-center gap-1.5 border border-theme-border bg-surface-container hover:bg-surface-container-high p-2.5 rounded-xl text-xs font-semibold text-on-surface transition cursor-pointer"
+                                >
+                                    <span className="material-symbols-outlined text-base text-primary">photo_camera</span>
+                                    <span>{t('logistics.takePhoto', 'Kameradan Çek')}</span>
+                                </button>
+
+                                <label className="flex items-center justify-center gap-1.5 border border-theme-border bg-surface-container hover:bg-surface-container-high p-2.5 rounded-xl text-xs font-semibold text-on-surface transition cursor-pointer">
+                                    <span className="material-symbols-outlined text-base text-blue-500">upload_file</span>
+                                    <span>{t('logistics.selectFile', 'Dosyadan Seç')}</span>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        capture="environment"
+                                        onChange={handleFileChange}
+                                        className="hidden"
+                                    />
+                                </label>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Dispatch Notes */}
+                    <div>
+                        <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
+                            {t('logistics.deliveryNotes', 'Sevkiyat Notu (İsteğe Bağlı)')}
+                        </label>
+                        <textarea
+                            rows={2}
+                            placeholder={t('logistics.deliveryNotesPlaceholder', 'Yükleme durumu veya teslimat ile ilgili ek açıklama...')}
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            className="w-full bg-surface-container border border-theme-border rounded-xl px-3 py-2 text-xs md:text-sm text-on-surface placeholder:text-text-muted outline-none focus:border-primary transition resize-none"
+                        />
+                    </div>
+
+                    {/* Footer Actions */}
+                    <div className="flex gap-2.5 pt-3 border-t border-theme-border">
+                        <button
+                            type="button"
+                            disabled={submitting}
+                            onClick={() => {
+                                stopCamera();
+                                onClose();
+                            }}
+                            className="flex-1 border border-theme-border rounded-xl py-2 text-xs font-semibold text-text-muted hover:bg-surface-container transition cursor-pointer"
+                        >
+                            {t('common.cancel', 'Vazgeç')}
+                        </button>
+                        <button
+                            type="submit"
+                            disabled={submitting}
+                            className="flex-1 primary-gradient text-white rounded-xl py-2 text-xs font-bold hover:opacity-95 shadow-md shadow-primary/20 transition flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                        >
+                            {submitting ? (
+                                <>
+                                    <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                                    <span>{t('common.saving', 'Kaydediliyor...')}</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span className="material-symbols-outlined text-sm">local_shipping</span>
+                                    <span>{t('logistics.confirmDispatch', 'Teslimata Çıkar & Kaydet')}</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    );
+};
+
 // ─── Task Detail Modal ────────────────────────────────────────────────────────
 const TaskDetailModal = ({
     onAdvance,
     onClose,
     canAct,
+    isAdmin,
     task
 }) => {
     const { t } = useTranslation();
+    const {
+        deleteProductionTaskDelivery,
+        refreshProductionTasks
+    } = useData();
+
     const [
         confirming,
         setConfirming
@@ -90,6 +608,18 @@ const TaskDetailModal = ({
         selectedStatus,
         setSelectedStatus
     ] = useState(normalizeStatus(task.status));
+    const [
+        showDispatchModal,
+        setShowDispatchModal
+    ] = useState(false);
+    const [
+        lightboxPhoto,
+        setLightboxPhoto
+    ] = useState(null);
+    const [
+        deletingRecordId,
+        setDeletingRecordId
+    ] = useState(null);
 
     const currentStatus = normalizeStatus(task.status);
     const next = statusNext[currentStatus];
@@ -110,6 +640,11 @@ const TaskDetailModal = ({
         if(!next) {
             return;
         }
+        if(next === 'In Delivery') {
+            setConfirming(false);
+            setShowDispatchModal(true);
+            return;
+        }
         await onAdvance(task.id, next);
         setConfirming(false);
     };
@@ -118,7 +653,29 @@ const TaskDetailModal = ({
         if(!selectedStatus || selectedStatus === currentStatus) {
             return;
         }
+        if(selectedStatus === 'In Delivery') {
+            setShowDispatchModal(true);
+            return;
+        }
         await onAdvance(task.id, selectedStatus);
+    };
+
+    const handleDeleteDeliveryRecord = async (deliveryId) => {
+        if(!isAdmin) {
+            alert('Teslimat kayıtlarını yalnızca sistem yöneticisi (admin) silebilir.');
+            return;
+        }
+        if(!window.confirm(t('logistics.deleteDeliveryConfirm', 'Bu teslimat kaydını silmek istediğinize emin misiniz?'))) {
+            return;
+        }
+        try {
+            setDeletingRecordId(deliveryId);
+            await deleteProductionTaskDelivery(task.id, deliveryId);
+        } catch (err) {
+            alert('Hata: ' + (err.message || 'Kayıt silinemedi'));
+        } finally {
+            setDeletingRecordId(null);
+        }
     };
 
     return (
@@ -204,7 +761,11 @@ const TaskDetailModal = ({
                                     key={stepKey}
                                     onClick={() => {
                                         if(canAct) {
-                                            setSelectedStatus(stepKey);
+                                            if(stepKey === 'In Delivery' && currentStatus !== 'In Delivery') {
+                                                setShowDispatchModal(true);
+                                            } else {
+                                                setSelectedStatus(stepKey);
+                                            }
                                         }
                                     }}
                                     className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition cursor-pointer ${bgClass}`}
@@ -357,6 +918,134 @@ const TaskDetailModal = ({
                     </div>
                 )}
 
+                {/* Delivery & Shipment History */}
+                <div className="bg-surface-container-high rounded-xl p-3.5 mb-4 text-xs">
+                    <div className="flex items-center justify-between mb-2.5">
+                        <p className="font-semibold text-on-surface flex items-center gap-1.5">
+                            <span className="material-symbols-outlined text-sm text-primary">local_shipping</span>
+                            {t('logistics.deliveryHistory', 'Teslimat & Sevkiyat Geçmişi')}
+                            {task.deliveryRecords?.length > 0 && (
+                                <span className="bg-surface-container text-text-muted text-[10px] font-bold px-2 py-0.5 rounded-full ml-1">
+                                    {task.deliveryRecords.length}
+                                </span>
+                            )}
+                        </p>
+                        {canAct && (
+                            <button
+                                onClick={() => setShowDispatchModal(true)}
+                                className="flex items-center gap-1 text-[11px] font-bold text-primary hover:underline cursor-pointer"
+                            >
+                                <span className="material-symbols-outlined text-sm">add</span>
+                                <span>Yeni Teslimat Kaydı</span>
+                            </button>
+                        )}
+                    </div>
+
+                    {(!task.deliveryRecords || task.deliveryRecords.length === 0) ? (
+                        <p className="text-text-muted text-[11px] py-1 italic">
+                            {t('logistics.noDeliveryHistory', 'Henüz teslimat kaydı bulunmuyor')}
+                        </p>
+                    ) : (
+                        <div className="space-y-2.5 max-h-56 overflow-y-auto">
+                            {task.deliveryRecords.map((rec) => {
+                                const fullPhotoUrl = getPhotoFullUrl(rec.photoUrl);
+                                const dateFormatted = rec.createdAt ? new Date(rec.createdAt).toLocaleString('tr-TR', {
+                                    day: '2-digit',
+                                    month: '2-digit',
+                                    year: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                }) : '—';
+
+                                return (
+                                    <div
+                                        key={rec.id}
+                                        className="p-3 rounded-xl bg-surface-container-lowest flex items-start justify-between gap-3 border border-theme-border/30"
+                                    >
+                                        {/* Left Photo or Icon */}
+                                        {fullPhotoUrl ? (
+                                            <div
+                                                onClick={() => setLightboxPhoto({
+                                                    url: fullPhotoUrl,
+                                                    title: rec.carrierName,
+                                                    details: `${rec.vehicleInfo || ''}${rec.createdByName ? ' • Kaydeden: ' + rec.createdByName : ''}`,
+                                                    date: dateFormatted
+                                                })}
+                                                className="w-14 h-14 rounded-lg overflow-hidden shrink-0 cursor-pointer relative group border border-theme-border/60 hover:opacity-90 transition"
+                                            >
+                                                <img
+                                                    src={fullPhotoUrl}
+                                                    alt="Teslimat Fotoğrafı"
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition">
+                                                    <span className="material-symbols-outlined text-white text-base">zoom_in</span>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="w-12 h-12 rounded-lg bg-surface-container flex items-center justify-center shrink-0 text-text-muted">
+                                                <span className="material-symbols-outlined text-xl">local_shipping</span>
+                                            </div>
+                                        )}
+
+                                        {/* Center Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                                                <span className="font-bold text-on-surface text-xs">
+                                                    {rec.carrierName}
+                                                </span>
+                                                {rec.isOutsource ? (
+                                                    <span className="bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full">
+                                                        Outsource
+                                                    </span>
+                                                ) : (
+                                                    <span className="bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-full">
+                                                        Şirket Personeli
+                                                    </span>
+                                                )}
+                                                <span className="text-[11px] text-text-muted font-mono ml-auto">
+                                                    {dateFormatted}
+                                                </span>
+                                            </div>
+
+                                            <p className="text-[11px] text-text-muted flex items-center gap-1">
+                                                <span className="material-symbols-outlined text-xs">directions_car</span>
+                                                <span className="font-semibold text-on-surface">{rec.vehicleInfo || '—'}</span>
+                                            </p>
+
+                                            {rec.notes && (
+                                                <p className="text-[11px] text-text-muted mt-1 italic whitespace-pre-wrap">
+                                                    {rec.notes}
+                                                </p>
+                                            )}
+
+                                            {rec.createdByName && (
+                                                <p className="text-[10px] text-text-muted mt-1">
+                                                    {t('logistics.recordedBy', 'Kaydeden')}: <span className="font-medium text-on-surface">{rec.createdByName}</span>
+                                                </p>
+                                            )}
+                                        </div>
+
+                                        {/* Right Delete Button (Admin Only!) */}
+                                        {isAdmin && (
+                                            <button
+                                                onClick={() => handleDeleteDeliveryRecord(rec.id)}
+                                                disabled={deletingRecordId === rec.id}
+                                                title="Teslimat Kaydını Sil (Admin Özel)"
+                                                className="p-1 rounded-lg text-red-500/70 hover:text-red-600 hover:bg-red-500/10 transition cursor-pointer disabled:opacity-50 shrink-0"
+                                            >
+                                                <span className={`material-symbols-outlined text-base ${deletingRecordId === rec.id ? 'animate-spin' : ''}`}>
+                                                    {deletingRecordId === rec.id ? 'progress_activity' : 'delete'}
+                                                </span>
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+
                 {/* Footer Status Controls (Matching Orders.jsx style) */}
                 {canAct && (
                     <div className="pt-4 mt-1 border-t border-theme-border flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
@@ -393,10 +1082,19 @@ const TaskDetailModal = ({
                         {/* Next Stage Button or Confirmation */}
                         {next && !confirming && (
                             <button
-                                onClick={() => setConfirming(true)}
+                                onClick={() => {
+                                    if(next === 'In Delivery') {
+                                        setShowDispatchModal(true);
+                                    } else {
+                                        setConfirming(true);
+                                    }
+                                }}
                                 className="flex items-center justify-center gap-1.5 bg-primary hover:opacity-90 text-white px-4 py-2 rounded-xl text-xs md:text-sm font-semibold transition cursor-pointer shadow-xs"
                             >
-                                <span>{t('logistics.advanceTo', { status: getStatusLabel(next, t) })}</span>
+                                <span>{t('logistics.advanceTo', {
+                                    defaultValue: `${getStatusLabel(next, t)} aşamasına geç`,
+                                    status: getStatusLabel(next, t)
+                                })}</span>
                                 <span className="material-symbols-outlined text-sm">arrow_forward</span>
                             </button>
                         )}
@@ -421,6 +1119,62 @@ const TaskDetailModal = ({
                                 </button>
                             </div>
                         )}
+                    </div>
+                )}
+
+                {/* Delivery Dispatch Modal when triggered */}
+                {showDispatchModal && (
+                    <DeliveryDispatchModal
+                        task={task}
+                        onClose={() => setShowDispatchModal(false)}
+                        onSuccess={() => {
+                            setShowDispatchModal(false);
+                            refreshProductionTasks();
+                        }}
+                    />
+                )}
+
+                {/* Lightbox Modal for enlarged photo */}
+                {lightboxPhoto && (
+                    <div
+                        className="fixed inset-0 z-70 bg-black/85 flex items-center justify-center p-4 backdrop-blur-xs"
+                        onClick={() => setLightboxPhoto(null)}
+                    >
+                        <div
+                            className="relative max-w-4xl max-h-[90vh] bg-surface-container-lowest rounded-2xl overflow-hidden shadow-2xl flex flex-col border border-theme-border"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <div className="flex items-center justify-between p-3.5 bg-surface-container-high border-b border-theme-border">
+                                <div className="flex items-center gap-2">
+                                    <span className="material-symbols-outlined text-primary">local_shipping</span>
+                                    <span className="text-xs font-bold text-on-surface">Araca Yükleme Fotoğrafı</span>
+                                    {lightboxPhoto.title && (
+                                        <span className="text-[11px] text-text-muted font-semibold">• {lightboxPhoto.title}</span>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={() => setLightboxPhoto(null)}
+                                    className="p-1 rounded-lg hover:bg-hover-bg text-text-muted hover:text-on-surface transition cursor-pointer"
+                                >
+                                    <span className="material-symbols-outlined text-base">close</span>
+                                </button>
+                            </div>
+                            <div className="p-2 flex items-center justify-center bg-black/60 overflow-auto max-h-[75vh]">
+                                <img
+                                    src={lightboxPhoto.url}
+                                    alt="Araca Yükleme"
+                                    className="max-h-[70vh] w-auto object-contain rounded-lg shadow-md"
+                                />
+                            </div>
+                            {lightboxPhoto.details && (
+                                <div className="p-3 bg-surface-container-lowest border-t border-theme-border text-xs text-text-muted flex items-center justify-between">
+                                    <span className="font-medium text-on-surface">{lightboxPhoto.details}</span>
+                                    {lightboxPhoto.date && (
+                                        <span className="font-mono text-[11px] text-text-muted">{lightboxPhoto.date}</span>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
@@ -809,6 +1563,7 @@ export default function Logistics() {
                 <TaskDetailModal
                     task={detailTask}
                     canAct={canAct}
+                    isAdmin={isAdmin}
                     onClose={() => setDetailTask(null)}
                     onAdvance={handleAdvance}
                 />

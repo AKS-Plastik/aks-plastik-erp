@@ -5,10 +5,7 @@ const { adminOnly } = require('../middleware/auth')
 const prisma = new PrismaClient()
 const router = Router()
 
-// All vehicle management is restricted to admin
-router.use(adminOnly)
-
-// ── List all vehicles ────────────────────────────────────────────────────────
+// ── List all vehicles (All authenticated users for dispatch selection) ──────
 router.get('/', async (req, res) => {
   try {
     const vehicles = await prisma.vehicle.findMany({
@@ -20,8 +17,8 @@ router.get('/', async (req, res) => {
   }
 })
 
-// ── Create vehicle ───────────────────────────────────────────────────────────
-router.post('/', async (req, res) => {
+// ── Create vehicle (Admin Only) ──────────────────────────────────────────────
+router.post('/', adminOnly, async (req, res) => {
   try {
     const { name, brand, model } = req.body
 
@@ -49,8 +46,8 @@ router.post('/', async (req, res) => {
   }
 })
 
-// ── Delete vehicle ───────────────────────────────────────────────────────────
-router.delete('/:id', async (req, res) => {
+// ── Delete vehicle (Admin Only) ──────────────────────────────────────────────
+router.delete('/:id', adminOnly, async (req, res) => {
   try {
     const { id } = req.params
     await prisma.vehicle.delete({
