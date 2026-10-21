@@ -56,9 +56,23 @@ function DetailRow({ icon, label, value }) {
   )
 }
 
-function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete, isAdmin, onCreateEmployeeTask }) {
+function getTaskNotes(task, orders) {
+  if (task?.orderItem?.notes && task.orderItem.notes.length > 0) {
+    return task.orderItem.notes
+  }
+  if (task?.orderItemId && orders) {
+    for (const order of orders) {
+      const it = (order.items || []).find((item) => item.id === task.orderItemId)
+      if (it?.notes && it.notes.length > 0) return it.notes
+    }
+  }
+  return []
+}
+
+function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete, isAdmin, onCreateEmployeeTask, orders }) {
   const { t } = useTranslation()
   const todayIso = getLocalTodayIso()
+  const taskNotes = getTaskNotes(task, orders)
   const [editing, setEditing] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [form, setForm] = useState({
@@ -148,6 +162,37 @@ function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete,
               </span>
             } />
             <DetailRow icon="schedule" label={t('common.created')} value={fmtDate(task.createdAt)} />
+
+            {/* Kalem Notları (OrderItem Notes) */}
+            {taskNotes.length > 0 && (
+              <div className="mt-4 pt-4 border-t border-theme-border">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="material-symbols-outlined text-[18px] text-red-600 dark:text-red-400">sticky_note_2</span>
+                  <span className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">
+                    {t('orders.itemNotes', 'Sipariş Kalem Notları')} ({taskNotes.length})
+                  </span>
+                  <span className="text-[10px] text-text-muted ml-auto font-medium">
+                    {t('orders.parentItemNotesInfo', 'Ana sipariş kalemine ait notlar')}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2.5">
+                  {taskNotes.map((n) => (
+                    <div key={n.id} className="bg-red-50/70 dark:bg-red-950/20 border border-red-200/80 dark:border-red-900/40 rounded-xl p-3">
+                      <div className="flex items-center justify-between gap-2 mb-1.5">
+                        <span className="text-xs font-bold text-red-700 dark:text-red-300 flex items-center gap-1.5">
+                          <span className="material-symbols-outlined text-[14px]">person</span>
+                          {n.authorName || 'Kullanıcı'}
+                        </span>
+                        <span className="text-[10px] text-red-600/80 dark:text-red-400/80 font-mono">
+                          {new Date(n.createdAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p className="text-xs text-on-surface whitespace-pre-wrap leading-relaxed">{n.note}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -183,6 +228,33 @@ function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete,
                 </select>
               </Field>
             </div>
+
+            {taskNotes.length > 0 && (
+              <div className="col-span-2 mt-2 pt-3 border-t border-theme-border">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="material-symbols-outlined text-[16px] text-red-600 dark:text-red-400">sticky_note_2</span>
+                  <span className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">
+                    {t('orders.itemNotes', 'Sipariş Kalem Notları')} ({taskNotes.length})
+                  </span>
+                  <span className="text-[10px] text-text-muted ml-auto font-medium">
+                    {t('orders.parentItemNotesInfo', 'Ana sipariş kalemine ait notlar')}
+                  </span>
+                </div>
+                <div className="flex flex-col gap-2 max-h-36 overflow-y-auto pr-1">
+                  {taskNotes.map((n) => (
+                    <div key={n.id} className="bg-red-50/60 dark:bg-red-950/20 border border-red-200/60 dark:border-red-900/30 rounded-lg p-2.5 text-xs">
+                      <div className="flex items-center justify-between gap-2 mb-1 text-[11px] text-red-700 dark:text-red-300 font-semibold">
+                        <span>{n.authorName || 'Kullanıcı'}</span>
+                        <span className="text-[10px] opacity-75 font-mono">
+                          {new Date(n.createdAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p className="text-xs text-on-surface whitespace-pre-wrap">{n.note}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -366,10 +438,11 @@ const STATUS_STYLES = {
   completed: { bg: 'bg-green-500/5 dark:bg-green-500/10', labelBg: 'bg-green-500/10 dark:bg-green-500/20', border: 'border-green-400/60 dark:border-green-700/60', text: 'text-green-600 dark:text-green-400' }
 }
 
-function KanbanCard({ task, onClick, locked }) {
+function KanbanCard({ task, onClick, locked, orders }) {
   const { t } = useTranslation()
   const statusDef = STATUS_STYLES[task.status] || STATUS_STYLES.open
   const statusLabel = t(`productionTasks.col${task.status.charAt(0).toUpperCase() + task.status.slice(1)}`)
+  const taskNotes = getTaskNotes(task, orders)
 
   return (
     <div
@@ -427,9 +500,20 @@ function KanbanCard({ task, onClick, locked }) {
 
       <div className="flex justify-between items-center mt-2">
         <p className="text-[9px] text-on-surface-variant/50 font-medium">{t('reports.createdAt')} {fmtDate(task.createdAt)}</p>
-        <p className="text-[9px] text-on-surface-variant/50 font-medium">
-          #{task.orderItem?.order?.code || 'STOK'}
-        </p>
+        <div className="flex items-center gap-2">
+          {taskNotes.length > 0 && (
+            <span
+              className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50"
+              title={`${taskNotes.length} not`}
+            >
+              <span className="material-symbols-outlined text-[12px]">sticky_note_2</span>
+              {taskNotes.length}
+            </span>
+          )}
+          <p className="text-[9px] text-on-surface-variant/50 font-medium">
+            #{task.orderItem?.order?.code || 'STOK'}
+          </p>
+        </div>
       </div>
     </div>
   )
@@ -920,6 +1004,7 @@ export default function ProductionTasks() {
       {detailTask && (
         <CardDetailModal
           task={detailTask}
+          orders={orders}
           machines={machines}
           employees={employees}
           isAdmin={isAdmin}
@@ -1238,6 +1323,7 @@ export default function ProductionTasks() {
                     <div key={task.id} className="w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.33%-11px)] xl:w-[calc(25%-12px)]">
                       <KanbanCard
                         task={task}
+                        orders={orders}
                         locked={isPast || showEodWizard}
                         onClick={() => {
                           if (!showEodWizard) setDetailTask(task)
@@ -1292,6 +1378,7 @@ export default function ProductionTasks() {
                     <KanbanCard
                       key={task.id}
                       task={task}
+                      orders={orders}
                       locked={isPastBoard || showEodWizard}
                       onClick={() => {
                         if (!showEodWizard) setDetailTask(task)

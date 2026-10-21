@@ -37,6 +37,9 @@ const userPurchasingStatusPermissionRoutes = require('./routes/userPurchasingSta
 const syncRoutes = require('./routes/sync')
 const productionTaskRoutes = require('./routes/productionTasks')
 const employeeTaskRoutes = require('./routes/employeeTasks')
+const vehicleRoutes = require('./routes/vehicles')
+const backupRoutes = require('./routes/backup')
+const { initBackupCron } = require('./jobs/backupCron')
 const app = express()
 const PORT = process.env.PORT || 3001
 
@@ -84,12 +87,17 @@ app.use('/api/user-purchasing-status-permissions', authenticate, userPurchasingS
 app.use('/api/sync', authenticate, syncRoutes)
 app.use('/api/production-tasks', authenticate, productionTaskRoutes)
 app.use('/api/employee-tasks', authenticate, employeeTaskRoutes)
+app.use('/api/vehicles', authenticate, vehicleRoutes)
+app.use('/api/backup', authenticate, backupRoutes)
 
 app.listen(PORT, () => {
   console.log(`AKS ERP API running on http://localhost:${PORT}`)
 
   // Initialize Snapshot/Cron Jobs
   initSnapshotJobs()
+
+  // Initialize Automated Backup Cron (4 times a day, 7 days retention)
+  initBackupCron()
 
   // 30 minute cron for Vio Sync using node-cron
   console.log('Starting 30-minute Vio sync cron job (*/30 * * * *)...')

@@ -24,8 +24,12 @@ router.get('/', async (req, res) => {
             code: true,
             orderItem: {
               select: {
+                id: true,
                 order: {
                   select: { code: true, customer: true }
+                },
+                notes: {
+                  orderBy: { createdAt: 'asc' }
                 }
               }
             }
@@ -75,12 +79,12 @@ router.post('/', async (req, res) => {
             }
           }
         },
-        include: { employee: true, machine: true, order: { select: { id: true, code: true, customer: true }}, productionTask: { select: { id: true, code: true, orderItem: { select: { order: { select: { code: true, customer: true } } } } } }, taskNotes: true }
+        include: { employee: true, machine: true, order: { select: { id: true, code: true, customer: true }}, productionTask: { select: { id: true, code: true, orderItem: { select: { id: true, order: { select: { code: true, customer: true } }, notes: { orderBy: { createdAt: 'asc' } } } } } }, taskNotes: true }
       })
     } else {
       task = await prisma.employeeTask.create({
         data,
-        include: { employee: true, machine: true, order: { select: { id: true, code: true, customer: true }}, productionTask: { select: { id: true, code: true, orderItem: { select: { order: { select: { code: true, customer: true } } } } } }, taskNotes: true }
+        include: { employee: true, machine: true, order: { select: { id: true, code: true, customer: true }}, productionTask: { select: { id: true, code: true, orderItem: { select: { id: true, order: { select: { code: true, customer: true } }, notes: { orderBy: { createdAt: 'asc' } } } } } }, taskNotes: true }
       })
     }
 

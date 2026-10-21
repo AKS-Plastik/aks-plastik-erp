@@ -558,7 +558,7 @@ function UserRolesTab() {
     if (current.includes(pageKey)) {
       // Unchecking a page — also strip any of its sub-permissions
       let subs = []
-      if (pageKey === 'orders') subs = ['orders-create']
+      if (pageKey === 'orders') subs = ['orders-create', 'orders-note-create', 'orders-note-delete']
       if (pageKey === 'purchasing') subs = ['purchasing:create']
       if (pageKey === 'production') subs = ['production-start']
       next = current.filter((p) => p !== pageKey && !subs.includes(p))
@@ -781,6 +781,10 @@ function UserRolesTab() {
                   const saving = !!permSaving[page.key]
                   const ordersSubEnabled = page.key === 'orders' && enabled && (permissions[viewDept] || []).includes('orders-create')
                   const ordersSubSaving = !!permSaving['orders-create']
+                  const ordersNoteCreateEnabled = page.key === 'orders' && enabled && (permissions[viewDept] || []).includes('orders-note-create')
+                  const ordersNoteCreateSaving = !!permSaving['orders-note-create']
+                  const ordersNoteDeleteEnabled = page.key === 'orders' && enabled && (permissions[viewDept] || []).includes('orders-note-delete')
+                  const ordersNoteDeleteSaving = !!permSaving['orders-note-delete']
                   const purchasingSubEnabled = page.key === 'purchasing' && enabled && (permissions[viewDept] || []).includes('purchasing:create')
                   const purchasingSubSaving = !!permSaving['purchasing:create']
                   const productionSubEnabled = page.key === 'production' && enabled && (permissions[viewDept] || []).includes('production-start')
@@ -823,22 +827,56 @@ function UserRolesTab() {
                         </button>
                       )}
                       {page.key === 'orders' && enabled && (
-                        <button
-                          onClick={() => togglePermission('orders-create')}
-                          disabled={ordersSubSaving}
-                          className={`ml-4 w-[calc(100%-1rem)] flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition text-[10px] md:text-xs ${
-                            ordersSubEnabled
-                              ? 'bg-primary/10 border-primary text-primary'
-                              : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
-                          }`}
-                        >
-                          <span className="material-symbols-outlined text-[12px]">add_circle</span>
-                          <span className="flex-1 text-left font-medium">{t('settings.canCreateOrders', 'Sipariş Oluştur/Düzenle')}</span>
-                          {ordersSubSaving
-                            ? <span className="material-symbols-outlined text-[12px] animate-spin">progress_activity</span>
-                            : <span className="material-symbols-outlined text-[12px]">{ordersSubEnabled ? 'check_box' : 'check_box_outline_blank'}</span>
-                          }
-                        </button>
+                        <>
+                          <button
+                            onClick={() => togglePermission('orders-create')}
+                            disabled={ordersSubSaving}
+                            className={`ml-4 w-[calc(100%-1rem)] flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition text-[10px] md:text-xs ${
+                              ordersSubEnabled
+                                ? 'bg-primary/10 border-primary text-primary'
+                                : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-[12px]">add_circle</span>
+                            <span className="flex-1 text-left font-medium">{t('settings.canCreateOrders', 'Sipariş Oluştur/Düzenle')}</span>
+                            {ordersSubSaving
+                              ? <span className="material-symbols-outlined text-[12px] animate-spin">progress_activity</span>
+                              : <span className="material-symbols-outlined text-[12px]">{ordersSubEnabled ? 'check_box' : 'check_box_outline_blank'}</span>
+                            }
+                          </button>
+                          <button
+                            onClick={() => togglePermission('orders-note-create')}
+                            disabled={ordersNoteCreateSaving}
+                            className={`ml-4 w-[calc(100%-1rem)] flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition text-[10px] md:text-xs ${
+                              ordersNoteCreateEnabled
+                                ? 'bg-primary/10 border-primary text-primary'
+                                : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-[12px]">note_add</span>
+                            <span className="flex-1 text-left font-medium">{t('settings.canAddOrderNotes', 'Kalem Notu Ekleyebilir')}</span>
+                            {ordersNoteCreateSaving
+                              ? <span className="material-symbols-outlined text-[12px] animate-spin">progress_activity</span>
+                              : <span className="material-symbols-outlined text-[12px]">{ordersNoteCreateEnabled ? 'check_box' : 'check_box_outline_blank'}</span>
+                            }
+                          </button>
+                          <button
+                            onClick={() => togglePermission('orders-note-delete')}
+                            disabled={ordersNoteDeleteSaving}
+                            className={`ml-4 w-[calc(100%-1rem)] flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition text-[10px] md:text-xs ${
+                              ordersNoteDeleteEnabled
+                                ? 'bg-primary/10 border-primary text-primary'
+                                : 'bg-surface-container border-theme-border text-text-muted hover:bg-hover-bg'
+                            }`}
+                          >
+                            <span className="material-symbols-outlined text-[12px]">delete</span>
+                            <span className="flex-1 text-left font-medium">{t('settings.canDeleteOrderNotes', 'Kalem Notu Silebilir')}</span>
+                            {ordersNoteDeleteSaving
+                              ? <span className="material-symbols-outlined text-[12px] animate-spin">progress_activity</span>
+                              : <span className="material-symbols-outlined text-[12px]">{ordersNoteDeleteEnabled ? 'check_box' : 'check_box_outline_blank'}</span>
+                            }
+                          </button>
+                        </>
                       )}
                       {page.key === 'purchasing' && enabled && (
                         <button
@@ -1416,8 +1454,849 @@ function PurchasingStatusTab() {
   )
 }
 
+// ─── Vehicles Tab (Admin Only) ──────────────────────────────────────────────
+function VehiclesTab() {
+  const { t } = useTranslation()
+  const { getToken, isAdmin } = useAuth()
+  const [vehicles, setVehicles] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
+  const [error, setError] = useState(null)
+  const [successMsg, setSuccessMsg] = useState(null)
+  const [form, setForm] = useState({
+    name: '',
+    brand: '',
+    model: ''
+  })
+
+  const fetchVehicles = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/vehicles`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Araç listesi alınamadı.')
+      }
+      const data = await res.json()
+      setVehicles(Array.isArray(data) ? data : [])
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [getToken])
+
+  useEffect(() => {
+    fetchVehicles()
+  }, [fetchVehicles])
+
+  if (!isAdmin) {
+    return (
+      <div className="p-8 text-center text-text-muted">
+        <span className="material-symbols-outlined text-4xl text-red-500 mb-2">lock</span>
+        <p className="font-bold text-on-surface">Erişim Reddedildi</p>
+        <p className="text-xs">Araç yönetimi sadece sistem yöneticileri (admin) tarafından görüntülenebilir.</p>
+      </div>
+    )
+  }
+
+  const handleCreateVehicle = async (e) => {
+    if (e) e.preventDefault()
+    if (!form.name.trim()) {
+      setError('Lütfen araç adını girin.')
+      return
+    }
+    if (!form.brand.trim()) {
+      setError('Lütfen araç markasını girin.')
+      return
+    }
+    if (!form.model.trim()) {
+      setError('Lütfen araç modelini girin.')
+      return
+    }
+
+    try {
+      setSaving(true)
+      setError(null)
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/vehicles`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          brand: form.brand.trim(),
+          model: form.model.trim()
+        })
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Araç eklenemedi.')
+      }
+      setSuccessMsg(`${data.name} başarıyla eklendi.`)
+      setShowAddModal(false)
+      setForm({ name: '', brand: '', model: '' })
+      await fetchVehicles()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDeleteVehicle = async (vehicle) => {
+    const confirmMsg = `${vehicle.name} (${vehicle.brand} ${vehicle.model}) aracını silmek istediğinize emin misiniz?`
+    if (!window.confirm(confirmMsg)) return
+
+    try {
+      setDeletingId(vehicle.id)
+      setError(null)
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/vehicles/${vehicle.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Araç silinemedi.')
+      }
+      setSuccessMsg(`${vehicle.name} başarıyla silindi.`)
+      await fetchVehicles()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  const filteredVehicles = vehicles.filter((v) => {
+    const q = search.toLowerCase()
+    return (
+      v.name?.toLowerCase().includes(q) ||
+      v.brand?.toLowerCase().includes(q) ||
+      v.model?.toLowerCase().includes(q)
+    )
+  })
+
+  return (
+    <div className="space-y-4">
+      {/* Alert Messages */}
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl p-3 md:p-4 text-xs md:text-sm flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-base md:text-lg">error</span>
+            <span>{error}</span>
+          </div>
+          <button onClick={() => setError(null)} className="hover:opacity-75">
+            <span className="material-symbols-outlined text-base">close</span>
+          </button>
+        </div>
+      )}
+
+      {successMsg && (
+        <div className="bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400 rounded-xl p-3 md:p-4 text-xs md:text-sm flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-base md:text-lg">check_circle</span>
+            <span>{successMsg}</span>
+          </div>
+          <button onClick={() => setSuccessMsg(null)} className="hover:opacity-75">
+            <span className="material-symbols-outlined text-base">close</span>
+          </button>
+        </div>
+      )}
+
+      {/* Header & Action Bar */}
+      <div className="bg-surface-container-lowest rounded-2xl border border-theme-border p-4 md:p-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-xl md:text-2xl">local_shipping</span>
+              <h2 className="text-base md:text-lg font-bold text-on-surface">{t('settings.vehicles', 'Araçlar')}</h2>
+              <span className="bg-primary/10 text-primary text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">Admin Özel</span>
+              <span className="bg-surface-container text-text-muted text-[10px] font-bold px-2 py-0.5 rounded-full">
+                {vehicles.length} Araç
+              </span>
+            </div>
+            <p className="text-xs text-text-muted mt-1">
+              {t('settings.vehiclesDesc', 'Sevkiyat ve lojistikte kullanılan araçları yönetin.')}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 sm:w-56">
+              <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted text-base">search</span>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Araç, marka, model ara..."
+                className="w-full bg-surface-container border border-theme-border rounded-xl pl-8 pr-3 py-1.5 text-xs text-on-surface placeholder:text-text-muted outline-none focus:border-primary transition"
+              />
+            </div>
+
+            <button
+              onClick={() => {
+                setError(null)
+                setForm({ name: '', brand: '', model: '' })
+                setShowAddModal(true)
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white primary-gradient hover:opacity-95 shadow-md shadow-primary/20 shrink-0 transition"
+            >
+              <span className="material-symbols-outlined text-base">add</span>
+              <span>{t('settings.addVehicle', 'Yeni Araç Ekle')}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Vehicles Table */}
+      <div className="bg-surface-container-lowest rounded-2xl border border-theme-border overflow-hidden shadow-sm">
+        {loading ? (
+          <div className="py-12 flex flex-col items-center justify-center text-text-muted gap-2">
+            <span className="material-symbols-outlined text-3xl animate-spin text-primary">progress_activity</span>
+            <p className="text-xs font-medium">Araçlar yükleniyor...</p>
+          </div>
+        ) : filteredVehicles.length === 0 ? (
+          <div className="py-12 flex flex-col items-center justify-center text-center p-4">
+            <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-text-muted mb-3">
+              <span className="material-symbols-outlined text-2xl">local_shipping</span>
+            </div>
+            <p className="text-sm font-bold text-on-surface">
+              {search ? 'Arama kriterine uygun araç bulunamadı' : t('settings.noVehicles', 'Henüz kayıtlı araç bulunmuyor')}
+            </p>
+            <p className="text-xs text-text-muted mt-1 max-w-sm">
+              {search ? `"${search}" araması ile eşleşen bir araç kaydı yok.` : 'Lojistik ve sevkiyat takibinde kullanmak için yeni araçlar ekleyebilirsiniz.'}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-theme-border bg-surface-container-low/50 text-text-muted uppercase tracking-wider text-[10px] font-bold">
+                  <th className="py-3 px-4">Araç Adı</th>
+                  <th className="py-3 px-4">Marka</th>
+                  <th className="py-3 px-4">Model</th>
+                  <th className="py-3 px-4">Kayıt Tarihi</th>
+                  <th className="py-3 px-4 text-right">İşlemler</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-theme-border text-on-surface">
+                {filteredVehicles.map((vehicle) => {
+                  const isDeleting = deletingId === vehicle.id
+                  const dateStr = vehicle.createdAt
+                    ? new Date(vehicle.createdAt).toLocaleDateString('tr-TR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      })
+                    : '—'
+
+                  return (
+                    <tr
+                      key={vehicle.id}
+                      className="hover:bg-surface-container-high/30 transition group"
+                    >
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                            <span className="material-symbols-outlined text-base">local_shipping</span>
+                          </div>
+                          <span className="font-bold text-on-surface">{vehicle.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 font-semibold text-text-muted">
+                        {vehicle.brand}
+                      </td>
+                      <td className="py-3 px-4 font-semibold text-text-muted">
+                        {vehicle.model}
+                      </td>
+                      <td className="py-3 px-4 text-text-muted font-mono text-[11px]">
+                        {dateStr}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <button
+                          onClick={() => handleDeleteVehicle(vehicle)}
+                          disabled={isDeleting}
+                          title="Aracı Sil"
+                          className="p-1.5 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-500/10 transition disabled:opacity-50"
+                        >
+                          <span className={`material-symbols-outlined text-base ${isDeleting ? 'animate-spin' : ''}`}>
+                            {isDeleting ? 'progress_activity' : 'delete'}
+                          </span>
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Add Vehicle Modal */}
+      {showAddModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => !saving && setShowAddModal(false)}
+        >
+          <div
+            className="bg-surface-container-lowest rounded-2xl shadow-2xl border border-theme-border w-full max-w-md flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-5 py-4 border-b border-theme-border flex items-center justify-between primary-gradient text-white">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-xl">local_shipping</span>
+                <h3 className="font-bold text-sm md:text-base">{t('settings.addVehicle', 'Yeni Araç Ekle')}</h3>
+              </div>
+              <button
+                onClick={() => !saving && setShowAddModal(false)}
+                className="text-white/80 hover:text-white transition"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleCreateVehicle} className="p-5 space-y-4">
+              <div>
+                <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
+                  {t('settings.vehicleName', 'Araç Adı')} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  placeholder="örn: 34 AKS 101 veya Kamyonet-1"
+                  value={form.name}
+                  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                  className="w-full bg-surface-container border border-theme-border rounded-xl px-3 py-2 text-xs md:text-sm text-on-surface placeholder:text-text-muted outline-none focus:border-primary transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
+                  {t('settings.brand', 'Marka')} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="örn: Ford, Mercedes-Benz, Iveco"
+                  value={form.brand}
+                  onChange={(e) => setForm((p) => ({ ...p, brand: e.target.value }))}
+                  className="w-full bg-surface-container border border-theme-border rounded-xl px-3 py-2 text-xs md:text-sm text-on-surface placeholder:text-text-muted outline-none focus:border-primary transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
+                  {t('settings.model', 'Model')} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="örn: Transit 350L, Actros, Daily"
+                  value={form.model}
+                  onChange={(e) => setForm((p) => ({ ...p, model: e.target.value }))}
+                  className="w-full bg-surface-container border border-theme-border rounded-xl px-3 py-2 text-xs md:text-sm text-on-surface placeholder:text-text-muted outline-none focus:border-primary transition"
+                />
+              </div>
+
+              {/* Modal Footer Buttons */}
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 border border-theme-border rounded-xl py-2 text-xs font-semibold text-text-muted hover:bg-surface-container transition"
+                >
+                  {t('common.cancel', 'İptal')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 primary-gradient text-white rounded-xl py-2 text-xs font-bold hover:opacity-95 shadow-md shadow-primary/20 transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  {saving ? (
+                    <>
+                      <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                      <span>{t('common.saving', 'Kaydediliyor...')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-sm">save</span>
+                      <span>{t('common.save', 'Kaydet')}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ─── Backup Tab (Admin Only) ────────────────────────────────────────────────
+function BackupTab() {
+  const { t } = useTranslation()
+  const { getToken } = useAuth()
+  const [backups, setBackups] = useState([])
+  const [config, setConfig] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [creating, setCreating] = useState(false)
+  const [deleting, setDeleting] = useState(null)
+  const [error, setError] = useState(null)
+  const [successMsg, setSuccessMsg] = useState(null)
+  const [showRestoreModal, setShowRestoreModal] = useState(false)
+  const [copiedDir, setCopiedDir] = useState(false)
+
+  const fetchBackups = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/backup`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Yedek listesi alınamadı.')
+      }
+      const data = await res.json()
+      setBackups(data.backups || [])
+      setConfig(data.config || null)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [getToken])
+
+  useEffect(() => {
+    fetchBackups()
+  }, [fetchBackups])
+
+  const handleTakeBackup = async () => {
+    try {
+      setCreating(true)
+      setError(null)
+      setSuccessMsg(null)
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/backup`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Yedekleme oluşturulamadı.')
+      }
+      setSuccessMsg(`Yedekleme başarıyla tamamlandı: ${data.backup?.fileName} (${data.backup?.sizeFormatted})`)
+      await fetchBackups()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setCreating(false)
+    }
+  }
+
+  const handleDownload = async (fileName) => {
+    try {
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/backup/download/${encodeURIComponent(fileName)}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!res.ok) throw new Error('İndirme başarısız.')
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = fileName
+      a.click()
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setError('Yedek indirilemedi: ' + err.message)
+    }
+  }
+
+  const handleDelete = async (fileName) => {
+    if (!window.confirm(`"${fileName}" yedeğini kalıcı olarak silmek istediğinize emin misiniz?`)) return
+    try {
+      setDeleting(fileName)
+      setError(null)
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/backup/${encodeURIComponent(fileName)}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Silme işlemi başarısız.')
+      setSuccessMsg(`${fileName} başarıyla silindi.`)
+      await fetchBackups()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setDeleting(null)
+    }
+  }
+
+  const handleCopyDir = () => {
+    if (config?.backupDir) {
+      navigator.clipboard.writeText(config.backupDir)
+      setCopiedDir(true)
+      setTimeout(() => setCopiedDir(false), 2000)
+    }
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Alert Banners */}
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl p-3 md:p-4 text-xs md:text-sm flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-base md:text-lg">error</span>
+            <span>{error}</span>
+          </div>
+          <button onClick={() => setError(null)} className="hover:opacity-75">
+            <span className="material-symbols-outlined text-base">close</span>
+          </button>
+        </div>
+      )}
+
+      {successMsg && (
+        <div className="bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400 rounded-xl p-3 md:p-4 text-xs md:text-sm flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-base md:text-lg">check_circle</span>
+            <span>{successMsg}</span>
+          </div>
+          <button onClick={() => setSuccessMsg(null)} className="hover:opacity-75">
+            <span className="material-symbols-outlined text-base">close</span>
+          </button>
+        </div>
+      )}
+
+      {/* Top Action & Overview Card */}
+      <div className="bg-surface-container-lowest rounded-2xl border border-theme-border p-4 md:p-6 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="material-symbols-outlined text-primary text-xl md:text-2xl">database</span>
+              <h2 className="text-base md:text-lg font-bold text-on-surface">Sistem & Veritabanı Yedekleme</h2>
+              <span className="bg-primary/10 text-primary text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">Admin Özel</span>
+            </div>
+            <p className="text-xs md:text-sm text-text-muted max-w-2xl leading-relaxed">
+              PostgreSQL veri tabanı (<code className="bg-surface-container px-1 py-0.5 rounded text-[11px]">aks_erp</code>), Keycloak kimlik doğrulaması ve tüm AKS ERP kullanıcı/rol tanımlarını tek tuşla geri yüklenebilir <code className="bg-surface-container px-1 py-0.5 rounded text-[11px]">.zip</code> arşivi olarak yedekleyin.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setShowRestoreModal(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-theme-border text-xs font-semibold text-text-muted hover:text-on-surface hover:bg-surface-container transition"
+            >
+              <span className="material-symbols-outlined text-base">help</span>
+              Nasıl Geri Yüklenir?
+            </button>
+
+            <button
+              onClick={handleTakeBackup}
+              disabled={creating}
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs md:text-sm font-bold text-white shadow-md transition ${
+                creating
+                  ? 'bg-primary/70 cursor-not-allowed'
+                  : 'primary-gradient hover:opacity-95 active:scale-95'
+              }`}
+            >
+              {creating ? (
+                <>
+                  <span className="material-symbols-outlined text-base animate-spin">progress_activity</span>
+                  <span>Yedek Alınıyor...</span>
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-base">backup</span>
+                  <span>Tek Tuşla Yedek Al</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Information Cards Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        {/* Cron Job Info */}
+        <div className="bg-surface-container-lowest rounded-xl border border-theme-border p-3.5 flex flex-col justify-between">
+          <div className="flex items-start justify-between">
+            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+              <span className="material-symbols-outlined text-base">schedule</span>
+            </div>
+            <span className="bg-emerald-500/10 text-emerald-600 text-[10px] font-bold px-2 py-0.5 rounded-full">Aktif</span>
+          </div>
+          <div className="mt-3">
+            <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Otomatik Cronjob</p>
+            <p className="text-sm font-bold text-on-surface mt-0.5">Günde 4 Kez</p>
+            <p className="text-[11px] text-text-muted mt-1">Saat 00:00, 06:00, 12:00, 18:00 otomatik çalışır.</p>
+          </div>
+        </div>
+
+        {/* Retention Info */}
+        <div className="bg-surface-container-lowest rounded-xl border border-theme-border p-3.5 flex flex-col justify-between">
+          <div className="flex items-start justify-between">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center">
+              <span className="material-symbols-outlined text-base">history_toggle_off</span>
+            </div>
+            <span className="bg-amber-500/10 text-amber-600 text-[10px] font-bold px-2 py-0.5 rounded-full">{config?.retentionDays || 7} Gün</span>
+          </div>
+          <div className="mt-3">
+            <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Saklama Politikası</p>
+            <p className="text-sm font-bold text-on-surface mt-0.5">Maks. 1 Hafta (7 Gün)</p>
+            <p className="text-[11px] text-text-muted mt-1">7 günden eski yedekler diskten otomatik temizlenir.</p>
+          </div>
+        </div>
+
+        {/* Backup Directory Info */}
+        <div className="bg-surface-container-lowest rounded-xl border border-theme-border p-3.5 flex flex-col justify-between">
+          <div className="flex items-start justify-between">
+            <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center">
+              <span className="material-symbols-outlined text-base">folder_open</span>
+            </div>
+            <button
+              onClick={handleCopyDir}
+              title="Dizini Kopyala"
+              className="text-text-muted hover:text-on-surface p-1 rounded hover:bg-surface-container transition"
+            >
+              <span className="material-symbols-outlined text-sm">{copiedDir ? 'check' : 'content_copy'}</span>
+            </button>
+          </div>
+          <div className="mt-3">
+            <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Kayıt Dizini (.env)</p>
+            <p className="text-xs font-mono font-semibold text-on-surface mt-0.5 truncate" title={config?.backupDir || ''}>
+              {config?.backupDir ? config.backupDir.split('\\').slice(-2).join('\\') || config.backupDir : 'Yükleniyor...'}
+            </p>
+            <p className="text-[11px] text-text-muted mt-1 truncate">BACKUP_DIR ortam değişkeni</p>
+          </div>
+        </div>
+
+        {/* Scope Info */}
+        <div className="bg-surface-container-lowest rounded-xl border border-theme-border p-3.5 flex flex-col justify-between">
+          <div className="flex items-start justify-between">
+            <div className="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-600 flex items-center justify-center">
+              <span className="material-symbols-outlined text-base">inventory_2</span>
+            </div>
+            <span className="bg-purple-500/10 text-purple-600 text-[10px] font-bold px-2 py-0.5 rounded-full">Tam Kapsam</span>
+          </div>
+          <div className="mt-3">
+            <p className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Yedek Kapsamı</p>
+            <p className="text-sm font-bold text-on-surface mt-0.5">Postgre + Keycloak + ERP</p>
+            <p className="text-[11px] text-text-muted mt-1">SQL şema/veri + Realm & Kullanıcı JSON</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Backups List Table */}
+      <div className="bg-surface-container-lowest rounded-2xl border border-theme-border overflow-hidden shadow-sm">
+        <div className="px-4 py-3 md:px-6 md:py-4 border-b border-theme-border flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm md:text-base font-bold text-on-surface">Mevcut Yedekler</h3>
+            <span className="bg-surface-container px-2 py-0.5 rounded-full text-xs font-bold text-text-muted">
+              {backups.length}
+            </span>
+          </div>
+          <button
+            onClick={fetchBackups}
+            disabled={loading}
+            className="flex items-center gap-1 text-xs text-text-muted hover:text-on-surface p-1.5 rounded-lg hover:bg-surface-container transition"
+            title="Yenile"
+          >
+            <span className={`material-symbols-outlined text-base ${loading ? 'animate-spin' : ''}`}>refresh</span>
+            <span>Yenile</span>
+          </button>
+        </div>
+
+        {loading && backups.length === 0 ? (
+          <div className="p-8 text-center text-text-muted text-xs md:text-sm flex flex-col items-center gap-2">
+            <span className="material-symbols-outlined text-2xl animate-spin">progress_activity</span>
+            <span>Yedekler yükleniyor...</span>
+          </div>
+        ) : backups.length === 0 ? (
+          <div className="p-8 text-center text-text-muted text-xs md:text-sm flex flex-col items-center gap-2">
+            <span className="material-symbols-outlined text-3xl text-text-muted/60">cloud_off</span>
+            <p className="font-semibold text-on-surface">Henüz yedek dosyası bulunmuyor</p>
+            <p className="text-xs">Yukarıdaki &quot;Tek Tuşla Yedek Al&quot; butonunu kullanarak ilk yedeğinizi oluşturabilirsiniz.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-surface-container-low text-text-muted font-bold text-[10px] uppercase tracking-wider border-b border-theme-border">
+                <tr>
+                  <th className="px-4 py-3">Tür</th>
+                  <th className="px-4 py-3">Dosya Adı</th>
+                  <th className="px-4 py-3">Boyut</th>
+                  <th className="px-4 py-3">Tarih</th>
+                  <th className="px-4 py-3 text-right">İşlemler</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-theme-border">
+                {backups.map((b) => {
+                  const dateStr = new Date(b.createdAt).toLocaleString('tr-TR', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                  const isDeletingThis = deleting === b.fileName
+
+                  return (
+                    <tr key={b.fileName} className="hover:bg-surface-container/50 transition">
+                      <td className="px-4 py-3">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            b.isAutomatic
+                              ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400'
+                              : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+                          }`}
+                        >
+                          <span className="material-symbols-outlined text-[12px]">
+                            {b.isAutomatic ? 'auto_mode' : 'touch_app'}
+                          </span>
+                          {b.type}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 font-mono font-medium text-on-surface flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-text-muted text-base">folder_zip</span>
+                        <span className="truncate max-w-xs">{b.fileName}</span>
+                      </td>
+                      <td className="px-4 py-3 text-text-muted font-mono">{b.sizeFormatted}</td>
+                      <td className="px-4 py-3 text-text-muted">{dateStr}</td>
+                      <td className="px-4 py-3 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleDownload(b.fileName)}
+                            title="İndir (.zip)"
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-theme-border text-[11px] font-semibold text-text-muted hover:text-on-surface hover:bg-surface-container transition"
+                          >
+                            <span className="material-symbols-outlined text-sm">download</span>
+                            <span>İndir</span>
+                          </button>
+
+                          <button
+                            onClick={() => handleDelete(b.fileName)}
+                            disabled={isDeletingThis}
+                            title="Yedeği Sil"
+                            className="p-1 rounded-lg text-red-500/80 hover:text-red-600 hover:bg-red-500/10 transition disabled:opacity-50"
+                          >
+                            <span className={`material-symbols-outlined text-base ${isDeletingThis ? 'animate-spin' : ''}`}>
+                              {isDeletingThis ? 'progress_activity' : 'delete'}
+                            </span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Restore Instructions Modal */}
+      {showRestoreModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={() => setShowRestoreModal(false)}>
+          <div
+            className="bg-surface-container-lowest rounded-2xl shadow-2xl border border-theme-border w-full max-w-2xl max-h-[85vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="px-5 py-4 border-b border-theme-border flex items-center justify-between primary-gradient rounded-t-2xl">
+              <div className="flex items-center gap-2 text-white">
+                <span className="material-symbols-outlined text-xl">restore_page</span>
+                <h3 className="font-bold text-sm md:text-base">AKS ERP Yedek Geri Yükleme Kılavuzu</h3>
+              </div>
+              <button onClick={() => setShowRestoreModal(false)} className="text-white/80 hover:text-white">
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+
+            <div className="overflow-y-auto p-5 space-y-4 text-xs md:text-sm text-text-muted leading-relaxed">
+              <div className="bg-surface-container p-3.5 rounded-xl border border-theme-border">
+                <p className="font-bold text-on-surface mb-1 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-base text-primary">folder_zip</span>
+                  1. Adım: Yedek Arşivini Açın
+                </p>
+                <p className="text-[11px] mb-2">İndirdiğiniz veya sunucudaki .zip dosyasını dışa aktarın:</p>
+                <code className="block bg-surface-container-highest p-2 rounded text-[11px] font-mono text-on-surface overflow-x-auto">
+                  Expand-Archive aks_manual_backup_xxx.zip -DestinationPath .\aks_restore
+                </code>
+              </div>
+
+              <div className="bg-surface-container p-3.5 rounded-xl border border-theme-border">
+                <p className="font-bold text-on-surface mb-1 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-base text-emerald-600">terminal</span>
+                  2. Adım: PostgreSQL Veritabanını Geri Yükleyin
+                </p>
+                <p className="text-[11px] mb-2">
+                  Paket içerisindeki <code className="font-mono font-bold">aks_erp.sql</code> dosyası veritabanındaki tüm tabloları, verileri ve ilişkileri temizleyip yeniden kurmak için hazır SQL scriptidir:
+                </p>
+                <code className="block bg-surface-container-highest p-2 rounded text-[11px] font-mono text-on-surface overflow-x-auto">
+                  psql -U postgres -d aks_erp -f .\aks_restore\aks_erp.sql
+                </code>
+              </div>
+
+              <div className="bg-surface-container p-3.5 rounded-xl border border-theme-border">
+                <p className="font-bold text-on-surface mb-1 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-base text-amber-600">security</span>
+                  3. Adım: Keycloak Kimlik Doğrulama Verileri
+                </p>
+                <p className="text-[11px]">
+                  Keycloak kullanıcıları ve rolleri <code className="font-mono font-bold">keycloak_realm.json</code> ve <code className="font-mono font-bold">keycloak_users.json</code> dosyalarında yer almaktadır. Gerekirse Keycloak Admin Console &gt; Realm Settings &gt; Action &gt; <em>Partial Import</em> sekmesinden içeri aktarılabilir.
+                </p>
+              </div>
+
+              <div className="bg-surface-container p-3.5 rounded-xl border border-theme-border">
+                <p className="font-bold text-on-surface mb-1 flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-base text-blue-600">check_circle</span>
+                  4. Adım: Servisleri Yeniden Başlatın
+                </p>
+                <p className="text-[11px]">
+                  Geri yükleme tamamlandıktan sonra AKS ERP backend servisini yeniden başlatarak son durumu doğrulayın.
+                </p>
+              </div>
+            </div>
+
+            <div className="px-5 py-3 border-t border-theme-border flex justify-end">
+              <button
+                onClick={() => setShowRestoreModal(false)}
+                className="px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:opacity-90 transition"
+              >
+                Anladım
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Settings() {
   const { t } = useTranslation()
+  const { isAdmin } = useAuth()
   const [tab, setTab] = useState('roles')
 
   const TABS = [
@@ -1426,6 +2305,8 @@ export default function Settings() {
     { key: 'order-status',        label: t('settings.orderStatus', 'Order Status'), icon: 'swap_horiz' },
     { key: 'purchasing-status',   label: t('settings.purchasingStatus', 'Purchasing Status'), icon: 'shopping_cart' },
     { key: 'machines',            label: t('settings.machines'), icon: 'precision_manufacturing' },
+    ...(isAdmin ? [{ key: 'vehicles', label: t('settings.vehicles', 'Araçlar'), icon: 'local_shipping' }] : []),
+    ...(isAdmin ? [{ key: 'backup', label: t('settings.backup', 'Yedekleme & Kurtarma'), icon: 'database' }] : []),
   ]
 
   return (
@@ -1458,6 +2339,24 @@ export default function Settings() {
       {tab === 'order-status'      && <OrderStatusTab />}
       {tab === 'purchasing-status' && <PurchasingStatusTab />}
       {tab === 'machines'          && <MachinesTab />}
+      {tab === 'vehicles' && (
+        isAdmin ? <VehiclesTab /> : (
+          <div className="p-8 text-center text-text-muted">
+            <span className="material-symbols-outlined text-4xl text-red-500 mb-2">lock</span>
+            <p className="font-bold text-on-surface">Erişim Reddedildi</p>
+            <p className="text-xs">Araç yönetimi sadece sistem yöneticileri (admin) tarafından görüntülenebilir.</p>
+          </div>
+        )
+      )}
+      {tab === 'backup' && (
+        isAdmin ? <BackupTab /> : (
+          <div className="p-8 text-center text-text-muted">
+            <span className="material-symbols-outlined text-4xl text-red-500 mb-2">lock</span>
+            <p className="font-bold text-on-surface">Erişim Reddedildi</p>
+            <p className="text-xs">Yedekleme yönetimi sadece sistem yöneticileri (admin) tarafından görüntülenebilir.</p>
+          </div>
+        )
+      )}
     </div>
   )
 }
