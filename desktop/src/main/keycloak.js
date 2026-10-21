@@ -2,7 +2,7 @@ import crypto from 'crypto'
 import { app } from 'electron'
 
 const isDev = !app.isPackaged
-const KEYCLOAK_URL = isDev ? 'http://keycloak.aksplastikambalaj.com' : 'http://172.18.0.1:8080'
+const KEYCLOAK_URL = isDev ? 'https://keycloak.aksplastikambalaj.com' : 'http://172.18.0.1:8080'
 const KEYCLOAK_URL_SECURE = isDev ? 'https://keycloak.aksplastikambalaj.com' : 'http://172.18.0.1:8080'
 const REALM = 'AKS'
 const CLIENT_ID = 'aks-erp-app'

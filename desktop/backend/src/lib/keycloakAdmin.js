@@ -26,14 +26,26 @@ async function findUserByEmail(email, token) {
     `${ADMIN_BASE}/users?email=${encodeURIComponent(email)}&exact=true`,
     { headers: { Authorization: `Bearer ${token}` } }
   )
-  if (!res.ok) return null
-  const users = await res.json()
-  return users[0] || null
+  if (res.ok) {
+    const users = await res.json()
+    if (users && users[0]) return users[0]
+  }
+
+  const userRes = await fetch(
+    `${ADMIN_BASE}/users?username=${encodeURIComponent(email)}&exact=true`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  )
+  if (userRes.ok) {
+    const users = await userRes.json()
+    if (users && users[0]) return users[0]
+  }
+
+  return null
 }
 
 async function createUser(email, name, password) {
   const token = await getAdminToken()
-  const [firstName, ...rest] = name.trim().split(' ')
+  const [firstName, ...rest] = (name || email || '').trim().split(' ')
   const lastName = rest.join(' ')
 
   const body = {
@@ -107,7 +119,7 @@ async function verifyPassword(email, password) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       grant_type: 'password',
-      client_id: 'aks-erp',
+      client_id: 'aks-erp-app',
       username: email,
       password,
     }).toString(),
@@ -122,10 +134,13 @@ async function verifyPassword(email, password) {
   return false
 }
 
-async function changePassword(email, newPassword) {
+async function changePassword(email, newPassword, name) {
   const token = await getAdminToken()
-  const kcUser = await findUserByEmail(email, token)
-  if (!kcUser) throw new Error('User not found in Keycloak')
+  let kcUser = await findUserByEmail(email, token)
+  if (!kcUser) {
+    await createUser(email, name || email, newPassword)
+    return
+  }
 
   const res = await fetch(`${ADMIN_BASE}/users/${kcUser.id}/reset-password`, {
     method: 'PUT',

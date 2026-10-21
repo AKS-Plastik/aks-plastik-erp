@@ -325,7 +325,7 @@ async function createBackup({ isAutomatic = false } = {}) {
         keycloakSuccess: keycloakExport.success,
         keycloakUserCount: keycloakExport.users?.length || 0,
         erpUserCount: erpDataExport.users?.length || 0,
-        appVersion: require('../../package.json').version || '2.0.10',
+        appVersion: require('../../package.json').version || '2.0.11',
       }
       archive.append(JSON.stringify(metadata, null, 2), { name: 'metadata.json' })
 
