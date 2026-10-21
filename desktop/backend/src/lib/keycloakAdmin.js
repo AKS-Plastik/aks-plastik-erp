@@ -119,7 +119,7 @@ async function verifyPassword(email, password) {
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
       grant_type: 'password',
-      client_id: 'aks-erp',
+      client_id: 'aks-erp-app',
       username: email,
       password,
     }).toString(),
