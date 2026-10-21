@@ -51,7 +51,8 @@ router.get('/', async (req, res) => {
         product: true,
         machine: true,
         operator: true,
-        deliveryRecords: { orderBy: { createdAt: 'desc' } }
+        deliveryRecords: { orderBy: { createdAt: 'desc' } },
+        logisticsLogs: { orderBy: { createdAt: 'desc' } }
       }
     })
     res.json(tasks)
@@ -155,6 +156,15 @@ router.patch('/:id/move', async (req, res) => {
     
     if (!task) return res.status(404).json({ error: 'Task not found' })
 
+    if (status === 'In Delivery') {
+      const hasDelivery = await prisma.deliveryRecord.findFirst({
+        where: { productionTaskId: task.id }
+      })
+      if (!hasDelivery) {
+        return res.status(400).json({ error: 'Teslimatta aşamasına geçmeden önce sevkiyat ve fotoğraf kaydı yapılmalıdır.' })
+      }
+    }
+
     const updates = []
     
     const shouldClearAssignment = status !== task.status && !isFinishedProduction(status)
@@ -233,7 +243,8 @@ router.patch('/:id/move', async (req, res) => {
           product: true,
           machine: true,
           operator: true,
-          deliveryRecords: { orderBy: { createdAt: 'desc' } }
+          deliveryRecords: { orderBy: { createdAt: 'desc' } },
+          logisticsLogs: { orderBy: { createdAt: 'desc' } }
         }
       }))
 
@@ -262,6 +273,42 @@ router.patch('/:id/move', async (req, res) => {
 
       const results = await prisma.$transaction(updates)
       returnedTask = results[0]
+
+      // Log logistics stage change
+      if (status && status !== task.status) {
+        const isRollback = (
+          (task.status === 'Delivered' && (status === 'In Delivery' || status === 'completed')) ||
+          (task.status === 'In Delivery' && status === 'completed') ||
+          (task.status === 'Invoiced' && (status === 'In Delivery' || status === 'completed'))
+        )
+        let desc = ''
+        if (status === 'Delivered') {
+          desc = task.isInvoiced
+            ? "Aşama 'Teslim Edildi (Faturalı)' olarak güncellendi."
+            : "Aşama 'Teslim Edildi (Faturasız)' olarak güncellendi."
+        } else if (isRollback) {
+          desc = `Aşama geri alındı: '${task.status}' -> '${status}'`
+        } else {
+          desc = `Aşama güncellendi: '${task.status}' -> '${status}'`
+        }
+
+        try {
+          await prisma.logisticsLog.create({
+            data: {
+              productionTaskId: task.id,
+              action: isRollback ? 'ROLLBACK' : 'STATUS_CHANGE',
+              fromStatus: task.status,
+              toStatus: status,
+              isInvoiced: task.isInvoiced,
+              description: desc,
+              userId: req.user?.id || null,
+              userName: req.user?.name || req.user?.email || 'Kullanıcı'
+            }
+          })
+        } catch (logErr) {
+          console.error('Failed to create logistics log in move:', logErr)
+        }
+      }
     }
 
     if (task.orderItemId) {
@@ -664,6 +711,10 @@ router.post('/:id/deliveries', upload.single('photo'), async (req, res) => {
       }
     }
 
+    if (!photoUrl) {
+      return res.status(400).json({ error: 'Araca yükleme / sevkiyat fotoğrafı zorunludur. Lütfen fotoğraf ekleyiniz.' })
+    }
+
     // Create the delivery record
     const deliveryRecord = await prisma.deliveryRecord.create({
       data: {
@@ -697,9 +748,28 @@ router.post('/:id/deliveries', upload.single('photo'), async (req, res) => {
         product: true,
         machine: true,
         operator: true,
-        deliveryRecords: { orderBy: { createdAt: 'desc' } }
+        deliveryRecords: { orderBy: { createdAt: 'desc' } },
+        logisticsLogs: { orderBy: { createdAt: 'desc' } }
       }
     })
+
+    // Log delivery dispatch
+    try {
+      await prisma.logisticsLog.create({
+        data: {
+          productionTaskId: task.id,
+          action: 'DELIVERY_DISPATCH',
+          fromStatus: task.status,
+          toStatus: nextStatus,
+          isInvoiced: task.isInvoiced,
+          description: `Sevkiyat çıkışı yapıldı. Taşıyıcı: ${carrierName}, Araç: ${vehicleInfo}${outsource ? ' (Outsource)' : ''}.`,
+          userId: req.user?.id || null,
+          userName: req.user?.name || req.user?.email || 'Kullanıcı'
+        }
+      })
+    } catch (e) {
+      console.error('Failed to log delivery dispatch:', e)
+    }
 
     res.status(201).json({
       success: true,
@@ -746,7 +816,118 @@ router.delete('/:taskId/deliveries/:deliveryId', adminOnly, async (req, res) => 
       where: { id: deliveryId }
     })
 
+    // Log delivery deletion
+    try {
+      await prisma.logisticsLog.create({
+        data: {
+          productionTaskId: taskId,
+          action: 'DELIVERY_DELETE',
+          description: 'Sevkiyat kaydı silindi (Yönetici işlemi).',
+          userId: req.user?.id || null,
+          userName: req.user?.name || req.user?.email || 'Yönetici'
+        }
+      })
+    } catch (e) {
+      console.error('Failed to log delivery deletion:', e)
+    }
+
     res.json({ success: true, message: 'Teslimat kaydı silindi' })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── Toggle / Update Invoice Status ──────────────────────────────────────────
+router.patch('/:id/invoice', async (req, res) => {
+  try {
+    const { isInvoiced, notes } = req.body
+    const task = await prisma.productionTask.findUnique({
+      where: { id: req.params.id }
+    })
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' })
+    }
+
+    const newInvoiced = Boolean(isInvoiced)
+    const userName = req.user?.name || req.user?.email || 'Kullanıcı'
+
+    const updatedTask = await prisma.productionTask.update({
+      where: { id: task.id },
+      data: {
+        isInvoiced: newInvoiced,
+        invoicedAt: newInvoiced ? new Date() : null,
+        invoicedById: newInvoiced ? req.user?.id : null,
+        invoicedByName: newInvoiced ? userName : null
+      },
+      include: {
+        orderItem: {
+          include: {
+            order: { select: { id: true, code: true, customer: true, salesRep: true, employee: true } },
+            product: true,
+            notes: { orderBy: { createdAt: 'asc' } }
+          }
+        },
+        product: true,
+        machine: true,
+        operator: true,
+        deliveryRecords: { orderBy: { createdAt: 'desc' } },
+        logisticsLogs: { orderBy: { createdAt: 'desc' } }
+      }
+    })
+
+    // Create log for invoice change
+    try {
+      await prisma.logisticsLog.create({
+        data: {
+          productionTaskId: task.id,
+          action: 'INVOICE_TOGGLE',
+          fromStatus: task.status,
+          toStatus: task.status,
+          isInvoiced: newInvoiced,
+          description: newInvoiced
+            ? `Fatura kesildi olarak işaretlendi.${notes ? ' Not: ' + String(notes).trim() : ''}`
+            : `Fatura kesildi işareti geri alındı (Faturasız yapıldı).${notes ? ' Not: ' + String(notes).trim() : ''}`,
+          userId: req.user?.id || null,
+          userName
+        }
+      })
+    } catch (e) {
+      console.error('Failed to log invoice toggle:', e)
+    }
+
+    // Refetch task with updated logs
+    const taskWithLogs = await prisma.productionTask.findUnique({
+      where: { id: task.id },
+      include: {
+        orderItem: {
+          include: {
+            order: { select: { id: true, code: true, customer: true, salesRep: true, employee: true } },
+            product: true,
+            notes: { orderBy: { createdAt: 'asc' } }
+          }
+        },
+        product: true,
+        machine: true,
+        operator: true,
+        deliveryRecords: { orderBy: { createdAt: 'desc' } },
+        logisticsLogs: { orderBy: { createdAt: 'desc' } }
+      }
+    })
+
+    res.json(taskWithLogs)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ── Get Logistics Logs for a task ───────────────────────────────────────────
+router.get('/:id/logistics-logs', async (req, res) => {
+  try {
+    const logs = await prisma.logisticsLog.findMany({
+      where: { productionTaskId: req.params.id },
+      orderBy: { createdAt: 'desc' }
+    })
+    res.json(logs)
   } catch (err) {
     res.status(500).json({ error: err.message })
   }

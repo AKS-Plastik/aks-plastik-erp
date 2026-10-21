@@ -770,6 +770,18 @@ export function DataProvider({ children }) {
     return data
   }
 
+  async function toggleProductionTaskInvoice(taskId, isInvoiced, notes = '') {
+    const res = await fetch(`${API_URL}/production-tasks/${taskId}/invoice`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ isInvoiced, notes })
+    })
+    const data = await res.json()
+    if (!res.ok) throw new Error(data.error || 'Fatura durumu güncellenemedi')
+    refreshProductionTasks()
+    return data
+  }
+
   const refreshEmployeeTasks = useCallback(() => {
     fetch(`${API_URL}/employee-tasks`, { headers: authHeaders })
       .then((r) => r.json())
@@ -863,7 +875,7 @@ export function DataProvider({ children }) {
       addMonthlyTask, updateMonthlyTask, deleteMonthlyTask,
       vehicles, refreshVehicles,
       productionTasks, addProductionTask, updateProductionTask, moveProductionTask, deleteProductionTask, rolloverProductionTask, refreshProductionTasks,
-      createProductionTaskDelivery, deleteProductionTaskDelivery,
+      createProductionTaskDelivery, deleteProductionTaskDelivery, toggleProductionTaskInvoice,
       employeeTasks, refreshEmployeeTasks, createEmployeeTask, updateEmployeeTask, moveEmployeeTask, deleteEmployeeTask, rolloverEmployeeTasks,
       isAdmin,
     }}>

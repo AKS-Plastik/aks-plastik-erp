@@ -617,7 +617,18 @@
     "deleteDeliveryConfirm": "Are you sure you want to delete this delivery record?",
     "adminOnlyDelete": "Admin only delete",
     "viewPhoto": "View Photo",
-    "recordedBy": "Recorded By"
+    "recordedBy": "Recorded By",
+    "statusDeliveredInvoiced": "Delivered (Invoiced)",
+    "statusDeliveredNotInvoiced": "Delivered (Uninvoiced)",
+    "deliveredInvoiced": "Delivered (Invoiced)",
+    "deliveredNotInvoiced": "Delivered (Uninvoiced)",
+    "logsTitle": "Logistics Logs (History)",
+    "noLogs": "No logistics logs yet.",
+    "invoiceDone": "Invoiced",
+    "invoicePending": "Not Invoiced",
+    "markInvoice": "Mark as Invoiced",
+    "revertInvoice": "Revert Invoice Status",
+    "revertStage": "Revert Stage"
   },
   "purchasing": {
     "title": "Purchasing",
