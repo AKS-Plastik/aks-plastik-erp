@@ -4,6 +4,15 @@ const { PrismaClient } = require('@prisma/client')
 const prisma = new PrismaClient()
 const router = Router()
 
+// Helper to check if a task is in completed production or post-production logistics
+const LOGISTIC_STATUS_SET = new Set([
+  'completed', 'Production Completed',
+  'In Delivery', 'in_delivery', 'Teslimatta',
+  'Invoiced', 'invoiced', 'E-Invoice', 'Fatura kesildi',
+  'Delivered', 'delivered', 'Teslim Edildi'
+])
+const isFinishedProduction = (st) => Boolean(st && LOGISTIC_STATUS_SET.has(st))
+
 // Get all production tasks
 router.get('/', async (req, res) => {
   try {
@@ -12,7 +21,7 @@ router.get('/', async (req, res) => {
       include: {
         orderItem: {
           include: {
-            order: { select: { code: true, customer: true, salesRep: true, employee: true } },
+            order: { select: { id: true, code: true, customer: true, salesRep: true, employee: true } },
             product: true,
             notes: { orderBy: { createdAt: 'asc' } }
           }
@@ -125,7 +134,7 @@ router.patch('/:id/move', async (req, res) => {
 
     const updates = []
     
-    const shouldClearAssignment = status !== task.status && status !== 'completed'
+    const shouldClearAssignment = status !== task.status && !isFinishedProduction(status)
 
     let returnedTask = null;
 
@@ -159,23 +168,26 @@ router.patch('/:id/move', async (req, res) => {
       }))
 
       if (task.orderItemId) {
-         if (status === 'completed' && task.status !== 'completed') {
-           updates.push(prisma.orderItem.update({
-             where: { id: task.orderItemId },
-             data: {
-               inProductionQuantity: { decrement: splitQuantity },
-               producedQuantity: { increment: splitQuantity }
-             }
-           }))
-         } else if (task.status === 'completed' && status !== 'completed') {
-           updates.push(prisma.orderItem.update({
-             where: { id: task.orderItemId },
-             data: {
-               inProductionQuantity: { increment: splitQuantity },
-               producedQuantity: { decrement: splitQuantity }
-             }
-           }))
-         }
+        const willBeFinished = isFinishedProduction(status)
+        const wasFinished = isFinishedProduction(task.status)
+
+        if (willBeFinished && !wasFinished) {
+          updates.push(prisma.orderItem.update({
+            where: { id: task.orderItemId },
+            data: {
+              inProductionQuantity: { decrement: splitQuantity },
+              producedQuantity: { increment: splitQuantity }
+            }
+          }))
+        } else if (!willBeFinished && wasFinished) {
+          updates.push(prisma.orderItem.update({
+            where: { id: task.orderItemId },
+            data: {
+              inProductionQuantity: { increment: splitQuantity },
+              producedQuantity: { decrement: splitQuantity }
+            }
+          }))
+        }
       }
       
       const results = await prisma.$transaction(updates)
@@ -194,7 +206,7 @@ router.patch('/:id/move', async (req, res) => {
         where: { id: task.id },
         data: updatedData,
         include: {
-          orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true, notes: { orderBy: { createdAt: 'asc' } } } },
+          orderItem: { include: { order: { select: { id: true, code: true, customer: true, salesRep: true, employee: true } }, product: true, notes: { orderBy: { createdAt: 'asc' } } } },
           product: true,
           machine: true,
           operator: true,
@@ -202,8 +214,10 @@ router.patch('/:id/move', async (req, res) => {
       }))
 
       if (task.orderItemId) {
-        // If task is completed, shift quantity from inProduction to produced
-        if (status === 'completed' && task.status !== 'completed') {
+        const willBeFinished = isFinishedProduction(status)
+        const wasFinished = isFinishedProduction(task.status)
+
+        if (willBeFinished && !wasFinished) {
           updates.push(prisma.orderItem.update({
             where: { id: task.orderItemId },
             data: {
@@ -211,8 +225,7 @@ router.patch('/:id/move', async (req, res) => {
               producedQuantity: { increment: task.quantity }
             }
           }))
-        } else if (task.status === 'completed' && status !== 'completed') {
-          // Revert if moved out of completed
+        } else if (!willBeFinished && wasFinished) {
           updates.push(prisma.orderItem.update({
             where: { id: task.orderItemId },
             data: {
@@ -231,7 +244,9 @@ router.patch('/:id/move', async (req, res) => {
       // Check if the whole orderItem is completed
       const updatedItem = await prisma.orderItem.findUnique({ where: { id: task.orderItemId } })
       if (updatedItem.producedQuantity >= updatedItem.quantity) {
-        await prisma.orderItem.update({ where: { id: updatedItem.id }, data: { status: 'Production Completed' } })
+        if (updatedItem.status === 'Pending' || updatedItem.status === 'In-Production') {
+          await prisma.orderItem.update({ where: { id: updatedItem.id }, data: { status: 'Production Completed' } })
+        }
       } else if (updatedItem.inProductionQuantity > 0 || updatedItem.producedQuantity > 0) {
         await prisma.orderItem.update({ where: { id: updatedItem.id }, data: { status: 'In-Production' } })
       }
@@ -241,7 +256,7 @@ router.patch('/:id/move', async (req, res) => {
       const allCompleted = allItems.every(i => i.producedQuantity >= i.quantity)
       const order = await prisma.order.findUnique({ where: { id: task.orderItem.orderId } })
       
-      if (allCompleted && order.status !== 'Production Completed') {
+      if (allCompleted && (order.status === 'Draft' || order.status === 'Processing' || order.status === 'Confirmed' || order.status === 'In-Production')) {
         await prisma.order.update({ where: { id: task.orderItem.orderId }, data: { status: 'Production Completed' } })
       } else if (!allCompleted && order.status === 'Production Completed') {
         await prisma.order.update({ where: { id: task.orderItem.orderId }, data: { status: 'In-Production' } })
@@ -258,17 +273,42 @@ router.patch('/:id/move', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { machineId, operatorId, quantity, status, date } = req.body
+    const task = await prisma.productionTask.findUnique({ where: { id: req.params.id } })
+    if (!task) return res.status(404).json({ error: 'Task not found' })
+
+    if (task.orderItemId && status && status !== task.status) {
+      const willBeFinished = isFinishedProduction(status)
+      const wasFinished = isFinishedProduction(task.status)
+      if (willBeFinished && !wasFinished) {
+        await prisma.orderItem.update({
+          where: { id: task.orderItemId },
+          data: {
+            inProductionQuantity: { decrement: task.quantity },
+            producedQuantity: { increment: task.quantity }
+          }
+        })
+      } else if (!willBeFinished && wasFinished) {
+        await prisma.orderItem.update({
+          where: { id: task.orderItemId },
+          data: {
+            inProductionQuantity: { increment: task.quantity },
+            producedQuantity: { decrement: task.quantity }
+          }
+        })
+      }
+    }
+
     const updatedTask = await prisma.productionTask.update({
       where: { id: req.params.id },
       data: {
-        ...(machineId && { machineId: parseInt(machineId) }),
-        ...(operatorId && { operatorId }),
+        ...(machineId !== undefined && { machineId: machineId ? parseInt(machineId) : null }),
+        ...(operatorId !== undefined && { operatorId: operatorId || null }),
         ...(quantity && { quantity: parseInt(quantity) }),
         ...(status && { status }),
         ...(date !== undefined && { date }),
       },
       include: {
-        orderItem: { include: { order: { select: { code: true, customer: true, salesRep: true, employee: true } }, product: true, notes: { orderBy: { createdAt: 'asc' } } } },
+        orderItem: { include: { order: { select: { id: true, code: true, customer: true, salesRep: true, employee: true } }, product: true, notes: { orderBy: { createdAt: 'asc' } } } },
         machine: true,
         operator: true,
       }
@@ -285,7 +325,7 @@ router.delete('/:id', async (req, res) => {
     const task = await prisma.productionTask.findUnique({ where: { id: req.params.id } })
     if (task) {
       if (task.orderItemId) {
-        if (task.status === 'completed') {
+        if (isFinishedProduction(task.status)) {
           await prisma.orderItem.update({
             where: { id: task.orderItemId },
             data: { producedQuantity: { decrement: task.quantity } }

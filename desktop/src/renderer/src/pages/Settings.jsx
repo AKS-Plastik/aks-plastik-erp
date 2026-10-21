@@ -1454,6 +1454,400 @@ function PurchasingStatusTab() {
   )
 }
 
+// ─── Vehicles Tab (Admin Only) ──────────────────────────────────────────────
+function VehiclesTab() {
+  const { t } = useTranslation()
+  const { getToken, isAdmin } = useAuth()
+  const [vehicles, setVehicles] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
+  const [error, setError] = useState(null)
+  const [successMsg, setSuccessMsg] = useState(null)
+  const [form, setForm] = useState({
+    name: '',
+    brand: '',
+    model: ''
+  })
+
+  const fetchVehicles = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/vehicles`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        throw new Error(data.error || 'Araç listesi alınamadı.')
+      }
+      const data = await res.json()
+      setVehicles(Array.isArray(data) ? data : [])
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [getToken])
+
+  useEffect(() => {
+    fetchVehicles()
+  }, [fetchVehicles])
+
+  if (!isAdmin) {
+    return (
+      <div className="p-8 text-center text-text-muted">
+        <span className="material-symbols-outlined text-4xl text-red-500 mb-2">lock</span>
+        <p className="font-bold text-on-surface">Erişim Reddedildi</p>
+        <p className="text-xs">Araç yönetimi sadece sistem yöneticileri (admin) tarafından görüntülenebilir.</p>
+      </div>
+    )
+  }
+
+  const handleCreateVehicle = async (e) => {
+    if (e) e.preventDefault()
+    if (!form.name.trim()) {
+      setError('Lütfen araç adını girin.')
+      return
+    }
+    if (!form.brand.trim()) {
+      setError('Lütfen araç markasını girin.')
+      return
+    }
+    if (!form.model.trim()) {
+      setError('Lütfen araç modelini girin.')
+      return
+    }
+
+    try {
+      setSaving(true)
+      setError(null)
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/vehicles`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: form.name.trim(),
+          brand: form.brand.trim(),
+          model: form.model.trim()
+        })
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Araç eklenemedi.')
+      }
+      setSuccessMsg(`${data.name} başarıyla eklendi.`)
+      setShowAddModal(false)
+      setForm({ name: '', brand: '', model: '' })
+      await fetchVehicles()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDeleteVehicle = async (vehicle) => {
+    const confirmMsg = `${vehicle.name} (${vehicle.brand} ${vehicle.model}) aracını silmek istediğinize emin misiniz?`
+    if (!window.confirm(confirmMsg)) return
+
+    try {
+      setDeletingId(vehicle.id)
+      setError(null)
+      const token = await getToken()
+      const res = await fetch(`${API_URL}/vehicles/${vehicle.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Araç silinemedi.')
+      }
+      setSuccessMsg(`${vehicle.name} başarıyla silindi.`)
+      await fetchVehicles()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  const filteredVehicles = vehicles.filter((v) => {
+    const q = search.toLowerCase()
+    return (
+      v.name?.toLowerCase().includes(q) ||
+      v.brand?.toLowerCase().includes(q) ||
+      v.model?.toLowerCase().includes(q)
+    )
+  })
+
+  return (
+    <div className="space-y-4">
+      {/* Alert Messages */}
+      {error && (
+        <div className="bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 rounded-xl p-3 md:p-4 text-xs md:text-sm flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-base md:text-lg">error</span>
+            <span>{error}</span>
+          </div>
+          <button onClick={() => setError(null)} className="hover:opacity-75">
+            <span className="material-symbols-outlined text-base">close</span>
+          </button>
+        </div>
+      )}
+
+      {successMsg && (
+        <div className="bg-green-500/10 border border-green-500/20 text-green-700 dark:text-green-400 rounded-xl p-3 md:p-4 text-xs md:text-sm flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-base md:text-lg">check_circle</span>
+            <span>{successMsg}</span>
+          </div>
+          <button onClick={() => setSuccessMsg(null)} className="hover:opacity-75">
+            <span className="material-symbols-outlined text-base">close</span>
+          </button>
+        </div>
+      )}
+
+      {/* Header & Action Bar */}
+      <div className="bg-surface-container-lowest rounded-2xl border border-theme-border p-4 md:p-5 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary text-xl md:text-2xl">local_shipping</span>
+              <h2 className="text-base md:text-lg font-bold text-on-surface">{t('settings.vehicles', 'Araçlar')}</h2>
+              <span className="bg-primary/10 text-primary text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full">Admin Özel</span>
+              <span className="bg-surface-container text-text-muted text-[10px] font-bold px-2 py-0.5 rounded-full">
+                {vehicles.length} Araç
+              </span>
+            </div>
+            <p className="text-xs text-text-muted mt-1">
+              {t('settings.vehiclesDesc', 'Sevkiyat ve lojistikte kullanılan araçları yönetin.')}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 sm:w-56">
+              <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted text-base">search</span>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Araç, marka, model ara..."
+                className="w-full bg-surface-container border border-theme-border rounded-xl pl-8 pr-3 py-1.5 text-xs text-on-surface placeholder:text-text-muted outline-none focus:border-primary transition"
+              />
+            </div>
+
+            <button
+              onClick={() => {
+                setError(null)
+                setForm({ name: '', brand: '', model: '' })
+                setShowAddModal(true)
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white primary-gradient hover:opacity-95 shadow-md shadow-primary/20 shrink-0 transition"
+            >
+              <span className="material-symbols-outlined text-base">add</span>
+              <span>{t('settings.addVehicle', 'Yeni Araç Ekle')}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Vehicles Table */}
+      <div className="bg-surface-container-lowest rounded-2xl border border-theme-border overflow-hidden shadow-sm">
+        {loading ? (
+          <div className="py-12 flex flex-col items-center justify-center text-text-muted gap-2">
+            <span className="material-symbols-outlined text-3xl animate-spin text-primary">progress_activity</span>
+            <p className="text-xs font-medium">Araçlar yükleniyor...</p>
+          </div>
+        ) : filteredVehicles.length === 0 ? (
+          <div className="py-12 flex flex-col items-center justify-center text-center p-4">
+            <div className="w-12 h-12 rounded-2xl bg-surface-container flex items-center justify-center text-text-muted mb-3">
+              <span className="material-symbols-outlined text-2xl">local_shipping</span>
+            </div>
+            <p className="text-sm font-bold text-on-surface">
+              {search ? 'Arama kriterine uygun araç bulunamadı' : t('settings.noVehicles', 'Henüz kayıtlı araç bulunmuyor')}
+            </p>
+            <p className="text-xs text-text-muted mt-1 max-w-sm">
+              {search ? `"${search}" araması ile eşleşen bir araç kaydı yok.` : 'Lojistik ve sevkiyat takibinde kullanmak için yeni araçlar ekleyebilirsiniz.'}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-theme-border bg-surface-container-low/50 text-text-muted uppercase tracking-wider text-[10px] font-bold">
+                  <th className="py-3 px-4">Araç Adı</th>
+                  <th className="py-3 px-4">Marka</th>
+                  <th className="py-3 px-4">Model</th>
+                  <th className="py-3 px-4">Kayıt Tarihi</th>
+                  <th className="py-3 px-4 text-right">İşlemler</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-theme-border text-on-surface">
+                {filteredVehicles.map((vehicle) => {
+                  const isDeleting = deletingId === vehicle.id
+                  const dateStr = vehicle.createdAt
+                    ? new Date(vehicle.createdAt).toLocaleDateString('tr-TR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      })
+                    : '—'
+
+                  return (
+                    <tr
+                      key={vehicle.id}
+                      className="hover:bg-surface-container-high/30 transition group"
+                    >
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0">
+                            <span className="material-symbols-outlined text-base">local_shipping</span>
+                          </div>
+                          <span className="font-bold text-on-surface">{vehicle.name}</span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 font-semibold text-text-muted">
+                        {vehicle.brand}
+                      </td>
+                      <td className="py-3 px-4 font-semibold text-text-muted">
+                        {vehicle.model}
+                      </td>
+                      <td className="py-3 px-4 text-text-muted font-mono text-[11px]">
+                        {dateStr}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <button
+                          onClick={() => handleDeleteVehicle(vehicle)}
+                          disabled={isDeleting}
+                          title="Aracı Sil"
+                          className="p-1.5 rounded-lg text-red-500 hover:text-red-600 hover:bg-red-500/10 transition disabled:opacity-50"
+                        >
+                          <span className={`material-symbols-outlined text-base ${isDeleting ? 'animate-spin' : ''}`}>
+                            {isDeleting ? 'progress_activity' : 'delete'}
+                          </span>
+                        </button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Add Vehicle Modal */}
+      {showAddModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={() => !saving && setShowAddModal(false)}
+        >
+          <div
+            className="bg-surface-container-lowest rounded-2xl shadow-2xl border border-theme-border w-full max-w-md flex flex-col overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="px-5 py-4 border-b border-theme-border flex items-center justify-between primary-gradient text-white">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-xl">local_shipping</span>
+                <h3 className="font-bold text-sm md:text-base">{t('settings.addVehicle', 'Yeni Araç Ekle')}</h3>
+              </div>
+              <button
+                onClick={() => !saving && setShowAddModal(false)}
+                className="text-white/80 hover:text-white transition"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <form onSubmit={handleCreateVehicle} className="p-5 space-y-4">
+              <div>
+                <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
+                  {t('settings.vehicleName', 'Araç Adı')} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  placeholder="örn: 34 AKS 101 veya Kamyonet-1"
+                  value={form.name}
+                  onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
+                  className="w-full bg-surface-container border border-theme-border rounded-xl px-3 py-2 text-xs md:text-sm text-on-surface placeholder:text-text-muted outline-none focus:border-primary transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
+                  {t('settings.brand', 'Marka')} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="örn: Ford, Mercedes-Benz, Iveco"
+                  value={form.brand}
+                  onChange={(e) => setForm((p) => ({ ...p, brand: e.target.value }))}
+                  className="w-full bg-surface-container border border-theme-border rounded-xl px-3 py-2 text-xs md:text-sm text-on-surface placeholder:text-text-muted outline-none focus:border-primary transition"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1.5">
+                  {t('settings.model', 'Model')} <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="örn: Transit 350L, Actros, Daily"
+                  value={form.model}
+                  onChange={(e) => setForm((p) => ({ ...p, model: e.target.value }))}
+                  className="w-full bg-surface-container border border-theme-border rounded-xl px-3 py-2 text-xs md:text-sm text-on-surface placeholder:text-text-muted outline-none focus:border-primary transition"
+                />
+              </div>
+
+              {/* Modal Footer Buttons */}
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 border border-theme-border rounded-xl py-2 text-xs font-semibold text-text-muted hover:bg-surface-container transition"
+                >
+                  {t('common.cancel', 'İptal')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="flex-1 primary-gradient text-white rounded-xl py-2 text-xs font-bold hover:opacity-95 shadow-md shadow-primary/20 transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  {saving ? (
+                    <>
+                      <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                      <span>{t('common.saving', 'Kaydediliyor...')}</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-sm">save</span>
+                      <span>{t('common.save', 'Kaydet')}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Backup Tab (Admin Only) ────────────────────────────────────────────────
 function BackupTab() {
   const { t } = useTranslation()
@@ -1911,6 +2305,7 @@ export default function Settings() {
     { key: 'order-status',        label: t('settings.orderStatus', 'Order Status'), icon: 'swap_horiz' },
     { key: 'purchasing-status',   label: t('settings.purchasingStatus', 'Purchasing Status'), icon: 'shopping_cart' },
     { key: 'machines',            label: t('settings.machines'), icon: 'precision_manufacturing' },
+    ...(isAdmin ? [{ key: 'vehicles', label: t('settings.vehicles', 'Araçlar'), icon: 'local_shipping' }] : []),
     ...(isAdmin ? [{ key: 'backup', label: t('settings.backup', 'Yedekleme & Kurtarma'), icon: 'database' }] : []),
   ]
 
@@ -1944,6 +2339,15 @@ export default function Settings() {
       {tab === 'order-status'      && <OrderStatusTab />}
       {tab === 'purchasing-status' && <PurchasingStatusTab />}
       {tab === 'machines'          && <MachinesTab />}
+      {tab === 'vehicles' && (
+        isAdmin ? <VehiclesTab /> : (
+          <div className="p-8 text-center text-text-muted">
+            <span className="material-symbols-outlined text-4xl text-red-500 mb-2">lock</span>
+            <p className="font-bold text-on-surface">Erişim Reddedildi</p>
+            <p className="text-xs">Araç yönetimi sadece sistem yöneticileri (admin) tarafından görüntülenebilir.</p>
+          </div>
+        )
+      )}
       {tab === 'backup' && (
         isAdmin ? <BackupTab /> : (
           <div className="p-8 text-center text-text-muted">

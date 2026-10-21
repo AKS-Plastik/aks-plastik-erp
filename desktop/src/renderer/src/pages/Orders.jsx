@@ -14,6 +14,7 @@ import SearchableSelect from "../components/SearchableSelect"
 
 const ITEMS_PER_PAGE = 10
 const ORDER_STATUSES = ['Processing', 'Confirmed', 'In-Production', 'Production Completed', 'E-WayBill', 'In Delivery', 'E-Invoice', 'Delivered']
+const ORDER_EDIT_STATUSES = ['Processing', 'Confirmed', 'In-Production', 'Production Completed']
 const ORDER_COLUMNS = ['Order Code', 'Customer', 'Sales Rep', 'Status', 'Notes', 'Product Name', 'Quantity', 'Unit', 'Unit Price', 'VAT %', 'Currency']
 
 const SHIPMENT_TYPES = [
@@ -88,7 +89,7 @@ function OrderDetailModal({
   const [savingNoteId, setSavingNoteId] = useState(null)
   const [deletingNoteId, setDeletingNoteId] = useState(null)
   const isAdmin = currentUser?.role === 'admin'
-  const nextStatus = ORDER_STATUSES[ORDER_STATUSES.indexOf(localStatus) + 1]
+  const nextStatus = ORDER_EDIT_STATUSES[ORDER_EDIT_STATUSES.indexOf(localStatus) + 1]
 
   const userDept = currentUser?.department
   const roleHasStatus = userDept ? (statusPermissions[userDept] || []).includes(localStatus) : false
@@ -456,7 +457,10 @@ function OrderDetailModal({
                   onChange={(e) => setPendingStatus(e.target.value === localStatus ? null : e.target.value)}
                   className="w-full md:flex-1 bg-surface-container-lowest border border-theme-border rounded-lg px-2 md:px-3 py-1.5 md:py-2 text-[11px] md:text-sm text-on-surface outline-none focus:border-primary"
                 >
-                  {ORDER_STATUSES.map((s) => <option key={s} value={s}>{t('status.' + s.replace(/-/g, ''), s)}</option>)}
+                  {ORDER_EDIT_STATUSES.map((s) => <option key={s} value={s}>{t('status.' + s.replace(/-/g, ''), s)}</option>)}
+                  {!ORDER_EDIT_STATUSES.includes(localStatus) && (
+                    <option value={localStatus} disabled>{t('status.' + localStatus.replace(/[\s-]/g, ''), localStatus)}</option>
+                  )}
                 </select>
               </div>
             ) : (
