@@ -447,6 +447,33 @@ export function DataProvider({ children }) {
         }),
       }
     }))
+    setProductionTasks((prev) => prev.map((t) => {
+      if (t.orderItemId === orderItemId || t.orderItem?.id === orderItemId) {
+        return {
+          ...t,
+          orderItem: t.orderItem ? {
+            ...t.orderItem,
+            notes: [...(t.orderItem.notes || []), data],
+          } : t.orderItem,
+        }
+      }
+      return t
+    }))
+    setEmployeeTasks((prev) => prev.map((et) => {
+      if (et.productionTask?.orderItem?.id === orderItemId) {
+        return {
+          ...et,
+          productionTask: {
+            ...et.productionTask,
+            orderItem: {
+              ...et.productionTask.orderItem,
+              notes: [...(et.productionTask.orderItem.notes || []), data],
+            },
+          },
+        }
+      }
+      return et
+    }))
     return data
   }
 
@@ -470,6 +497,33 @@ export function DataProvider({ children }) {
           }
         }),
       }
+    }))
+    setProductionTasks((prev) => prev.map((t) => {
+      if (t.orderItemId === orderItemId || t.orderItem?.id === orderItemId) {
+        return {
+          ...t,
+          orderItem: t.orderItem ? {
+            ...t.orderItem,
+            notes: (t.orderItem.notes || []).filter((n) => n.id !== noteId),
+          } : t.orderItem,
+        }
+      }
+      return t
+    }))
+    setEmployeeTasks((prev) => prev.map((et) => {
+      if (et.productionTask?.orderItem?.id === orderItemId) {
+        return {
+          ...et,
+          productionTask: {
+            ...et.productionTask,
+            orderItem: {
+              ...et.productionTask.orderItem,
+              notes: (et.productionTask.orderItem.notes || []).filter((n) => n.id !== noteId),
+            },
+          },
+        }
+      }
+      return et
     }))
   }
 
