@@ -10,14 +10,33 @@ const router = Router()
 async function canAddOrderNote(user) {
   if (user.role === 'admin' || user.department === 'Sales Manager') return true
   if (user.employeeId) {
+    const emp = await prisma.employee.findUnique({ where: { id: user.employeeId } })
+    if (emp?.isManager) return true
     const empPerms = await prisma.employeePermission.findMany({ where: { employeeId: user.employeeId } })
     const pages = empPerms.map((p) => p.page)
     if (pages.includes('-orders-note-create')) return false
-    if (pages.includes('orders-note-create')) return true
+    if (
+      pages.includes('orders-note-create') ||
+      pages.includes('production') ||
+      pages.includes('production-tasks') ||
+      pages.includes('production-planning') ||
+      pages.includes('production-planning-edit')
+    ) return true
   }
   if (user.department) {
     const rolePerm = await prisma.rolePermission.findFirst({
-      where: { role: user.department, page: 'orders-note-create' }
+      where: {
+        role: user.department,
+        page: {
+          in: [
+            'orders-note-create',
+            'production',
+            'production-tasks',
+            'production-planning',
+            'production-planning-edit',
+          ],
+        },
+      },
     })
     if (rolePerm) return true
   }
@@ -27,14 +46,33 @@ async function canAddOrderNote(user) {
 async function canDeleteOrderNote(user) {
   if (user.role === 'admin' || user.department === 'Sales Manager') return true
   if (user.employeeId) {
+    const emp = await prisma.employee.findUnique({ where: { id: user.employeeId } })
+    if (emp?.isManager) return true
     const empPerms = await prisma.employeePermission.findMany({ where: { employeeId: user.employeeId } })
     const pages = empPerms.map((p) => p.page)
     if (pages.includes('-orders-note-delete')) return false
-    if (pages.includes('orders-note-delete')) return true
+    if (
+      pages.includes('orders-note-delete') ||
+      pages.includes('production') ||
+      pages.includes('production-tasks') ||
+      pages.includes('production-planning') ||
+      pages.includes('production-planning-edit')
+    ) return true
   }
   if (user.department) {
     const rolePerm = await prisma.rolePermission.findFirst({
-      where: { role: user.department, page: 'orders-note-delete' }
+      where: {
+        role: user.department,
+        page: {
+          in: [
+            'orders-note-delete',
+            'production',
+            'production-tasks',
+            'production-planning',
+            'production-planning-edit',
+          ],
+        },
+      },
     })
     if (rolePerm) return true
   }

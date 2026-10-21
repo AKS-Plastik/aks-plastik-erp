@@ -69,10 +69,67 @@ function getTaskNotes(task, orders) {
   return []
 }
 
-function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete, isAdmin, onCreateEmployeeTask, orders }) {
+function getTaskOrderItemId(task, orders) {
+  if (task?.orderItem?.id) return task.orderItem.id
+  if (task?.orderItemId) return task.orderItemId
+  if (orders) {
+    for (const order of orders) {
+      const it = (order.items || []).find((item) => item.id === task.orderItemId)
+      if (it) return it.id
+    }
+  }
+  return null
+}
+
+function CardDetailModal({
+  task,
+  machines,
+  employees,
+  onClose,
+  onSave,
+  onDelete,
+  isAdmin,
+  onCreateEmployeeTask,
+  orders,
+  canAddNote = true,
+  canDeleteNote = true,
+  addOrderItemNote,
+  deleteOrderItemNote,
+}) {
   const { t } = useTranslation()
   const todayIso = getLocalTodayIso()
   const taskNotes = getTaskNotes(task, orders)
+  const orderItemId = getTaskOrderItemId(task, orders)
+  const [newNoteText, setNewNoteText] = useState('')
+  const [savingNote, setSavingNote] = useState(false)
+  const [deletingNoteId, setDeletingNoteId] = useState(null)
+
+  async function handleAddNote() {
+    const text = newNoteText.trim()
+    if (!text || !orderItemId || !addOrderItemNote) return
+    setSavingNote(true)
+    try {
+      await addOrderItemNote(orderItemId, text)
+      setNewNoteText('')
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setSavingNote(false)
+    }
+  }
+
+  async function handleDeleteNote(noteId) {
+    if (!confirm(t('orders.deleteNoteConfirm', 'Bu notu silmek istediğinize emin misiniz?'))) return
+    if (!deleteOrderItemNote || !orderItemId) return
+    setDeletingNoteId(noteId)
+    try {
+      await deleteOrderItemNote(orderItemId, noteId)
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setDeletingNoteId(null)
+    }
+  }
   const [editing, setEditing] = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [form, setForm] = useState({
@@ -164,33 +221,86 @@ function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete,
             <DetailRow icon="schedule" label={t('common.created')} value={fmtDate(task.createdAt)} />
 
             {/* Kalem Notları (OrderItem Notes) */}
-            {taskNotes.length > 0 && (
+            {orderItemId && (
               <div className="mt-4 pt-4 border-t border-theme-border">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="material-symbols-outlined text-[18px] text-red-600 dark:text-red-400">sticky_note_2</span>
-                  <span className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">
-                    {t('orders.itemNotes', 'Sipariş Kalem Notları')} ({taskNotes.length})
-                  </span>
-                  <span className="text-[10px] text-text-muted ml-auto font-medium">
+                <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[18px] text-red-600 dark:text-red-400">sticky_note_2</span>
+                    <span className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">
+                      {t('orders.itemNotes', 'Sipariş Kalem Notları')}
+                    </span>
+                    <span className="text-[11px] font-bold text-red-600 bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded-full border border-red-200 dark:border-red-900/50">
+                      {taskNotes.length}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-text-muted font-medium">
                     {t('orders.parentItemNotesInfo', 'Ana sipariş kalemine ait notlar')}
                   </span>
                 </div>
-                <div className="flex flex-col gap-2.5">
-                  {taskNotes.map((n) => (
-                    <div key={n.id} className="bg-red-50/70 dark:bg-red-950/20 border border-red-200/80 dark:border-red-900/40 rounded-xl p-3">
-                      <div className="flex items-center justify-between gap-2 mb-1.5">
-                        <span className="text-xs font-bold text-red-700 dark:text-red-300 flex items-center gap-1.5">
-                          <span className="material-symbols-outlined text-[14px]">person</span>
-                          {n.authorName || 'Kullanıcı'}
-                        </span>
-                        <span className="text-[10px] text-red-600/80 dark:text-red-400/80 font-mono">
-                          {new Date(n.createdAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </span>
+
+                <div className="flex flex-col gap-2 max-h-52 overflow-y-auto pr-1">
+                  {taskNotes.length === 0 ? (
+                    <p className="text-xs text-text-muted italic py-1 font-normal">
+                      {t('orders.noItemNotes', 'Bu kaleme ait not bulunmamaktadır.')}
+                    </p>
+                  ) : (
+                    taskNotes.map((n) => (
+                      <div key={n.id} className="bg-red-50/70 dark:bg-red-950/20 border border-red-200/80 dark:border-red-900/40 rounded-xl p-3 flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <span className="text-xs font-bold text-red-700 dark:text-red-300 flex items-center gap-1.5">
+                              <span className="material-symbols-outlined text-[14px]">person</span>
+                              {n.authorName || 'Kullanıcı'}
+                            </span>
+                            <span className="text-[10px] text-red-600/80 dark:text-red-400/80 font-mono">
+                              {new Date(n.createdAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-xs text-on-surface whitespace-pre-wrap leading-relaxed">{n.note}</p>
+                        </div>
+                        {canDeleteNote && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteNote(n.id)}
+                            disabled={deletingNoteId === n.id}
+                            className="text-text-muted hover:text-error p-1 rounded hover:bg-error/10 transition shrink-0 cursor-pointer"
+                            title={t('common.delete', 'Sil')}
+                          >
+                            <span className="material-symbols-outlined text-[15px]">delete</span>
+                          </button>
+                        )}
                       </div>
-                      <p className="text-xs text-on-surface whitespace-pre-wrap leading-relaxed">{n.note}</p>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
+
+                {canAddNote && (
+                  <div className="flex items-center gap-2 mt-3 pt-2.5 border-t border-theme-border/60">
+                    <input
+                      type="text"
+                      value={newNoteText}
+                      onChange={(e) => setNewNoteText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault()
+                          handleAddNote()
+                        }
+                      }}
+                      placeholder={t('orders.notePlaceholder', 'Kalem ile ilgili bir not yazın...')}
+                      className="flex-1 bg-surface-container border border-theme-border rounded-xl px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition"
+                      disabled={savingNote}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddNote}
+                      disabled={savingNote || !newNoteText.trim()}
+                      className="px-3.5 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shrink-0 cursor-pointer shadow-sm"
+                    >
+                      <span className="material-symbols-outlined text-sm">send</span>
+                      <span>{savingNote ? t('common.saving', 'Kaydediliyor...') : t('orders.addNote', 'Not Ekle')}</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -229,30 +339,82 @@ function CardDetailModal({ task, machines, employees, onClose, onSave, onDelete,
               </Field>
             </div>
 
-            {taskNotes.length > 0 && (
+            {orderItemId && (
               <div className="col-span-2 mt-2 pt-3 border-t border-theme-border">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="material-symbols-outlined text-[16px] text-red-600 dark:text-red-400">sticky_note_2</span>
-                  <span className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">
-                    {t('orders.itemNotes', 'Sipariş Kalem Notları')} ({taskNotes.length})
-                  </span>
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-[16px] text-red-600 dark:text-red-400">sticky_note_2</span>
+                    <span className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">
+                      {t('orders.itemNotes', 'Sipariş Kalem Notları')}
+                    </span>
+                    <span className="text-[11px] font-bold text-red-600 bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded-full border border-red-200 dark:border-red-900/50">
+                      {taskNotes.length}
+                    </span>
+                  </div>
                   <span className="text-[10px] text-text-muted ml-auto font-medium">
                     {t('orders.parentItemNotesInfo', 'Ana sipariş kalemine ait notlar')}
                   </span>
                 </div>
                 <div className="flex flex-col gap-2 max-h-36 overflow-y-auto pr-1">
-                  {taskNotes.map((n) => (
-                    <div key={n.id} className="bg-red-50/60 dark:bg-red-950/20 border border-red-200/60 dark:border-red-900/30 rounded-lg p-2.5 text-xs">
-                      <div className="flex items-center justify-between gap-2 mb-1 text-[11px] text-red-700 dark:text-red-300 font-semibold">
-                        <span>{n.authorName || 'Kullanıcı'}</span>
-                        <span className="text-[10px] opacity-75 font-mono">
-                          {new Date(n.createdAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                        </span>
+                  {taskNotes.length === 0 ? (
+                    <p className="text-xs text-text-muted italic py-1">
+                      {t('orders.noItemNotes', 'Bu kaleme ait not bulunmamaktadır.')}
+                    </p>
+                  ) : (
+                    taskNotes.map((n) => (
+                      <div key={n.id} className="bg-red-50/60 dark:bg-red-950/20 border border-red-200/60 dark:border-red-900/30 rounded-lg p-2.5 text-xs flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 mb-1 text-[11px] text-red-700 dark:text-red-300 font-semibold">
+                            <span>{n.authorName || 'Kullanıcı'}</span>
+                            <span className="text-[10px] opacity-75 font-mono">
+                              {new Date(n.createdAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <p className="text-xs text-on-surface whitespace-pre-wrap">{n.note}</p>
+                        </div>
+                        {canDeleteNote && (
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteNote(n.id)}
+                            disabled={deletingNoteId === n.id}
+                            className="text-text-muted hover:text-error p-1 rounded hover:bg-error/10 transition shrink-0 cursor-pointer"
+                            title={t('common.delete', 'Sil')}
+                          >
+                            <span className="material-symbols-outlined text-[14px]">delete</span>
+                          </button>
+                        )}
                       </div>
-                      <p className="text-xs text-on-surface whitespace-pre-wrap">{n.note}</p>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
+
+                {canAddNote && (
+                  <div className="flex items-center gap-2 mt-2 pt-2 border-t border-theme-border/60">
+                    <input
+                      type="text"
+                      value={newNoteText}
+                      onChange={(e) => setNewNoteText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault()
+                          handleAddNote()
+                        }
+                      }}
+                      placeholder={t('orders.notePlaceholder', 'Kalem ile ilgili bir not yazın...')}
+                      className="flex-1 bg-surface-container border border-theme-border rounded-xl px-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary transition"
+                      disabled={savingNote}
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddNote}
+                      disabled={savingNote || !newNoteText.trim()}
+                      className="px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition flex items-center gap-1 shrink-0 cursor-pointer shadow-sm"
+                    >
+                      <span className="material-symbols-outlined text-sm">send</span>
+                      <span>{savingNote ? t('common.saving', 'Kaydediliyor...') : t('orders.addNote', 'Not Ekle')}</span>
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -783,7 +945,9 @@ export default function ProductionTasks() {
     permissions,
     employeePermissions,
     addProductionTask,
-    createEmployeeTask
+    createEmployeeTask,
+    addOrderItemNote,
+    deleteOrderItemNote,
   } = useData()
   const { user: currentUser, token } = useAuth()
   const location = useLocation()
@@ -797,6 +961,31 @@ export default function ProductionTasks() {
   const hasEmpAct = empPerms.includes('production-start')
   const hasDeptAct = deptPerms.includes('production-start')
   const canAct = isAdmin || (!isActDenied && (hasDeptAct || hasEmpAct))
+  const isManager = Boolean(activeEmployee?.isManager || currentUser?.role === 'manager' || currentUser?.role === 'admin')
+
+  const canAddNote = isAdmin || isManager || (!empPerms.includes('-orders-note-create') && (
+    deptPerms.includes('production-tasks') ||
+    empPerms.includes('production-tasks') ||
+    deptPerms.includes('production') ||
+    empPerms.includes('production') ||
+    deptPerms.includes('orders-note-create') ||
+    empPerms.includes('orders-note-create') ||
+    deptPerms.includes('production-planning') ||
+    empPerms.includes('production-planning') ||
+    canAct
+  ))
+
+  const canDeleteNote = isAdmin || isManager || (!empPerms.includes('-orders-note-delete') && (
+    deptPerms.includes('production-tasks') ||
+    empPerms.includes('production-tasks') ||
+    deptPerms.includes('production') ||
+    empPerms.includes('production') ||
+    deptPerms.includes('orders-note-delete') ||
+    empPerms.includes('orders-note-delete') ||
+    deptPerms.includes('production-planning') ||
+    empPerms.includes('production-planning') ||
+    canAct
+  ))
 
   const [detailTask, setDetailTask] = useState(null)
   const [employeeTaskModal, setEmployeeTaskModal] = useState(null)
@@ -1008,6 +1197,10 @@ export default function ProductionTasks() {
           machines={machines}
           employees={employees}
           isAdmin={isAdmin}
+          canAddNote={canAddNote}
+          canDeleteNote={canDeleteNote}
+          addOrderItemNote={addOrderItemNote}
+          deleteOrderItemNote={deleteOrderItemNote}
           onClose={() => setDetailTask(null)}
           onSave={(id, form) => {
             if (form.status !== detailTask.status) {

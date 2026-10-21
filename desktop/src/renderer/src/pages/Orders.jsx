@@ -698,14 +698,15 @@ function OrderModal({
               </button>
             </div>
             {errors.items && <p className="text-xs text-error mb-2">{errors.items}</p>}
-            <div className="hidden md:flex items-center gap-2 mb-1 px-0.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted flex-1">{t('orders.product')}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted w-14 text-center">{t('orders.qty')}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted w-12 text-center">{t('common.unit')}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted w-28 text-center">{t('orders.unitPrice')}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted w-16 text-center">{t('orders.vat')}</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted w-24 text-right">{t('orders.total')}</span>
-              <span className="w-5" />
+            <div className="hidden md:flex items-center gap-2 mb-1.5 px-3">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted flex-1 min-w-0">{t('orders.product')}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted w-16 text-center shrink-0">{t('orders.qty')}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted w-14 text-center shrink-0">{t('common.unit')}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted w-44 text-center shrink-0">{t('orders.unitPrice')}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted w-24 text-center shrink-0">{t('orders.vat')}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted w-32 text-right shrink-0">{t('orders.total')}</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted w-24 text-center shrink-0">{t('orders.notes', 'Not')}</span>
+              <span className="w-8 shrink-0" />
             </div>
             <div className="space-y-3 md:space-y-2">
               {form.items.map((item, idx) => {
@@ -715,8 +716,9 @@ function OrderModal({
 
                 return (
                   <div key={idx} className="flex flex-col border border-theme-border rounded-xl p-3 bg-surface-container-high/30">
-                    <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-2">
-                      <div className="flex-1 md:w-auto mt-2 md:mt-0">
+                    {/* Desktop layout: exact column widths matching header */}
+                    <div className="hidden md:flex items-center gap-2">
+                      <div className="flex-1 min-w-0">
                         <SearchableSelect
                           options={products.map(p => ({
                             value: p.id,
@@ -729,78 +731,71 @@ function OrderModal({
                         />
                       </div>
 
-                      <div className="flex flex-wrap md:flex-nowrap items-end gap-2 w-full md:w-auto">
-                        <div className="w-[calc(50%-4px)] md:w-14">
-                          <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.qty')}</span>
+                      <div className="w-16 shrink-0">
+                        <input
+                          type="number" min="1"
+                          className={`w-full border rounded px-2 py-1.5 text-xs md:text-sm bg-surface-container-lowest text-on-surface outline-none focus:border-primary text-center ${itemErr && parseInt(item.quantity) < 1 ? 'border-error' : 'border-theme-border'}`}
+                          placeholder="1"
+                          value={item.quantity}
+                          onChange={(e) => setItem(idx, 'quantity', e.target.value)}
+                        />
+                      </div>
+
+                      <div className="w-14 shrink-0 flex items-center justify-center">
+                        {item.unit ? (
+                          <span className="text-[11px] font-semibold text-text-muted bg-surface-container-high border border-theme-border rounded px-1.5 py-1 leading-none w-full text-center truncate">{item.unit}</span>
+                        ) : (
+                          <span className="text-[11px] text-text-muted/40 w-full text-center">—</span>
+                        )}
+                      </div>
+
+                      <div className="w-44 shrink-0">
+                        <div className={`flex items-center border rounded overflow-hidden bg-surface-container-lowest ${itemErr && !item.unitPrice ? 'border-error' : 'border-theme-border'}`}>
+                          <select
+                            className="px-1.5 py-1.5 text-[11px] text-text-muted border-r border-theme-border bg-surface-container-high outline-none cursor-pointer shrink-0"
+                            value={item.currency || 'TRY'}
+                            onChange={(e) => setItem(idx, 'currency', e.target.value)}
+                          >
+                            <option value="TRY">TRY</option>
+                            <option value="USD">USD</option>
+                            <option value="EUR">EUR</option>
+                            <option value="GBP">GBP</option>
+                          </select>
                           <input
-                            type="number" min="1"
-                            className={`w-full border rounded px-2 py-1.5 text-xs md:text-sm bg-surface-container-lowest text-on-surface outline-none focus:border-primary text-center ${itemErr && parseInt(item.quantity) < 1 ? 'border-error' : 'border-theme-border'}`}
-                            placeholder="1"
-                            value={item.quantity}
-                            onChange={(e) => setItem(idx, 'quantity', e.target.value)}
+                            type="number" min="0" step="0.01"
+                            className="w-full px-2 py-1.5 text-xs md:text-sm text-on-surface outline-none bg-transparent"
+                            placeholder="0.00"
+                            value={item.unitPrice}
+                            onChange={(e) => setItem(idx, 'unitPrice', e.target.value)}
                           />
-                        </div>
-                        <div className="w-[calc(50%-4px)] md:w-12 flex flex-col">
-                          <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('common.unit')}</span>
-                          <div className="h-[28px] md:h-auto flex items-center justify-center">
-                            {item.unit ? (
-                              <span className="text-[11px] font-semibold text-text-muted bg-surface-container-high border border-theme-border rounded px-1.5 py-1 leading-none w-full text-center">{item.unit}</span>
-                            ) : (
-                              <span className="text-[11px] text-text-muted/40 w-full text-center">—</span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="w-[calc(50%-4px)] md:w-28 flex flex-col">
-                          <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.unitPrice')}</span>
-                          <div className={`flex items-center border rounded overflow-hidden bg-surface-container-lowest ${itemErr && !item.unitPrice ? 'border-error' : 'border-theme-border'}`}>
-                            <select
-                              className="px-1 py-1.5 md:py-0 h-full text-[10px] text-text-muted border-r border-theme-border bg-surface-container-high outline-none cursor-pointer"
-                              value={item.currency || 'TRY'}
-                              onChange={(e) => setItem(idx, 'currency', e.target.value)}
-                            >
-                              <option value="TRY">TRY</option>
-                              <option value="USD">USD</option>
-                              <option value="EUR">EUR</option>
-                              <option value="GBP">GBP</option>
-                            </select>
-                            <input
-                              type="number" min="0" step="0.01"
-                              className="w-full px-2 py-1.5 text-xs md:text-sm text-on-surface outline-none bg-transparent"
-                              placeholder="0.00"
-                              value={item.unitPrice}
-                              onChange={(e) => setItem(idx, 'unitPrice', e.target.value)}
-                            />
-                          </div>
-                        </div>
-                        <div className="w-[calc(50%-4px)] md:w-16 flex flex-col">
-                          <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.vat')}</span>
-                          <div className="flex items-center border border-theme-border rounded overflow-hidden bg-surface-container-lowest">
-                            <input
-                              type="number" min="0" max="100" step="0.1"
-                              className="w-full px-2 py-1.5 text-xs md:text-sm text-on-surface outline-none bg-transparent text-center"
-                              placeholder="0"
-                              value={item.vat}
-                              onChange={(e) => setItem(idx, 'vat', e.target.value)}
-                            />
-                            <span className="px-1.5 text-[10px] text-text-muted border-l border-theme-border bg-surface-container-high">%</span>
-                          </div>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between w-full md:w-auto mt-1 md:mt-0 pt-2 md:pt-0 border-t border-theme-border md:border-0 gap-2">
-                        <div className="flex flex-col md:items-end">
-                          <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted mb-0.5 block">{t('orders.total')}</span>
-                          <span className="text-xs md:text-sm font-semibold text-on-surface md:w-24 md:text-right">
-                            {item.currency || 'TRY'} {itemTotal.toFixed(2)}
-                          </span>
+                      <div className="w-24 shrink-0">
+                        <div className="flex items-center border border-theme-border rounded overflow-hidden bg-surface-container-lowest">
+                          <input
+                            type="number" min="0" max="100" step="0.1"
+                            className="w-full px-2 py-1.5 text-xs md:text-sm text-on-surface outline-none bg-transparent text-center"
+                            placeholder="0"
+                            value={item.vat}
+                            onChange={(e) => setItem(idx, 'vat', e.target.value)}
+                          />
+                          <span className="px-2 text-xs text-text-muted border-l border-theme-border bg-surface-container-high font-semibold shrink-0">%</span>
                         </div>
+                      </div>
 
-                        {/* Accordion trigger badge */}
+                      <div className="w-32 shrink-0 text-right">
+                        <span className="text-xs md:text-sm font-bold text-on-surface truncate block" title={`${item.currency || 'TRY'} ${itemTotal.toFixed(2)}`}>
+                          {item.currency || 'TRY'} {itemTotal.toFixed(2)}
+                        </span>
+                      </div>
+
+                      <div className="w-24 shrink-0 flex items-center justify-center">
                         {notesCount > 0 ? (
                           <button
                             type="button"
                             onClick={() => setExpandedNotes((prev) => ({ ...prev, [idx]: !prev[idx] }))}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 hover:bg-red-100 transition shadow-xs cursor-pointer shrink-0"
+                            className="inline-flex items-center justify-center gap-1 w-full px-2 py-1 rounded-full text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 hover:bg-red-100 transition shadow-xs cursor-pointer"
                             title={t('orders.itemNotes', 'Kalem Notları')}
                           >
                             <span className="material-symbols-outlined text-[15px] text-red-600 dark:text-red-400">sticky_note_2</span>
@@ -813,23 +808,151 @@ function OrderModal({
                           <button
                             type="button"
                             onClick={() => setExpandedNotes((prev) => ({ ...prev, [idx]: !prev[idx] }))}
-                            className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] text-text-muted hover:text-primary bg-surface-container-high/60 hover:bg-primary/10 border border-dashed border-theme-border hover:border-primary/40 transition cursor-pointer shrink-0"
+                            className="inline-flex items-center justify-center gap-1 w-full px-2 py-1 rounded-full text-[11px] text-text-muted hover:text-primary bg-surface-container-high/60 hover:bg-primary/10 border border-dashed border-theme-border hover:border-primary/40 transition cursor-pointer"
                             title={t('orders.addNote', 'Not Ekle')}
                           >
                             <span className="material-symbols-outlined text-[14px]">add_comment</span>
                             <span>{t('orders.addNote', 'Not Ekle')}</span>
                           </button>
-                        ) : null}
+                        ) : (
+                          <span className="text-text-muted text-xs">—</span>
+                        )}
+                      </div>
 
-                        {form.items.length > 1 && (
+                      <div className="w-8 shrink-0 flex items-center justify-center">
+                        {form.items.length > 1 ? (
                           <button
                             type="button"
                             onClick={() => removeItem(idx)}
-                            className="text-text-muted hover:text-error flex items-center justify-center p-1.5 rounded-lg hover:bg-error/10 transition shrink-0"
+                            className="text-text-muted hover:text-error flex items-center justify-center p-1.5 rounded-lg hover:bg-error/10 transition cursor-pointer"
+                            title={t('common.delete', 'Sil')}
                           >
                             <span className="material-symbols-outlined text-base">remove_circle</span>
                           </button>
+                        ) : (
+                          <span className="w-6" />
                         )}
+                      </div>
+                    </div>
+
+                    {/* Mobile layout */}
+                    <div className="flex flex-col gap-2.5 md:hidden">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.product')}</span>
+                        <SearchableSelect
+                          options={products.map(p => ({
+                            value: p.id,
+                            label: p.stockNo ? `${p.stockNo} — ${p.name}` : p.name
+                          }))}
+                          value={item.productId || ''}
+                          onChange={(val) => fillFromProduct(idx, val)}
+                          placeholder={t('orders.selectProduct')}
+                          error={errors.items && !item.productName}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.qty')}</span>
+                          <input
+                            type="number" min="1"
+                            className={`w-full border rounded px-2 py-1.5 text-xs bg-surface-container-lowest text-on-surface outline-none focus:border-primary text-center ${itemErr && parseInt(item.quantity) < 1 ? 'border-error' : 'border-theme-border'}`}
+                            placeholder="1"
+                            value={item.quantity}
+                            onChange={(e) => setItem(idx, 'quantity', e.target.value)}
+                          />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('common.unit')}</span>
+                          <div className="h-[34px] flex items-center justify-center">
+                            {item.unit ? (
+                              <span className="text-[11px] font-semibold text-text-muted bg-surface-container-high border border-theme-border rounded px-1.5 py-1 leading-none w-full text-center truncate">{item.unit}</span>
+                            ) : (
+                              <span className="text-[11px] text-text-muted/40 w-full text-center">—</span>
+                            )}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.unitPrice')}</span>
+                          <div className={`flex items-center border rounded overflow-hidden bg-surface-container-lowest ${itemErr && !item.unitPrice ? 'border-error' : 'border-theme-border'}`}>
+                            <select
+                              className="px-1.5 py-1.5 text-[10px] text-text-muted border-r border-theme-border bg-surface-container-high outline-none cursor-pointer"
+                              value={item.currency || 'TRY'}
+                              onChange={(e) => setItem(idx, 'currency', e.target.value)}
+                            >
+                              <option value="TRY">TRY</option>
+                              <option value="USD">USD</option>
+                              <option value="EUR">EUR</option>
+                              <option value="GBP">GBP</option>
+                            </select>
+                            <input
+                              type="number" min="0" step="0.01"
+                              className="w-full px-2 py-1.5 text-xs text-on-surface outline-none bg-transparent"
+                              placeholder="0.00"
+                              value={item.unitPrice}
+                              onChange={(e) => setItem(idx, 'unitPrice', e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.vat')}</span>
+                          <div className="flex items-center border border-theme-border rounded overflow-hidden bg-surface-container-lowest">
+                            <input
+                              type="number" min="0" max="100" step="0.1"
+                              className="w-full px-2 py-1.5 text-xs text-on-surface outline-none bg-transparent text-center"
+                              placeholder="0"
+                              value={item.vat}
+                              onChange={(e) => setItem(idx, 'vat', e.target.value)}
+                            />
+                            <span className="px-2 text-[10px] text-text-muted border-l border-theme-border bg-surface-container-high font-semibold">%</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-theme-border gap-2">
+                        <div>
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-0.5 block">{t('orders.total')}</span>
+                          <span className="text-xs font-bold text-on-surface">
+                            {item.currency || 'TRY'} {itemTotal.toFixed(2)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {notesCount > 0 ? (
+                            <button
+                              type="button"
+                              onClick={() => setExpandedNotes((prev) => ({ ...prev, [idx]: !prev[idx] }))}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 hover:bg-red-100 transition shadow-xs cursor-pointer shrink-0"
+                              title={t('orders.itemNotes', 'Kalem Notları')}
+                            >
+                              <span className="material-symbols-outlined text-[15px] text-red-600 dark:text-red-400">sticky_note_2</span>
+                              <span className="text-red-600 dark:text-red-400 font-extrabold">{notesCount}</span>
+                              <span className={`material-symbols-outlined text-[14px] text-red-500 transition-transform duration-200 ${expandedNotes[idx] ? 'rotate-180' : ''}`}>
+                                expand_more
+                              </span>
+                            </button>
+                          ) : canAddNote ? (
+                            <button
+                              type="button"
+                              onClick={() => setExpandedNotes((prev) => ({ ...prev, [idx]: !prev[idx] }))}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[11px] text-text-muted hover:text-primary bg-surface-container-high/60 hover:bg-primary/10 border border-dashed border-theme-border hover:border-primary/40 transition cursor-pointer shrink-0"
+                              title={t('orders.addNote', 'Not Ekle')}
+                            >
+                              <span className="material-symbols-outlined text-[14px]">add_comment</span>
+                              <span>{t('orders.addNote', 'Not Ekle')}</span>
+                            </button>
+                          ) : null}
+
+                          {form.items.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeItem(idx)}
+                              className="text-text-muted hover:text-error flex items-center justify-center p-1.5 rounded-lg hover:bg-error/10 transition shrink-0"
+                              title={t('common.delete', 'Sil')}
+                            >
+                              <span className="material-symbols-outlined text-base">remove_circle</span>
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
 

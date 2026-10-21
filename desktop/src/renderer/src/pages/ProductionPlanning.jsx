@@ -40,20 +40,113 @@ function getPlanningTaskNotes(task, productionTasks, orders) {
   return []
 }
 
+function getPlanningOrderItemId(task, productionTasks, orders) {
+  if (task?.productionTask?.orderItem?.id) return task.productionTask.orderItem.id
+  if (task?.productionTask?.orderItemId) return task.productionTask.orderItemId
+  const ptId = task?.productionTaskId
+  if (ptId && productionTasks) {
+    const pt = productionTasks.find(p => p.id === ptId)
+    if (pt?.orderItem?.id) return pt.orderItem.id
+    if (pt?.orderItemId) return pt.orderItemId
+  }
+  if (task?.orderId && orders) {
+    const order = orders.find(o => o.id === task.orderId)
+    if (order?.items) {
+      if (task.productId) {
+        const it = order.items.find(item => item.productId === task.productId)
+        if (it?.id) return it.id
+      }
+      if (order.items[0]?.id) return order.items[0].id
+    }
+  }
+  return null
+}
+
 export default function ProductionPlanning() {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { employeeTasks: allTasks, employees, machines, products, isAdmin, moveEmployeeTask, createEmployeeTask, updateEmployeeTask, deleteEmployeeTask, rolloverEmployeeTasks, permissions, employeePermissions, orders, productionTasks } = useData()
+  const { employeeTasks: allTasks, employees, machines, products, isAdmin, moveEmployeeTask, createEmployeeTask, updateEmployeeTask, deleteEmployeeTask, rolloverEmployeeTasks, permissions, employeePermissions, orders, productionTasks, addOrderItemNote, deleteOrderItemNote } = useData()
   const { user: currentUser } = useAuth()
   
   const empId = currentUser?.employeeId
-  const dept = currentUser?.department
-  
-  // Sadece Admin veya yetkili kişiler herkesi görebilir (Görünüm)
-  const canViewAll = isAdmin
-  
+  const activeEmployee = employees?.find(e => e.id === empId)
+  const dept = activeEmployee?.department || currentUser?.department
+
+  const empPerms = employeePermissions?.[empId] || []
+  const deptPerms = permissions?.[dept] || []
+
+  const isManager = Boolean(activeEmployee?.isManager || currentUser?.role === 'manager' || currentUser?.role === 'admin')
+  const isPlanningDenied = empPerms.includes('-production-planning')
+  const isEditDenied = empPerms.includes('-production-planning-edit')
+
+  const hasPlanningPerm = !isPlanningDenied && (
+    deptPerms.includes('production-planning') ||
+    empPerms.includes('production-planning')
+  )
+
+  const hasEditPerm = !isEditDenied && (
+    deptPerms.includes('production-planning-edit') ||
+    empPerms.includes('production-planning-edit')
+  )
+
   // Düzenleme yetkisi
-  const canEdit = isAdmin || (!((employeePermissions?.[empId] || []).includes('-production-planning-edit')) && ((permissions?.[dept] || []).includes('production-planning-edit') || (employeePermissions?.[empId] || []).includes('production-planning-edit')))
+  const canEdit = isAdmin || isManager || hasEditPerm || (hasPlanningPerm && !isEditDenied)
+
+  // Sadece Admin veya yetkili kişiler herkesi görebilir (Görünüm)
+  const canViewAll = isAdmin || isManager || canEdit || hasPlanningPerm
+
+  const canAddNote = isAdmin || isManager || canEdit || (!empPerms.includes('-orders-note-create') && (
+    deptPerms.includes('production-planning') ||
+    empPerms.includes('production-planning') ||
+    deptPerms.includes('production-planning-edit') ||
+    empPerms.includes('production-planning-edit') ||
+    deptPerms.includes('production-tasks') ||
+    empPerms.includes('production-tasks') ||
+    deptPerms.includes('orders-note-create') ||
+    empPerms.includes('orders-note-create')
+  ))
+
+  const canDeleteNote = isAdmin || isManager || canEdit || (!empPerms.includes('-orders-note-delete') && (
+    deptPerms.includes('production-planning') ||
+    empPerms.includes('production-planning') ||
+    deptPerms.includes('production-planning-edit') ||
+    empPerms.includes('production-planning-edit') ||
+    deptPerms.includes('production-tasks') ||
+    empPerms.includes('production-tasks') ||
+    deptPerms.includes('orders-note-delete') ||
+    empPerms.includes('orders-note-delete')
+  ))
+
+  const [newPlanningNote, setNewPlanningNote] = useState('')
+  const [savingPlanningNote, setSavingPlanningNote] = useState(false)
+  const [deletingPlanningNoteId, setDeletingPlanningNoteId] = useState(null)
+
+  const handleAddPlanningNote = async (orderItemId) => {
+    const text = newPlanningNote.trim()
+    if (!text || !orderItemId || !addOrderItemNote) return
+    setSavingPlanningNote(true)
+    try {
+      await addOrderItemNote(orderItemId, text)
+      setNewPlanningNote('')
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setSavingPlanningNote(false)
+    }
+  }
+
+  const handleDeletePlanningNote = async (orderItemId, noteId) => {
+    if (!confirm(t('orders.deleteNoteConfirm', 'Bu notu silmek istediğinize emin misiniz?'))) return
+    if (!deleteOrderItemNote || !orderItemId) return
+    setDeletingPlanningNoteId(noteId)
+    try {
+      await deleteOrderItemNote(orderItemId, noteId)
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setDeletingPlanningNoteId(null)
+    }
+  }
 
   const myTasks = useMemo(() => {
     if (canViewAll) return allTasks || []
@@ -61,6 +154,11 @@ export default function ProductionPlanning() {
   }, [allTasks, canViewAll, empId])
 
   const [filterEmployeeId, setFilterEmployeeId] = useState('')
+
+  const selectableEmployees = useMemo(() => {
+    const list = canViewAll ? (employees || []) : (employees || []).filter(e => e.id === empId)
+    return [...list].sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr'))
+  }, [canViewAll, employees, empId])
 
   const filteredTasks = useMemo(() => {
     if (!filterEmployeeId) return myTasks;
@@ -79,7 +177,8 @@ export default function ProductionPlanning() {
     const today = new Date()
     const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 
-    const pastIncomplete = myTasks.filter(t => {
+    const targetTasks = empId ? (allTasks || []).filter(t => t.employeeId === empId) : []
+    const pastIncomplete = targetTasks.filter(t => {
       return t.date < todayStr && t.status !== 'completed' && t.status !== 'cancelled'
     })
 
@@ -89,7 +188,7 @@ export default function ProductionPlanning() {
     } else {
       setShowRollover(false)
     }
-  }, [myTasks])
+  }, [allTasks, empId])
 
   const handleRolloverConfirm = async () => {
     try {
@@ -323,9 +422,9 @@ export default function ProductionPlanning() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-surface rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden border border-theme-border animate-in fade-in zoom-in duration-200 relative">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => setShowRollover(false)}
               className="absolute top-4 right-4 p-2 rounded-xl text-on-surface-variant hover:bg-surface-container hover:text-on-surface transition-colors flex items-center justify-center z-10"
-              title="Geri Dön"
+              title="Kapat"
             >
               <span className="material-symbols-outlined">close</span>
             </button>
@@ -472,34 +571,85 @@ export default function ProductionPlanning() {
 
               {(() => {
                 const lineItemNotes = getPlanningTaskNotes(detailTask, productionTasks, orders);
-                if (!lineItemNotes || lineItemNotes.length === 0) return null;
+                const orderItemId = getPlanningOrderItemId(detailTask, productionTasks, orders);
+                if (!orderItemId) return null;
                 return (
                   <div className="p-4 bg-red-50/70 dark:bg-red-950/20 border border-red-200/80 dark:border-red-900/40 rounded-xl mt-2">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="material-symbols-outlined text-[18px] text-red-600 dark:text-red-400">sticky_note_2</span>
-                      <p className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">
-                        Sipariş Kalem Notları ({lineItemNotes.length})
-                      </p>
-                      <span className="text-[10px] text-text-muted ml-auto font-medium">
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className="material-symbols-outlined text-[18px] text-red-600 dark:text-red-400">sticky_note_2</span>
+                        <p className="text-xs font-bold text-red-600 dark:text-red-400 uppercase tracking-wider">
+                          Sipariş Kalem Notları ({lineItemNotes.length})
+                        </p>
+                      </div>
+                      <span className="text-[10px] text-text-muted font-medium">
                         Ana sipariş kalemine ait notlar
                       </span>
                     </div>
+
                     <div className="flex flex-col gap-2 max-h-48 overflow-y-auto pr-1">
-                      {lineItemNotes.map((n) => (
-                        <div key={n.id} className="bg-surface rounded-lg p-3 border border-theme-border/60">
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <span className="text-xs font-bold text-red-700 dark:text-red-300 flex items-center gap-1">
-                              <span className="material-symbols-outlined text-[13px]">person</span>
-                              {n.authorName || 'Kullanıcı'}
-                            </span>
-                            <span className="text-[10px] text-text-muted font-mono">
-                              {new Date(n.createdAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                            </span>
+                      {lineItemNotes.length === 0 ? (
+                        <p className="text-xs text-text-muted italic py-1">
+                          Bu kaleme ait not bulunmamaktadır.
+                        </p>
+                      ) : (
+                        lineItemNotes.map((n) => (
+                          <div key={n.id} className="bg-surface rounded-lg p-3 border border-theme-border/60 flex items-start justify-between gap-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2 mb-1">
+                                <span className="text-xs font-bold text-red-700 dark:text-red-300 flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[13px]">person</span>
+                                  {n.authorName || 'Kullanıcı'}
+                                </span>
+                                <span className="text-[10px] text-text-muted font-mono">
+                                  {new Date(n.createdAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                              <p className="text-xs text-on-surface whitespace-pre-wrap leading-relaxed">{n.note}</p>
+                            </div>
+                            {canDeleteNote && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeletePlanningNote(orderItemId, n.id)}
+                                disabled={deletingPlanningNoteId === n.id}
+                                className="text-text-muted hover:text-error p-1 rounded hover:bg-error/10 transition shrink-0 cursor-pointer"
+                                title="Sil"
+                              >
+                                <span className="material-symbols-outlined text-[15px]">delete</span>
+                              </button>
+                            )}
                           </div>
-                          <p className="text-xs text-on-surface whitespace-pre-wrap leading-relaxed">{n.note}</p>
-                        </div>
-                      ))}
+                        ))
+                      )}
                     </div>
+
+                    {canAddNote && (
+                      <div className="flex items-center gap-2 mt-3 pt-2.5 border-t border-theme-border/60">
+                        <input
+                          type="text"
+                          value={newPlanningNote}
+                          onChange={(e) => setNewPlanningNote(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault()
+                              handleAddPlanningNote(orderItemId)
+                            }
+                          }}
+                          placeholder="Kalem ile ilgili bir not yazın..."
+                          className="flex-1 bg-surface-container border border-theme-border rounded-xl px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition"
+                          disabled={savingPlanningNote}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleAddPlanningNote(orderItemId)}
+                          disabled={savingPlanningNote || !newPlanningNote.trim()}
+                          className="px-3.5 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 shrink-0 cursor-pointer shadow-sm"
+                        >
+                          <span className="material-symbols-outlined text-sm">send</span>
+                          <span>{savingPlanningNote ? 'Kaydediliyor...' : 'Not Ekle'}</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 );
               })()}
@@ -537,7 +687,7 @@ export default function ProductionPlanning() {
                     Düzenle
                   </button>
                 )}
-                {isAdmin && (
+                {(isAdmin || canEdit) && (
                   <button
                     onClick={() => handleDeleteTask(detailTask.id)}
                     className="px-4 py-2 bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 font-bold rounded-xl text-sm transition-colors flex items-center gap-2"
@@ -595,7 +745,7 @@ export default function ProductionPlanning() {
                   <label className="block text-sm font-bold text-on-surface-variant mb-1">Personel</label>
                   <select required value={newTaskForm.employeeId} onChange={e => setNewTaskForm({...newTaskForm, employeeId: e.target.value})} className="w-full bg-surface-container p-3 rounded-xl border border-theme-border text-on-surface outline-none">
                     <option value="">Seçiniz...</option>
-                    {employees.filter(e => e.status === 'Active').map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+                    {employees.filter(e => e.status === 'Active').sort((a, b) => (a.name || '').localeCompare(b.name || '', 'tr')).map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
                   </select>
                 </div>
               )}
@@ -631,7 +781,7 @@ export default function ProductionPlanning() {
           </p>
         </div>
         {canEdit && (
-          <button onClick={() => { setNewTaskForm(defaultForm); setNewTaskModal(true); }} className="bg-primary text-on-primary px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-primary/90 transition-colors">
+          <button onClick={() => { setNewTaskForm({ ...defaultForm, employeeId: filterEmployeeId || empId || '' }); setNewTaskModal(true); }} className="bg-primary text-on-primary px-4 py-2 rounded-xl font-bold flex items-center gap-2 hover:bg-primary/90 transition-colors">
             <span className="material-symbols-outlined text-[20px]">add</span>
             Yeni Görev
           </button>
@@ -704,8 +854,8 @@ export default function ProductionPlanning() {
               onChange={(e) => setFilterEmployeeId(e.target.value)}
               className="bg-transparent border-none outline-none text-xs font-bold text-on-surface cursor-pointer focus:ring-0"
             >
-              <option value="">Tümü</option>
-              {(canViewAll ? employees : employees?.filter(e => e.id === empId))?.map(e => (
+              <option value="">{t('common.all', 'Tümü')}</option>
+              {selectableEmployees.map(e => (
                 <option key={e.id} value={e.id}>{e.name}</option>
               ))}
             </select>

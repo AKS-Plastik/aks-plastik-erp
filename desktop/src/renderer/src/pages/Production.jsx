@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
@@ -169,11 +169,59 @@ function SendToProductionModal({ item, onClose, onSave, machines, employees }) {
 }
 
 // ─── Order Detail Modal ───────────────────────────────────────────────────────
-function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo, machines, employees, addProductionTask }) {
+function OrderDetailModal({
+  order,
+  onClose,
+  onAdvance,
+  canAct,
+  canChangeTo,
+  machines,
+  employees,
+  addProductionTask,
+  canAddNote,
+  canDeleteNote,
+  addOrderItemNote,
+  deleteOrderItemNote,
+}) {
   const { t } = useTranslation()
   const [confirming, setConfirming] = useState(false)
   const [productionItem, setProductionItem] = useState(null)
   const [expandedNotes, setExpandedNotes] = useState({})
+  const [newNoteInputs, setNewNoteInputs] = useState({})
+  const [savingNoteId, setSavingNoteId] = useState(null)
+  const [deletingNoteId, setDeletingNoteId] = useState(null)
+
+  function toggleItemNotes(key) {
+    setExpandedNotes((prev) => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  async function handleAddDetailNote(itemId, key) {
+    const text = (newNoteInputs[key] || '').trim()
+    if (!text || !itemId || !addOrderItemNote) return
+    setSavingNoteId(key)
+    try {
+      await addOrderItemNote(itemId, text)
+      setNewNoteInputs((prev) => ({ ...prev, [key]: '' }))
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setSavingNoteId(null)
+    }
+  }
+
+  async function handleDeleteDetailNote(itemId, noteId) {
+    if (!confirm(t('orders.deleteNoteConfirm', 'Bu notu silmek istediğinize emin misiniz?'))) return
+    if (!deleteOrderItemNote) return
+    setDeletingNoteId(noteId)
+    try {
+      await deleteOrderItemNote(itemId, noteId)
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setDeletingNoteId(null)
+    }
+  }
+
   const subtotal = (order.items || []).reduce(
     (s, it) => s + (parseFloat(it.unitPrice) || 0) * (parseInt(it.quantity) || 0), 0
   )
@@ -222,6 +270,8 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo, mach
             </thead>
             <tbody className="block md:table-row-group">
               {(order.items || []).map((it, i) => {
+                const itemKey = it.id || i
+                const notesCount = it.notes?.length || 0
                 const produced = it.producedQuantity || 0
                 const inProd = it.inProductionQuantity || 0
                 const remaining = it.quantity - produced - inProd
@@ -229,7 +279,7 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo, mach
                 const activeTasks = (it.productionTasks || []).filter(task => task.status !== 'completed')
 
                 return (
-                  <div key={it.id || i} className="contents">
+                  <Fragment key={itemKey}>
                     <tr className="block md:table-row border-t border-theme-border py-2 md:py-0 bg-surface-container-lowest md:bg-transparent">
                       <td className="block md:table-cell w-full md:w-auto relative px-3 md:px-4 py-1 md:py-3 font-mono text-xs text-text-muted">
                         <div className="flex items-center justify-between md:justify-start">
@@ -241,24 +291,39 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo, mach
                         <div className="flex items-start md:items-center justify-between md:justify-start gap-4">
                           <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted pt-0.5">{t('orders.product')}</span>
                           <div className="text-right md:text-left flex-1 flex flex-col items-start gap-1">
-                            <span>{it.productName}</span>
-                            {it.notes && it.notes.length > 0 && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  setExpandedNotes((prev) => ({ ...prev, [i]: !prev[i] }))
-                                }}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50 hover:bg-red-200 dark:hover:bg-red-900/60 transition cursor-pointer"
-                                title={`${it.notes.length} not`}
-                              >
-                                <span className="material-symbols-outlined text-[13px] text-red-600 dark:text-red-400">sticky_note_2</span>
-                                <span>{it.notes.length} {t('orders.notes', 'Not')}</span>
-                                <span className={`material-symbols-outlined text-[13px] transition-transform duration-200 ${expandedNotes[i] ? 'rotate-180' : ''}`}>
-                                  expand_more
-                                </span>
-                              </button>
-                            )}
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span>{it.productName}</span>
+                              {notesCount > 0 ? (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    toggleItemNotes(itemKey)
+                                  }}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-bold text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 hover:bg-red-100 dark:hover:bg-red-900/60 transition shadow-xs cursor-pointer"
+                                  title={t('orders.itemNotes', 'Kalem Notları')}
+                                >
+                                  <span className="material-symbols-outlined text-[15px] text-red-600 dark:text-red-400">sticky_note_2</span>
+                                  <span className="text-red-600 dark:text-red-400 font-extrabold">{notesCount}</span>
+                                  <span className={`material-symbols-outlined text-[14px] text-red-500 transition-transform duration-200 ${expandedNotes[itemKey] ? 'rotate-180' : ''}`}>
+                                    expand_more
+                                  </span>
+                                </button>
+                              ) : canAddNote ? (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    toggleItemNotes(itemKey)
+                                  }}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] text-text-muted hover:text-primary bg-surface-container-high/60 hover:bg-primary/10 border border-dashed border-theme-border hover:border-primary/40 transition cursor-pointer"
+                                  title={t('orders.addNote', 'Not Ekle')}
+                                >
+                                  <span className="material-symbols-outlined text-[13px]">add_comment</span>
+                                  <span>{t('orders.addNote', 'Not Ekle')}</span>
+                                </button>
+                              ) : null}
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -316,49 +381,119 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo, mach
                         )}
                       </td>
                     </tr>
-                    {expandedNotes[i] && it.notes && it.notes.length > 0 && (
-                      <tr key={`notes-${i}`} className="block md:table-row bg-red-50/40 dark:bg-red-950/20 border-t border-theme-border/60">
-                        <td colSpan={6} className="block md:table-cell p-3 md:p-4">
-                          <div className="bg-surface-container-lowest border border-red-200/80 dark:border-red-900/40 rounded-xl p-3 space-y-2">
-                            <div className="flex items-center justify-between pb-1.5 border-b border-theme-border/60">
+                    {expandedNotes[itemKey] && (
+                      <tr
+                        key={`${itemKey}-notes`}
+                        className="block md:table-row bg-surface-container-high/20 border-b border-theme-border"
+                      >
+                        <td
+                          colSpan={6}
+                          className="block md:table-cell p-2.5 md:px-5 md:py-3"
+                        >
+                          <div className="w-full bg-surface-container-lowest border border-theme-border rounded-xl shadow-xs p-3 md:p-3.5 space-y-2.5">
+                            <div className="flex items-center justify-between border-b border-theme-border/60 pb-2">
                               <div className="flex items-center gap-2">
-                                <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-base">sticky_note_2</span>
+                                <span className="material-symbols-outlined text-red-500 text-base">sticky_note_2</span>
                                 <span className="font-bold text-xs text-on-surface">
                                   {it.productName} — {t('orders.itemNotes', 'Kalem Notları')}
                                 </span>
-                                <span className="text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded-full border border-red-200 dark:border-red-900/50">
-                                  {it.notes.length}
+                                <span className="text-[11px] font-bold text-red-600 bg-red-50 dark:bg-red-950/40 px-2 py-0.5 rounded-full border border-red-200 dark:border-red-900/50">
+                                  {notesCount}
                                 </span>
                               </div>
                               <button
                                 type="button"
-                                onClick={() => setExpandedNotes((prev) => ({ ...prev, [i]: false }))}
-                                className="text-text-muted hover:text-on-surface p-1 rounded hover:bg-hover-bg transition"
+                                onClick={() => toggleItemNotes(itemKey)}
+                                className="text-text-muted hover:text-on-surface p-1 rounded hover:bg-hover-bg transition cursor-pointer"
                               >
                                 <span className="material-symbols-outlined text-sm">close</span>
                               </button>
                             </div>
-                            <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
-                              {it.notes.map((n) => (
-                                <div key={n.id} className="p-2.5 rounded-lg bg-surface-container-high/30 border border-theme-border/50 text-xs">
-                                  <div className="flex items-center justify-between gap-2 mb-1">
-                                    <span className="font-bold text-[11px] text-red-700 dark:text-red-300 flex items-center gap-1">
-                                      <span className="material-symbols-outlined text-[13px]">person</span>
-                                      {n.authorName || 'Kullanıcı'}
-                                    </span>
-                                    <span className="text-[10px] text-text-muted font-mono">
-                                      {new Date(n.createdAt).toLocaleString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                                    </span>
+
+                            {/* List of notes */}
+                            <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                              {notesCount === 0 ? (
+                                <p className="text-xs text-text-muted italic py-1 font-normal">
+                                  {t('orders.noItemNotes', 'Bu kaleme ait not bulunmamaktadır.')}
+                                </p>
+                              ) : (
+                                (it.notes || []).map((n, nIdx) => (
+                                  <div
+                                    key={n.id || nIdx}
+                                    className="flex items-start justify-between gap-2 p-2 rounded-lg bg-surface-container-high/30 border border-theme-border/50 text-xs font-normal"
+                                  >
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2 mb-0.5">
+                                        <span className="font-bold text-[11px] text-on-surface flex items-center gap-1">
+                                          <span className="material-symbols-outlined text-[13px] text-text-muted">person</span>
+                                          {n.authorName || 'Kullanıcı'}
+                                        </span>
+                                        {n.createdAt && (
+                                          <span className="text-[10px] text-text-muted font-mono">
+                                            {new Date(n.createdAt).toLocaleString('tr-TR', {
+                                              day: '2-digit', month: '2-digit', year: 'numeric',
+                                              hour: '2-digit', minute: '2-digit',
+                                            })}
+                                          </span>
+                                        )}
+                                      </div>
+                                      <p className="text-xs text-on-surface whitespace-pre-wrap leading-relaxed">{n.note}</p>
+                                    </div>
+                                    {canDeleteNote && (
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteDetailNote(it.id, n.id)}
+                                        disabled={deletingNoteId === n.id}
+                                        className="text-text-muted hover:text-error p-1 rounded hover:bg-error/10 transition shrink-0 cursor-pointer"
+                                        title={t('common.delete', 'Sil')}
+                                      >
+                                        <span className="material-symbols-outlined text-[15px]">delete</span>
+                                      </button>
+                                    )}
                                   </div>
-                                  <p className="text-xs text-on-surface whitespace-pre-wrap leading-relaxed">{n.note}</p>
-                                </div>
-                              ))}
+                                ))
+                              )}
                             </div>
+
+                            {/* Add Note Input if canAddNote */}
+                            {canAddNote && (
+                              <div className="flex items-center gap-2 pt-1.5 border-t border-theme-border/50 font-normal">
+                                <input
+                                  type="text"
+                                  value={newNoteInputs[itemKey] || ''}
+                                  onChange={(e) => setNewNoteInputs((prev) => ({ ...prev, [itemKey]: e.target.value }))}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && !e.shiftKey) {
+                                      e.preventDefault()
+                                      handleAddDetailNote(it.id, itemKey)
+                                    }
+                                  }}
+                                  placeholder={t('orders.notePlaceholder', 'Kalem ile ilgili bir not yazın...')}
+                                  className="flex-1 bg-surface-container-high/40 border border-theme-border rounded-lg px-2.5 py-1.5 text-xs text-on-surface outline-none focus:border-primary transition"
+                                  disabled={savingNoteId === itemKey}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleAddDetailNote(it.id, itemKey)}
+                                  disabled={savingNoteId === itemKey || !(newNoteInputs[itemKey] || '').trim()}
+                                  className="bg-primary text-white px-3 py-1.5 rounded-lg text-xs font-semibold hover:opacity-90 transition disabled:opacity-50 flex items-center gap-1 shrink-0 cursor-pointer"
+                                >
+                                  {savingNoteId === itemKey ? (
+                                    <span className="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+                                  ) : (
+                                    <>
+                                      <span className="material-symbols-outlined text-[14px]">send</span>
+                                      <span>{t('orders.addNote', 'Not Ekle')}</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>
                     )}
-                  </div>
+                  </Fragment>
                 )
               })}
             </tbody>
@@ -434,7 +569,20 @@ function OrderDetailModal({ order, onClose, onAdvance, canAct, canChangeTo, mach
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function Production() {
   const { t } = useTranslation()
-  const { orders, updateOrder, refreshOrders, statusPermissions, userStatusPermissions, permissions, machines, employees, addProductionTask, employeePermissions } = useData()
+  const {
+    orders,
+    updateOrder,
+    refreshOrders,
+    statusPermissions,
+    userStatusPermissions,
+    permissions,
+    machines,
+    employees,
+    addProductionTask,
+    employeePermissions,
+    addOrderItemNote,
+    deleteOrderItemNote,
+  } = useData()
   const { isAdmin, user: currentUser } = useAuth()
   
   const empId = currentUser?.employeeId
@@ -447,6 +595,16 @@ export default function Production() {
   const hasEmpAct = empPerms.includes('production-start')
   const hasDeptAct = deptPerms.includes('production-start')
   const canAct = isAdmin || (!isActDenied && (hasDeptAct || hasEmpAct))
+
+  const checkPerm = (permKey) => {
+    if (isAdmin || activeDept === 'Sales Manager') return true
+    if (empPerms.includes(`-${permKey}`)) return false
+    if (empPerms.includes(permKey)) return true
+    return deptPerms.includes(permKey)
+  }
+
+  const canAddNote = isAdmin || (!empPerms.includes('-orders-note-create') && (deptPerms.includes('production') || empPerms.includes('production') || checkPerm('orders-note-create')))
+  const canDeleteNote = isAdmin || (!empPerms.includes('-orders-note-delete') && (deptPerms.includes('production') || empPerms.includes('production') || checkPerm('orders-note-delete')))
 
   const canChangeTo = (status) => {
     if (isAdmin) return true
@@ -697,6 +855,10 @@ export default function Production() {
           machines={machines}
           employees={employees}
           addProductionTask={addProductionTask}
+          canAddNote={canAddNote}
+          canDeleteNote={canDeleteNote}
+          addOrderItemNote={addOrderItemNote}
+          deleteOrderItemNote={deleteOrderItemNote}
         />
       )}
     </div>
