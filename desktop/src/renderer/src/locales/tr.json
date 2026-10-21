@@ -919,7 +919,16 @@
     "updateInfoWarning": "Kullanıcı bilgilerini güncelleyecektir.",
     "userDetails": "Kullanıcı Detayları",
     "memberSince": "Kayıt Tarihi",
-    "deleteUserConfirm": "Kullanıcı silinsin mi?"
+    "deleteUserConfirm": "Kullanıcı silinsin mi?",
+    "resetPassword": "Parola Sıfırla",
+    "newPassword": "Yeni Parola",
+    "resetPasswordDesc": "Kullanıcı için yeni bir parola belirleyin. Kullanıcı bu parola ile hemen giriş yapabilir.",
+    "passwordMinLength": "Parola en az 6 karakter olmalıdır.",
+    "passwordUpdated": "Parola başarıyla güncellendi.",
+    "generateRandom": "Rastgele Üret",
+    "copyPassword": "Kopyala",
+    "passwordCopied": "Parola kopyalandı",
+    "updatePassword": "Parolayı Güncelle"
   },
   "helvetica": "normal",
   "Roboto": "normal",

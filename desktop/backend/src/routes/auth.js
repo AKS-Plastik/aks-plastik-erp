@@ -155,6 +155,38 @@ router.post('/users/:id/reset-password', authenticate, adminOnly, async (req, re
   }
 })
 
+// POST admin directly sets/resets user password
+router.post(['/users/:id/change-password', '/users/:id/set-password'], authenticate, adminOnly, async (req, res) => {
+  try {
+    const { newPassword } = req.body
+    if (!newPassword || typeof newPassword !== 'string' || newPassword.length < 6) {
+      return res.status(400).json({ error: 'Parola en az 6 karakter olmalıdır.' })
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: req.params.id } })
+    if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı.' })
+
+    // Update in Keycloak
+    try {
+      await kc.changePassword(user.email, newPassword, user.name)
+    } catch (kcErr) {
+      console.error('Keycloak password change failed:', kcErr)
+      return res.status(500).json({ error: `Keycloak parola güncelleme hatası: ${kcErr.message}` })
+    }
+
+    // Update in Prisma
+    const hashedPassword = await bcrypt.hash(newPassword, 10)
+    await prisma.user.update({
+      where: { id: req.params.id },
+      data: { password: hashedPassword },
+    })
+
+    res.json({ success: true, message: 'Parola başarıyla güncellendi.' })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // --- Web Login Endpoints ---
 const KEYCLOAK_URL = process.env.KEYCLOAK_URL || 'http://localhost:8080'
 const REALM = process.env.KEYCLOAK_REALM || 'AKS'

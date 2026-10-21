@@ -18,6 +18,15 @@ export default function Users() {
   const [error, setError] = useState('')
   const [editError, setEditError] = useState('')
 
+  // Admin Password Reset Modal State
+  const [resetPasswordUser, setResetPasswordUser] = useState(null)
+  const [newAdminPassword, setNewAdminPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
+  const [resetError, setResetError] = useState('')
+  const [resetSuccess, setResetSuccess] = useState(false)
+  const [copied, setCopied] = useState(false)
+
   useEffect(() => {
     fetch(`${API_URL}/auth/users`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -123,6 +132,78 @@ export default function Users() {
     setEditingUser(null)
     setConfirmEdit(false)
     setEditError('')
+  }
+
+  function openResetPassword(u) {
+    setResetPasswordUser(u)
+    setNewAdminPassword('')
+    setShowPassword(false)
+    setResetLoading(false)
+    setResetError('')
+    setResetSuccess(false)
+    setCopied(false)
+  }
+
+  function closeResetPassword() {
+    setResetPasswordUser(null)
+    setNewAdminPassword('')
+    setShowPassword(false)
+    setResetLoading(false)
+    setResetError('')
+    setResetSuccess(false)
+    setCopied(false)
+  }
+
+  function generateRandomPassword() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%'
+    let result = ''
+    for (let i = 0; i < 10; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    setNewAdminPassword(result)
+    setShowPassword(true)
+    setResetError('')
+  }
+
+  function handleCopyPassword() {
+    if (!newAdminPassword) return
+    navigator.clipboard?.writeText(newAdminPassword)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function handleAdminResetPassword(e) {
+    if (e) e.preventDefault()
+    if (!resetPasswordUser) return
+    if (!newAdminPassword || newAdminPassword.length < 6) {
+      setResetError(t('users.passwordMinLength', 'Parola en az 6 karakter olmalıdır.'))
+      return
+    }
+    setResetLoading(true)
+    setResetError('')
+    setResetSuccess(false)
+    try {
+      const res = await fetch(`${API_URL}/auth/users/${resetPasswordUser.id}/change-password`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ newPassword: newAdminPassword }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || 'Parola güncellenemedi.')
+      }
+      setResetSuccess(true)
+      setTimeout(() => {
+        closeResetPassword()
+      }, 1500)
+    } catch (err) {
+      setResetError(err.message || 'Parola güncellenemedi.')
+    } finally {
+      setResetLoading(false)
+    }
   }
 
   async function handleUpdate() {
@@ -373,14 +454,31 @@ export default function Users() {
                       {roles.map((r) => <option key={r.id} value={r.name}>{r.name}</option>)}
                     </select>
                   </div>
-                  <div className="flex gap-2 justify-end pt-2">
-                    <button onClick={closeEdit} className="px-3 py-1.5 text-xs md:text-sm text-on-surface-variant hover:text-on-surface transition-colors">
-                      {t('common.cancel')}
+                  <div className="flex items-center justify-between pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const target = users.find((u) => u.id === editingUser)
+                        if (target) {
+                          closeEdit()
+                          openResetPassword(target)
+                        }
+                      }}
+                      className="px-3 py-1.5 rounded-lg border border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 text-xs md:text-sm font-semibold flex items-center gap-1.5 transition-colors"
+                      title={t('users.resetPassword', 'Parola Sıfırla')}
+                    >
+                      <span className="material-symbols-outlined text-sm md:text-base">key</span>
+                      {t('users.resetPassword', 'Parola Sıfırla')}
                     </button>
-                    <button onClick={() => setConfirmEdit(true)} className="px-4 py-1.5 md:py-2 rounded-lg primary-gradient text-white text-xs md:text-sm font-bold hover:opacity-90 flex items-center gap-1.5">
-                      <span className="material-symbols-outlined text-sm md:text-base">save</span>
-                      {t('common.saveChanges')}
-                    </button>
+                    <div className="flex gap-2">
+                      <button onClick={closeEdit} className="px-3 py-1.5 text-xs md:text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+                        {t('common.cancel')}
+                      </button>
+                      <button onClick={() => setConfirmEdit(true)} className="px-4 py-1.5 md:py-2 rounded-lg primary-gradient text-white text-xs md:text-sm font-bold hover:opacity-90 flex items-center gap-1.5">
+                        <span className="material-symbols-outlined text-sm md:text-base">save</span>
+                        {t('common.saveChanges')}
+                      </button>
+                    </div>
                   </div>
                 </>
               ) : (
@@ -491,6 +589,19 @@ export default function Users() {
               )}
 
               <button
+                onClick={() => {
+                  const target = viewUser
+                  setViewUser(null)
+                  setResetEmailStatus(null)
+                  openResetPassword(target)
+                }}
+                className="w-full py-2 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-[11px] md:text-xs font-bold hover:bg-amber-500/20 transition-all flex items-center justify-center gap-1.5"
+              >
+                <span className="material-symbols-outlined text-sm md:text-base">key</span>
+                {t('users.resetPassword', 'Parola Sıfırla (Doğrudan)')}
+              </button>
+
+              <button
                 onClick={() => sendResetEmail(viewUser.id)}
                 disabled={resetEmailStatus === 'sending' || resetEmailStatus === 'sent'}
                 className="w-full py-2 rounded-lg border-2 border-outline-variant text-on-surface-variant text-[11px] md:text-xs font-bold hover:border-primary hover:text-primary transition-all flex items-center justify-center gap-1.5 disabled:opacity-50"
@@ -520,7 +631,137 @@ export default function Users() {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Admin Password Reset Modal */}
+      {resetPasswordUser && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-0">
+          <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={closeResetPassword} />
+          <div className="relative bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-md mx-auto overflow-hidden">
+            <div className="primary-gradient px-4 py-3.5 md:py-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-[9px] md:text-[10px] font-bold text-white/70 uppercase tracking-widest flex items-center gap-1.5">
+                  <span className="material-symbols-outlined text-sm">lock_reset</span>
+                  {t('users.resetPassword', 'Parola Sıfırla')}
+                </span>
+                <button
+                  type="button"
+                  onClick={closeResetPassword}
+                  className="p-1 rounded-md text-white/70 hover:text-white hover:bg-surface-container-lowest/10 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-base md:text-lg">close</span>
+                </button>
+              </div>
+              <h2 className="text-sm md:text-base font-extrabold text-white leading-tight">
+                {resetPasswordUser.name}
+              </h2>
+              <p className="text-[11px] md:text-xs text-white/80 truncate mt-0.5">
+                {resetPasswordUser.email}
+              </p>
+            </div>
+
+            <form onSubmit={handleAdminResetPassword} className="p-4 md:p-5 space-y-3.5">
+              <p className="text-[11px] md:text-xs text-text-muted leading-relaxed">
+                {t('users.resetPasswordDesc', 'Kullanıcı için yeni bir parola belirleyin. Kullanıcı bu parola ile hemen giriş yapabilir.')}
+              </p>
+
+              <div>
+                <label className="block text-[10px] md:text-xs font-bold text-text-muted uppercase tracking-wider mb-1.5">
+                  {t('users.newPassword', 'Yeni Parola')}
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={newAdminPassword}
+                    onChange={(e) => {
+                      setNewAdminPassword(e.target.value)
+                      setResetError('')
+                    }}
+                    placeholder="••••••••"
+                    required
+                    minLength={6}
+                    autoFocus
+                    className="w-full pl-3 pr-20 py-2 rounded-xl border border-input-border bg-input-bg text-on-surface text-xs md:text-sm font-mono focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  />
+                  <div className="absolute right-1.5 flex items-center gap-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="p-1.5 text-text-subtle hover:text-on-surface rounded-lg hover:bg-hover-bg transition-colors"
+                      title={showPassword ? 'Gizle' : 'Göster'}
+                    >
+                      <span className="material-symbols-outlined text-base md:text-lg">
+                        {showPassword ? 'visibility_off' : 'visibility'}
+                      </span>
+                    </button>
+                    {newAdminPassword && (
+                      <button
+                        type="button"
+                        onClick={handleCopyPassword}
+                        className="p-1.5 text-text-subtle hover:text-primary rounded-lg hover:bg-hover-bg transition-colors"
+                        title={t('users.copyPassword', 'Kopyala')}
+                      >
+                        <span className="material-symbols-outlined text-base md:text-lg">
+                          {copied ? 'check' : 'content_copy'}
+                        </span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] pt-0.5">
+                <button
+                  type="button"
+                  onClick={generateRandomPassword}
+                  className="inline-flex items-center gap-1 text-primary hover:underline font-semibold"
+                >
+                  <span className="material-symbols-outlined text-sm">autorenew</span>
+                  {t('users.generateRandom', 'Rastgele Üret')}
+                </button>
+                {copied && (
+                  <span className="text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1">
+                    <span className="material-symbols-outlined text-xs">check_circle</span>
+                    {t('users.passwordCopied', 'Parola kopyalandı')}
+                  </span>
+                )}
+              </div>
+
+              {resetError && (
+                <div className="p-2.5 rounded-xl bg-error-container text-on-error-container text-[11px] md:text-xs flex items-center gap-2">
+                  <span className="material-symbols-outlined text-sm md:text-base flex-shrink-0">error</span>
+                  <span>{resetError}</span>
+                </div>
+              )}
+
+              {resetSuccess && (
+                <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[11px] md:text-xs flex items-center gap-2">
+                  <span className="material-symbols-outlined text-sm md:text-base flex-shrink-0">check_circle</span>
+                  <span>{t('users.passwordUpdated', 'Parola başarıyla güncellendi.')}</span>
+                </div>
+              )}
+
+              <div className="flex gap-2 justify-end pt-2">
+                <button
+                  type="button"
+                  onClick={closeResetPassword}
+                  className="px-3.5 py-2 text-xs md:text-sm font-semibold text-text-muted hover:text-on-surface rounded-xl hover:bg-hover-bg transition-colors"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button
+                  type="submit"
+                  disabled={resetLoading || resetSuccess}
+                  className="px-4 py-2 rounded-xl primary-gradient text-white text-xs md:text-sm font-bold hover:opacity-90 transition-opacity flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <span className="material-symbols-outlined text-sm md:text-base">
+                    {resetLoading ? 'hourglass_top' : 'lock_reset'}
+                  </span>
+                  {resetLoading ? 'Güncelleniyor...' : t('users.updatePassword', 'Parolayı Güncelle')}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       {confirmDeleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-0">
           <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={() => setConfirmDeleteId(null)} />
@@ -594,6 +835,13 @@ export default function Users() {
                 <td className="px-6 py-4 text-right" onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center justify-end gap-1">
                     <button
+                      onClick={() => openResetPassword(u)}
+                      className="p-2 text-text-subtle hover:text-amber-500 transition-colors rounded-xl hover:bg-amber-500/10"
+                      title={t('users.resetPassword', 'Parola Sıfırla')}
+                    >
+                      <span className="material-symbols-outlined text-lg">key</span>
+                    </button>
+                    <button
                       onClick={() => startEdit(u)}
                       className="p-2 text-text-subtle hover:text-primary transition-colors rounded-xl hover:bg-primary/10"
                       title="Edit user"
@@ -660,6 +908,13 @@ export default function Users() {
 
               {/* Actions */}
               <div className="flex items-center gap-1.5 md:gap-2" onClick={(e) => e.stopPropagation()}>
+                <button
+                  onClick={() => openResetPassword(u)}
+                  className="p-2 md:p-2.5 bg-amber-500/10 text-amber-500 rounded-xl hover:bg-amber-500/20 transition-colors"
+                  title={t('users.resetPassword', 'Parola Sıfırla')}
+                >
+                  <span className="material-symbols-outlined text-base md:text-lg">key</span>
+                </button>
                 <button onClick={() => startEdit(u)} className="p-2 md:p-2.5 bg-primary/10 text-primary rounded-xl hover:bg-primary/20 transition-colors">
                   <span className="material-symbols-outlined text-base md:text-lg">edit</span>
                 </button>
