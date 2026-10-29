@@ -7,7 +7,7 @@ const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY;
  * @param {string} content - The body of the notification
  * @param {string[]} [externalIds] - Array of external user IDs to send to. If omitted, sends to all.
  */
-async function sendNotification(heading, content, externalIds = []) {
+async function sendNotification(heading, content, externalIds = [], link = null) {
   if (!ONESIGNAL_APP_ID || !ONESIGNAL_API_KEY) {
     console.warn("OneSignal credentials missing in .env, notification not sent.");
     return;
@@ -18,6 +18,13 @@ async function sendNotification(heading, content, externalIds = []) {
     contents: { en: content, tr: content },
     headings: { en: heading, tr: heading },
   };
+
+  if (link) {
+    const baseUrl = process.env.APP_URL || 'https://aksplastikambalaj.com';
+    const fullUrl = link.startsWith('http') ? link : `${baseUrl.replace(/\/$/, '')}${link}`;
+    payload.url = fullUrl;
+    payload.web_url = fullUrl;
+  }
 
   // If specific users are targeted by their employee/user ID (external_id in OneSignal)
   if (externalIds && externalIds.length > 0) {

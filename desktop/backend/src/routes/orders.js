@@ -239,7 +239,7 @@ router.post('/', async (req, res) => {
       body: `${order.customer?.name || 'Müşteri'} için ${order.items?.length || 0} kalem sipariş oluşturuldu.`,
       type: 'order',
       page: 'orders',
-      link: '/orders',
+      link: `/orders?orderId=${order.id}`,
       excludeUserId: req.user?.id,
     }).catch((err) => console.error('Failed to dispatch order notification:', err))
 
@@ -393,7 +393,7 @@ router.put('/:id', async (req, res) => {
         body: `Sipariş durumu "${current.status}" -> "${status}" olarak güncellendi.`,
         type: 'order',
         page: 'orders',
-        link: '/orders',
+        link: `/orders?orderId=${order.id}`,
         excludeUserId: req.user?.id,
       }).catch((err) => console.error('Failed to dispatch order status notification:', err))
     }

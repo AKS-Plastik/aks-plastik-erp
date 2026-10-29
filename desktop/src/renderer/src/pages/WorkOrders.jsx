@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useRef, useEffect } from 'react'
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { useData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
@@ -841,6 +841,8 @@ function VisitCardCompact({ visit, onClick, showDate }) {
 export default function SiteVisits() {
   const { t } = useTranslation()
   const { customers, employees, siteVisits, addSiteVisit, updateSiteVisit, deleteSiteVisit } = useData()
+  const [searchParams] = useSearchParams()
+  const location = useLocation()
   const [showModal, setShowModal] = useState(false)
   const [initialSlot, setInitialSlot] = useState(null)
   const [selected, setSelected] = useState(null)
@@ -858,6 +860,20 @@ export default function SiteVisits() {
   const scrollRef = useRef(null)
   const [isDragging, setIsDragging] = useState(false)
   const [startX, setStartX] = useState(0)
+
+  useEffect(() => {
+    const targetVisitId = searchParams.get('visitId') || location.state?.openVisitId
+    const targetCode = searchParams.get('code') || location.state?.openCode
+    if ((targetVisitId || targetCode) && siteVisits && siteVisits.length > 0) {
+      const match = targetVisitId
+        ? siteVisits.find((v) => v.id === targetVisitId)
+        : siteVisits.find((v) => v.code === targetCode)
+      if (match) {
+        setSelected(match)
+        window.history.replaceState({}, document.title, window.location.pathname)
+      }
+    }
+  }, [searchParams, location.state, siteVisits])
   const [scrollLeftPos, setScrollLeftPos] = useState(0)
   const [hasDragged, setHasDragged] = useState(false)
 

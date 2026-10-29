@@ -145,7 +145,7 @@ router.post('/', async (req, res) => {
       body: `${task.product?.name || task.orderItem?.productName || 'Ürün'} (${task.quantity} adet) planlandı.`,
       type: 'production',
       page: 'production',
-      link: '/production-tasks',
+      link: `/production-tasks?taskId=${task.id}`,
       excludeUserId: req.user?.id,
     }).catch((err) => console.error('Failed to dispatch production task notification:', err))
 

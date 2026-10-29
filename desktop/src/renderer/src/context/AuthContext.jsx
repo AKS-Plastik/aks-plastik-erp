@@ -42,6 +42,18 @@ export function AuthProvider({ children }) {
               enable: true,
             },
           })
+
+          // Ensure desktop banner displays even when website is open in active foreground
+          try {
+            OneSignal.Notifications.addEventListener('foregroundWillDisplay', (event) => {
+              if (event && event.notification && typeof event.notification.display === 'function') {
+                event.notification.display()
+              }
+            })
+          } catch (e) {
+            console.warn('OneSignal foreground listener error:', e)
+          }
+
           setOneSignalReady(true)
         } catch (err) {
           console.warn('OneSignal init error:', err)
@@ -61,6 +73,11 @@ export function AuthProvider({ children }) {
         try {
           await OneSignal.login(externalId)
           console.log('[OneSignal] Logged in with externalId:', externalId)
+          if (user.email) {
+            try {
+              await OneSignal.User.addEmail(user.email)
+            } catch {}
+          }
 
           // Prompt for permission if default
           if (typeof window !== 'undefined' && 'Notification' in window) {

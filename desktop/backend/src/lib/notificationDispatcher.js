@@ -175,21 +175,37 @@ async function dispatchNotification({
     );
 
     // 1. Save in database for in-app history & bell notification
-    await prisma.notification.createMany({
-      data: recipients.map((u) => ({
-        userId: u.id,
-        title,
-        body,
-        type,
-        page,
-        link,
-        isRead: false,
-      })),
-    });
+    try {
+      await prisma.notification.createMany({
+        data: recipients.map((u) => ({
+          userId: u.id,
+          title,
+          body,
+          type,
+          page,
+          link,
+          isRead: false,
+        })),
+      });
+    } catch (dbErr) {
+      console.error('[NotificationDispatcher] Database save failed:', dbErr.message);
+    }
 
     // 2. Send Push Notification via OneSignal (using externalIds)
-    const externalIds = recipients.map((u) => u.employeeId || u.id);
-    await sendNotification(title, body, externalIds);
+    try {
+      const externalIds = Array.from(
+        new Set(
+          recipients.flatMap((u) => [
+            u.id,
+            u.employeeId,
+            u.email,
+          ]).filter(Boolean)
+        )
+      );
+      await sendNotification(title, body, externalIds, link);
+    } catch (pushErr) {
+      console.error('[NotificationDispatcher] OneSignal push failed:', pushErr.message);
+    }
   } catch (err) {
     console.error('[NotificationDispatcher] Failed to dispatch notification:', err);
   }
