@@ -1,5 +1,6 @@
 const { Router } = require('express')
 const { PrismaClient } = require('@prisma/client')
+const { dispatchNotification } = require('../lib/notificationDispatcher')
 
 const prisma = new PrismaClient()
 const router = Router()
@@ -75,6 +76,18 @@ router.post('/', async (req, res) => {
       },
       include: { customer: customerSelect, employee: employeeSelect, assignees: employeeSelect, orders: { select: { id: true, code: true, status: true, totalAmount: true } }, statusNotes: { include: { createdBy: employeeSelect }, orderBy: { createdAt: 'desc' } } },
     })
+    // Dispatch notification to admins & managers
+    const customerName = visit.customer?.name || ''
+    const creatorName = req.user.name || 'Bir kullanıcı'
+    dispatchNotification({
+      title: `Yeni Saha Ziyareti: ${customerName || finalTitle}`,
+      body: `${creatorName} tarafından ${date || ''} ${time ? '(' + time + ')' : ''} için saha ziyareti planlandı.`,
+      page: 'work-orders',
+      type: 'work_order',
+      link: '/work-orders',
+      excludeUserId: req.user.id,
+    }).catch(err => console.error('[Notification] SiteVisit creation dispatch error:', err))
+
     res.status(201).json(visit)
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -139,6 +152,20 @@ router.put('/:id', async (req, res) => {
       data: updateData,
       include: { customer: customerSelect, employee: employeeSelect, assignees: employeeSelect, orders: { select: { id: true, code: true, status: true, totalAmount: true } }, statusNotes: { include: { createdBy: employeeSelect }, orderBy: { createdAt: 'desc' } } },
     })
+
+    if (status && status !== existingVisit.status) {
+      const customerName = visit.customer?.name || ''
+      const updaterName = req.user.name || 'Bir kullanıcı'
+      dispatchNotification({
+        title: `Saha Ziyareti Güncellendi: ${customerName || visit.title}`,
+        body: `${updaterName} durumu "${existingVisit.status}" -> "${status}" olarak değiştirdi.${req.body.statusNote ? ' Not: ' + req.body.statusNote : ''}`,
+        page: 'work-orders',
+        type: 'work_order',
+        link: '/work-orders',
+        excludeUserId: req.user.id,
+      }).catch(err => console.error('[Notification] SiteVisit status dispatch error:', err))
+    }
+
     res.json(visit)
   } catch (err) {
     res.status(500).json({ error: err.message })
