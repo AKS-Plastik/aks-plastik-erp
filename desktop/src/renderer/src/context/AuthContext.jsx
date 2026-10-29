@@ -83,6 +83,9 @@ export function AuthProvider({ children }) {
           if (typeof window !== 'undefined' && 'Notification' in window) {
             if (Notification.permission === 'granted') {
               try {
+                if (OneSignal.Notifications && typeof OneSignal.Notifications.requestPermission === 'function') {
+                  await OneSignal.Notifications.requestPermission()
+                }
                 if (OneSignal.User?.PushSubscription && typeof OneSignal.User.PushSubscription.optIn === 'function') {
                   await OneSignal.User.PushSubscription.optIn()
                   console.log('[OneSignal] Push subscription opted in successfully')

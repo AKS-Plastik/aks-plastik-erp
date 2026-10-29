@@ -244,6 +244,16 @@ export default function NotificationCenter() {
         setPermissionStatus(perm)
         if (perm !== 'granted') return
       }
+      try {
+        if (window.OneSignal?.Notifications?.requestPermission) {
+          await window.OneSignal.Notifications.requestPermission()
+        }
+        if (window.OneSignal?.User?.PushSubscription?.optIn) {
+          await window.OneSignal.User.PushSubscription.optIn()
+        }
+      } catch (e) {
+        console.warn('OneSignal test handshake error:', e)
+      }
     }
     triggerDesktopNotification({
       id: `test-${Date.now()}`,
