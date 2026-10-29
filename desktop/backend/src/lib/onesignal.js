@@ -29,6 +29,7 @@ async function sendNotification(heading, content, externalIds = [], link = null)
   // If specific users are targeted by their employee/user ID (external_id in OneSignal)
   if (externalIds && externalIds.length > 0) {
     payload.include_aliases = { external_id: externalIds };
+    payload.include_external_user_ids = externalIds;
     payload.target_channel = "push";
   } else {
     // Otherwise broadcast to all subscribers

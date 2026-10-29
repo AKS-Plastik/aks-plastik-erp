@@ -16,59 +16,117 @@ export default function NotificationCenter() {
   const [filter, setFilter] = useState('all') // 'all' | 'unread'
   const [permissionStatus, setPermissionStatus] = useState(() => (typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'granted'))
   const containerRef = useRef(null)
+  const knownIdsRef = useRef(null)
+  const isFirstLoadRef = useRef(true)
 
   const lang = i18n.language === 'tr' ? 'tr' : 'en'
 
-  // Fetch unread count
-  const fetchUnreadCount = useCallback(async () => {
-    if (!token) return
+  // Web Audio chime for notification
+  const playNotificationSound = useCallback(() => {
     try {
-      const res = await fetch(`${API_URL}/notifications/unread-count`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      if (!res.ok) return
-      const data = await res.json()
-      setUnreadCount(typeof data.unreadCount === 'number' ? data.unreadCount : 0)
+      const AudioCtx = window.AudioContext || window.webkitAudioContext
+      if (!AudioCtx) return
+      const ctx = new AudioCtx()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.type = 'sine'
+      const now = ctx.currentTime
+      osc.frequency.setValueAtTime(587.33, now) // D5
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.12) // A5
+      gain.gain.setValueAtTime(0.2, now)
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45)
+      osc.start(now)
+      osc.stop(now + 0.5)
     } catch {
-      // ignore network errors
+      // Audio autoplay policy or not supported
     }
-  }, [token])
+  }, [])
 
-  // Fetch full list
-  const fetchNotifications = useCallback(async () => {
+  // Trigger system / desktop notification
+  const triggerDesktopNotification = useCallback((notification) => {
+    playNotificationSound()
+
+    if (typeof window === 'undefined' || !('Notification' in window)) return
+    if (Notification.permission !== 'granted') return
+
+    try {
+      const n = new window.Notification(notification.title || 'AKS ERP', {
+        body: notification.body || '',
+        icon: '/pwa-192x192.png',
+        badge: '/pwa-192x192.png',
+        tag: `aks-notification-${notification.id}`,
+        renotify: true,
+      })
+
+      n.onclick = () => {
+        try {
+          window.focus()
+        } catch {}
+        if (notification.link) {
+          navigate(notification.link)
+        }
+        n.close()
+      }
+    } catch (err) {
+      console.warn('Native desktop notification error:', err)
+    }
+  }, [navigate, playNotificationSound])
+
+  // Check notifications and trigger desktop alerts for new unread items
+  const checkNotifications = useCallback(async (isManualOpen = false) => {
     if (!token) return
-    setLoading(true)
+    if (isManualOpen) setLoading(true)
     try {
       const res = await fetch(`${API_URL}/notifications`, {
         headers: { Authorization: `Bearer ${token}` }
       })
       if (!res.ok) return
       const data = await res.json()
-      if (Array.isArray(data)) {
-        setNotifications(data)
-        const unread = data.filter((n) => !n.isRead).length
-        setUnreadCount(unread)
+      if (!Array.isArray(data)) return
+
+      setNotifications(data)
+      const unread = data.filter((n) => !n.isRead).length
+      setUnreadCount(unread)
+
+      const currentIds = new Set(data.map((n) => n.id))
+
+      if (isFirstLoadRef.current) {
+        knownIdsRef.current = currentIds
+        isFirstLoadRef.current = false
+      } else {
+        const previousIds = knownIdsRef.current || new Set()
+        const newUnread = data.filter((n) => !n.isRead && !previousIds.has(n.id))
+
+        if (newUnread.length > 0) {
+          newUnread.slice(0, 3).forEach((item) => {
+            triggerDesktopNotification(item)
+          })
+        }
+
+        knownIdsRef.current = currentIds
       }
     } catch {
-      // ignore
+      // ignore network errors
     } finally {
-      setLoading(false)
+      if (isManualOpen) setLoading(false)
     }
-  }, [token])
+  }, [token, triggerDesktopNotification])
 
-  // Polling unread count every 30 seconds
+  // Polling notifications every 15 seconds
   useEffect(() => {
-    fetchUnreadCount()
-    const interval = setInterval(fetchUnreadCount, 30000)
+    checkNotifications()
+    const interval = setInterval(() => checkNotifications(false), 15000)
     return () => clearInterval(interval)
-  }, [fetchUnreadCount])
+  }, [checkNotifications])
 
-  // Fetch list when opened
+  // Refresh when opened
   useEffect(() => {
     if (isOpen) {
-      fetchNotifications()
+      checkNotifications(true)
     }
-  }, [isOpen, fetchNotifications])
+  }, [isOpen, checkNotifications])
 
   // Click outside to close
   useEffect(() => {
@@ -179,6 +237,24 @@ export default function NotificationCenter() {
     }
   }
 
+  async function handleTestNotification() {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission !== 'granted') {
+        const perm = await Notification.requestPermission()
+        setPermissionStatus(perm)
+        if (perm !== 'granted') return
+      }
+    }
+    triggerDesktopNotification({
+      id: `test-${Date.now()}`,
+      title: 'AKS ERP Bildirim Testi',
+      body: lang === 'tr'
+        ? 'Masaüstü bildirimleri ve ses başarıyla çalışıyor!'
+        : 'Desktop notifications and sound are working successfully!',
+      link: null
+    })
+  }
+
   const displayedList = filter === 'unread'
     ? notifications.filter((n) => !n.isRead)
     : notifications
@@ -217,6 +293,16 @@ export default function NotificationCenter() {
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleTestNotification}
+                title={lang === 'tr' ? 'PC bildirimini test et' : 'Test PC notification'}
+                className="px-2 py-0.5 rounded-lg text-text-muted hover:text-primary hover:bg-primary/10 transition-colors flex items-center gap-1 text-[11px] font-medium"
+              >
+                <span className="material-symbols-outlined text-[15px]">campaign</span>
+                <span>{lang === 'tr' ? 'Test' : 'Test'}</span>
+              </button>
+
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
