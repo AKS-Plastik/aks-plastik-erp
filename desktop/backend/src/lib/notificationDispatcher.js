@@ -114,6 +114,20 @@ async function getEligibleUsers(page = null) {
           eligible.push(u);
           continue;
         }
+        if (
+          page === 'work-orders' &&
+          (deptLower.includes('sale') || deptLower.includes('satış') || deptLower.includes('satis') || deptLower.includes('saha') || deptLower.includes('pazarlama'))
+        ) {
+          eligible.push(u);
+          continue;
+        }
+        if (
+          page === 'reports' &&
+          (deptLower.includes('sale') || deptLower.includes('satış') || deptLower.includes('satis') || deptLower.includes('saha'))
+        ) {
+          eligible.push(u);
+          continue;
+        }
       }
     }
 

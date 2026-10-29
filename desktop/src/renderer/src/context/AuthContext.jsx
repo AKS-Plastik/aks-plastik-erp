@@ -26,6 +26,8 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(!!savedRt)
   const refreshTokenRef = useRef(savedRt)
 
+  const [oneSignalReady, setOneSignalReady] = useState(false)
+
   // Initialize OneSignal
   useEffect(() => {
     const initOneSignal = async () => {
@@ -40,6 +42,7 @@ export function AuthProvider({ children }) {
               enable: true,
             },
           })
+          setOneSignalReady(true)
         } catch (err) {
           console.warn('OneSignal init error:', err)
         }
@@ -48,28 +51,44 @@ export function AuthProvider({ children }) {
     initOneSignal()
   }, [])
 
-  // Sync user with OneSignal
+  // Sync user with OneSignal and prompt for permission
   useEffect(() => {
     const syncOneSignalUser = async () => {
-      if (import.meta.env.VITE_ONESIGNAL_APP_ID && OneSignal.initialized) {
-        if (user) {
-          const externalId = user.employeeId || user.id
-          try {
-            await OneSignal.login(externalId)
-          } catch (err) {
-            console.warn('OneSignal login error:', err)
+      if (!oneSignalReady || !import.meta.env.VITE_ONESIGNAL_APP_ID) return
+
+      if (user) {
+        const externalId = user.employeeId || user.id
+        try {
+          await OneSignal.login(externalId)
+          console.log('[OneSignal] Logged in with externalId:', externalId)
+
+          // Prompt for permission if default
+          if (typeof window !== 'undefined' && 'Notification' in window) {
+            if (Notification.permission === 'default') {
+              try {
+                if (OneSignal.Slidedown && typeof OneSignal.Slidedown.promptPush === 'function') {
+                  await OneSignal.Slidedown.promptPush()
+                } else if (OneSignal.Notifications && typeof OneSignal.Notifications.requestPermission === 'function') {
+                  await OneSignal.Notifications.requestPermission()
+                }
+              } catch (permErr) {
+                console.warn('OneSignal permission prompt error:', permErr)
+              }
+            }
           }
-        } else {
-          try {
-            await OneSignal.logout()
-          } catch (err) {
-            console.warn('OneSignal logout error:', err)
-          }
+        } catch (err) {
+          console.warn('OneSignal login error:', err)
+        }
+      } else {
+        try {
+          await OneSignal.logout()
+        } catch (err) {
+          console.warn('OneSignal logout error:', err)
         }
       }
     }
     syncOneSignalUser()
-  }, [user])
+  }, [user, oneSignalReady])
 
   // Web-only: Restore session on mount if we have a refresh token saved
   useEffect(() => {

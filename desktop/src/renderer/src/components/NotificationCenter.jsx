@@ -14,6 +14,7 @@ export default function NotificationCenter() {
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(false)
   const [filter, setFilter] = useState('all') // 'all' | 'unread'
+  const [permissionStatus, setPermissionStatus] = useState(() => (typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'granted'))
   const containerRef = useRef(null)
 
   const lang = i18n.language === 'tr' ? 'tr' : 'en'
@@ -114,6 +115,23 @@ export default function NotificationCenter() {
       setUnreadCount(0)
     } catch {
       // ignore
+    }
+  }
+
+  async function requestNotificationPermission() {
+    try {
+      if (typeof window !== 'undefined' && 'Notification' in window) {
+        if (window.OneSignal?.Notifications?.requestPermission) {
+          await window.OneSignal.Notifications.requestPermission()
+        } else if (window.OneSignal?.Slidedown?.promptPush) {
+          await window.OneSignal.Slidedown.promptPush()
+        } else {
+          await Notification.requestPermission()
+        }
+        setPermissionStatus(Notification.permission)
+      }
+    } catch (e) {
+      console.warn('Request permission error:', e)
     }
   }
 
@@ -233,6 +251,24 @@ export default function NotificationCenter() {
               {lang === 'tr' ? 'Okunmamış' : 'Unread'} ({unreadCount})
             </button>
           </div>
+
+          {/* Notification Permission Banner */}
+          {permissionStatus === 'default' && (
+            <div className="mx-3 my-2 p-2.5 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="material-symbols-outlined text-primary text-base">notifications_active</span>
+                <span className="text-[11px] text-on-surface font-medium truncate">
+                  {lang === 'tr' ? 'Anlık bildirimleri etkinleştir' : 'Enable push notifications'}
+                </span>
+              </div>
+              <button
+                onClick={requestNotificationPermission}
+                className="px-2.5 py-1 bg-primary text-white rounded-lg text-[10px] font-bold hover:opacity-90 transition-opacity flex-shrink-0"
+              >
+                {lang === 'tr' ? 'İzin Ver' : 'Enable'}
+              </button>
+            </div>
+          )}
 
           {/* Notification List */}
           <div className="max-h-[420px] overflow-y-auto divide-y divide-surface-container-low">
