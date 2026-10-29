@@ -7,6 +7,7 @@ const { adminOnly } = require('../middleware/auth')
 
 const prisma = new PrismaClient()
 const router = Router()
+const { dispatchNotification } = require('../lib/notificationDispatcher')
 
 // Ensure deliveries upload folder exists
 const deliveriesDir = path.join(__dirname, '..', '..', 'uploads', 'deliveries')
@@ -73,7 +74,7 @@ router.post('/', async (req, res) => {
         data: {
           code,
           productId,
-          quantity: parseInt(quantity),
+          quantity: Math.round(parseFloat(String(quantity).replace(",", "."))) || 0,
           status: 'open',
           date: date || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`,
           machineId: extrusionMachineId ? parseInt(extrusionMachineId) : null,
@@ -92,7 +93,7 @@ router.post('/', async (req, res) => {
     const orderItem = await prisma.orderItem.findUnique({ where: { id: orderItemId } })
     if (!orderItem) return res.status(404).json({ error: 'Order item not found' })
 
-    const totalAssigned = orderItem.producedQuantity + orderItem.inProductionQuantity + parseInt(quantity)
+    const totalAssigned = orderItem.producedQuantity + orderItem.inProductionQuantity + parseFloat(String(quantity).replace(",", "."))
     if (totalAssigned > orderItem.quantity) {
       return res.status(400).json({ error: 'Cannot assign more quantity to production than ordered' })
     }
@@ -103,7 +104,7 @@ router.post('/', async (req, res) => {
         data: {
           code,
           orderItemId,
-          quantity: parseInt(quantity),
+          quantity: Math.round(parseFloat(String(quantity).replace(",", "."))) || 0,
           status: 'open',
           date: date || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`,
           machineId: extrusionMachineId ? parseInt(extrusionMachineId) : null,
@@ -119,7 +120,7 @@ router.post('/', async (req, res) => {
       prisma.orderItem.update({
         where: { id: orderItemId },
         data: { 
-          inProductionQuantity: { increment: parseInt(quantity) },
+          inProductionQuantity: { increment: parseFloat(String(quantity).replace(",", ".")) },
           status: 'In-Production',
           ...(extrusionMachineId && { extrusionMachineId: parseInt(extrusionMachineId) }),
           ...(extrusionOperatorId && { extrusionOperatorId }),
@@ -138,6 +139,15 @@ router.post('/', async (req, res) => {
         data: { status: 'In-Production' }
       })
     }
+
+    dispatchNotification({
+      title: `Yeni Üretim Görevi: #${task.code}`,
+      body: `${task.product?.name || task.orderItem?.productName || 'Ürün'} (${task.quantity} adet) planlandı.`,
+      type: 'production',
+      page: 'production',
+      link: '/production-tasks',
+      excludeUserId: req.user?.id,
+    }).catch((err) => console.error('Failed to dispatch production task notification:', err))
 
     res.status(201).json(task)
   } catch (err) {
@@ -374,7 +384,7 @@ router.put('/:id', async (req, res) => {
       data: {
         ...(machineId !== undefined && { machineId: machineId ? parseInt(machineId) : null }),
         ...(operatorId !== undefined && { operatorId: operatorId || null }),
-        ...(quantity && { quantity: parseInt(quantity) }),
+        ...(quantity && { quantity: parseFloat(String(quantity).replace(",", ".")) }),
         ...(status && { status }),
         ...(date !== undefined && { date }),
       },
@@ -453,7 +463,7 @@ router.post('/rollover', async (req, res) => {
       }
       res.json({ action: 'rollover', task: updated })
     } else if (action === 'split') {
-      const compQty = parseInt(completedQuantity)
+      const compQty = parseFloat(String(completedQuantity).replace(",", "."))
       if (compQty <= 0 || compQty >= task.quantity) return res.status(400).json({ error: 'Invalid split quantity' })
       
       const remainQty = task.quantity - compQty

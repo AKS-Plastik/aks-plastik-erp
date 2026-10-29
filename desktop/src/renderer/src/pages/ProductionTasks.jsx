@@ -95,6 +95,8 @@ function CardDetailModal({
   canDeleteNote = true,
   addOrderItemNote,
   deleteOrderItemNote,
+  isSaving = false,
+  isDeleting = false,
 }) {
   const { t } = useTranslation()
   const todayIso = getLocalTodayIso()
@@ -143,6 +145,7 @@ function CardDetailModal({
   const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
 
   function handleSave() {
+    if (isSaving || isDeleting) return
     if (!form.machineId) { setErrors({ machineId: 'Required' }); return }
     if (!form.operatorId) { setErrors({ operatorId: 'Required' }); return }
     if (!form.quantity || form.quantity < 1) { setErrors({ quantity: 'Invalid' }); return }
@@ -151,6 +154,7 @@ function CardDetailModal({
   }
 
   function handleCancel() {
+    if (isSaving || isDeleting) return
     setForm({
       machineId: task.machineId || '',
       operatorId: task.operatorId || '',
@@ -166,7 +170,7 @@ function CardDetailModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={(isSaving || isDeleting) ? undefined : onClose} />
       <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl shadow-inverse-surface/20 w-[95%] md:w-[90%] lg:w-[85%] max-w-none mx-4 flex flex-col max-h-[90vh]">
 
         {/* Header banner */}
@@ -183,7 +187,7 @@ function CardDetailModal({
                 <p className="text-blue-200 text-[9px] md:text-[10px] font-mono mt-0.5">{task.code}</p>
               </div>
             </div>
-            <button onClick={onClose} className="p-1 md:p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-surface-container-lowest/10 transition-colors flex-shrink-0">
+            <button onClick={onClose} disabled={isSaving || isDeleting} className="p-1 md:p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-surface-container-lowest/10 transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
               <span className="material-symbols-outlined text-lg md:text-xl">close</span>
             </button>
           </div>
@@ -431,12 +435,21 @@ function CardDetailModal({
               </div>
             </div>
             <div className="flex gap-2 flex-shrink-0">
-              <button onClick={() => setConfirming(false)} className="px-4 py-2 rounded-xl text-on-error-container text-xs font-bold hover:bg-error-container/60 transition-colors">
+              <button onClick={() => setConfirming(false)} disabled={isDeleting} className="px-4 py-2 rounded-xl text-on-error-container text-xs font-bold hover:bg-error-container/60 transition-colors disabled:opacity-50">
                 {t('common.cancel')}
               </button>
-              <button onClick={() => onDelete(task.id)} className="px-4 py-2 rounded-xl bg-error text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-sm">delete</span>
-                {t('common.yesDelete')}
+              <button onClick={() => onDelete(task.id)} disabled={isDeleting} className="px-4 py-2 rounded-xl bg-error text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 disabled:opacity-50">
+                {isDeleting ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                    <span>Siliniyor...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-sm">delete</span>
+                    {t('common.yesDelete')}
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -447,37 +460,47 @@ function CardDetailModal({
           {!editing ? (
             <>
               <div className="flex items-center gap-2">
-                <button onClick={() => setEditing(true)} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 border-primary text-primary text-xs md:text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center gap-1.5">
+                <button onClick={() => setEditing(true)} disabled={isSaving || isDeleting} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 border-primary text-primary text-xs md:text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
                   <span className="material-symbols-outlined text-[14px] md:text-[18px]">edit</span>
                   <span className="hidden md:inline">{t('common.edit')}</span>
                 </button>
                 {isAdmin && (
                   <button
                     onClick={() => setConfirming((v) => !v)}
-                    className={`px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 text-xs md:text-sm font-bold transition-all flex items-center gap-1.5 ${confirming ? 'border-error bg-error text-white' : 'border-error text-error hover:bg-error hover:text-white'
+                    disabled={isSaving || isDeleting}
+                    className={`px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 text-xs md:text-sm font-bold transition-all flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${confirming ? 'border-error bg-error text-white' : 'border-error text-error hover:bg-error hover:text-white'
                       }`}
                   >
                     <span className="material-symbols-outlined text-[14px] md:text-[18px]">delete</span>
                     <span className="hidden md:inline">{t('common.delete')}</span>
                   </button>
                 )}
-                <button onClick={() => onCreateEmployeeTask && onCreateEmployeeTask(task)} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 border-secondary text-secondary text-xs md:text-sm font-bold hover:bg-secondary hover:text-white transition-all flex items-center gap-1.5">
+                <button onClick={() => onCreateEmployeeTask && onCreateEmployeeTask(task)} disabled={isSaving || isDeleting} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 border-secondary text-secondary text-xs md:text-sm font-bold hover:bg-secondary hover:text-white transition-all flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
                   <span className="material-symbols-outlined text-[14px] md:text-[18px]">assignment_add</span>
                   <span className="hidden md:inline">Görev Oluştur</span>
                 </button>
               </div>
-              <button onClick={onClose} className="px-4 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity">
+              <button onClick={onClose} disabled={isSaving || isDeleting} className="px-4 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed">
                 {t('common.close')}
               </button>
             </>
           ) : (
             <>
-              <button onClick={handleCancel} className="px-3 py-1.5 md:px-5 md:py-2 rounded-lg md:rounded-xl text-on-surface-variant text-xs md:text-sm font-semibold hover:bg-surface-container-low transition-colors">
+              <button onClick={handleCancel} disabled={isSaving} className="px-3 py-1.5 md:px-5 md:py-2 rounded-lg md:rounded-xl text-on-surface-variant text-xs md:text-sm font-semibold hover:bg-surface-container-low transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 {t('common.cancel')}
               </button>
-              <button onClick={handleSave} className="px-4 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 md:gap-2">
-                <span className="material-symbols-outlined text-[14px] md:text-[18px]">save</span>
-                {t('common.saveChanges')}
+              <button onClick={handleSave} disabled={isSaving} className="px-4 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 md:gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                {isSaving ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                    <span>Kaydediliyor...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[14px] md:text-[18px]">save</span>
+                    {t('common.saveChanges')}
+                  </>
+                )}
               </button>
             </>
           )}
@@ -487,7 +510,7 @@ function CardDetailModal({
   )
 }
 
-function EmployeeTaskCreateModal({ task, employees, machines, onClose, onCreate }) {
+function EmployeeTaskCreateModal({ task, employees, machines, onClose, onCreate, isCreating = false }) {
   const { products } = useData()
 
   // Try to find a matching product ID if not explicitly set
@@ -524,6 +547,7 @@ function EmployeeTaskCreateModal({ task, employees, machines, onClose, onCreate 
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    if (isCreating) return
     onCreate(form)
   }
 
@@ -532,7 +556,7 @@ function EmployeeTaskCreateModal({ task, employees, machines, onClose, onCreate 
       <div className="bg-surface rounded-3xl shadow-2xl max-w-md w-full overflow-hidden border border-theme-border">
         <div className="p-6 border-b border-theme-border flex justify-between items-center bg-surface-container-low/30">
           <h2 className="text-xl font-black text-on-surface">Personel Görevi Oluştur</h2>
-          <button onClick={onClose} className="text-on-surface-variant hover:text-error transition-colors">
+          <button onClick={onClose} disabled={isCreating} className="text-on-surface-variant hover:text-error transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
@@ -584,8 +608,15 @@ function EmployeeTaskCreateModal({ task, employees, machines, onClose, onCreate 
               <option value="completed">Tamamlandı</option>
             </select>
           </div>
-          <button type="submit" className="w-full bg-primary text-on-primary font-bold py-3 rounded-xl mt-4 hover:opacity-90 transition-opacity">
-            Görevi Kaydet
+          <button type="submit" disabled={isCreating} className="w-full bg-primary text-on-primary font-bold py-3 rounded-xl mt-4 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2">
+            {isCreating ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                <span>Görevi Kaydediliyor...</span>
+              </>
+            ) : (
+              'Görevi Kaydet'
+            )}
           </button>
         </form>
       </div>
@@ -994,6 +1025,10 @@ export default function ProductionTasks() {
   const [pendingMove, setPendingMove] = useState(null)
   const [dragOverColumn, setDragOverColumn] = useState(null)
   const [search, setSearch] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isCreatingEmployeeTask, setIsCreatingEmployeeTask] = useState(false)
+  const [isCreatingProductionTask, setIsCreatingProductionTask] = useState(false)
   const dateInputRef = useRef(null)
 
   const todayIso = getLocalTodayIso()
@@ -1201,8 +1236,11 @@ export default function ProductionTasks() {
           canDeleteNote={canDeleteNote}
           addOrderItemNote={addOrderItemNote}
           deleteOrderItemNote={deleteOrderItemNote}
-          onClose={() => setDetailTask(null)}
-          onSave={(id, form) => {
+          isSaving={isSaving}
+          isDeleting={isDeleting}
+          onClose={() => { if (!isSaving && !isDeleting) setDetailTask(null); }}
+          onSave={async (id, form) => {
+            if (isSaving || isDeleting) return
             if (form.status !== detailTask.status) {
               setPendingMove({
                 task: { ...detailTask, ...form, id },
@@ -1212,12 +1250,27 @@ export default function ProductionTasks() {
               })
               setDetailTask(null)
             } else {
-              updateProductionTask(id, form);
-              setDetailTask(null)
+              try {
+                setIsSaving(true)
+                await updateProductionTask(id, form);
+                setDetailTask(null)
+              } finally {
+                setIsSaving(false)
+              }
             }
           }}
-          onDelete={(id) => { deleteProductionTask(id); setDetailTask(null) }}
+          onDelete={async (id) => {
+            if (isSaving || isDeleting) return
+            try {
+              setIsDeleting(true)
+              await deleteProductionTask(id);
+              setDetailTask(null)
+            } finally {
+              setIsDeleting(false)
+            }
+          }}
           onCreateEmployeeTask={(task) => {
+            if (isSaving || isDeleting) return
             setDetailTask(null)
             setEmployeeTaskModal(task)
           }}
@@ -1229,13 +1282,18 @@ export default function ProductionTasks() {
           task={employeeTaskModal}
           employees={employees}
           machines={machines}
-          onClose={() => setEmployeeTaskModal(null)}
+          isCreating={isCreatingEmployeeTask}
+          onClose={() => { if (!isCreatingEmployeeTask) setEmployeeTaskModal(null); }}
           onCreate={async (formData) => {
+            if (isCreatingEmployeeTask) return
             try {
+              setIsCreatingEmployeeTask(true)
               await createEmployeeTask(formData)
               setEmployeeTaskModal(null)
             } catch (e) {
               alert(e.message)
+            } finally {
+              setIsCreatingEmployeeTask(false)
             }
           }}
         />
@@ -1278,13 +1336,18 @@ export default function ProductionTasks() {
 
       {showCreateModal && (
         <CreateProductionTaskModal
-          onClose={() => setShowCreateModal(false)}
+          onClose={() => { if (!isCreatingProductionTask) setShowCreateModal(false); }}
+          isSaving={isCreatingProductionTask}
           onSave={async (form) => {
+            if (isCreatingProductionTask) return
             try {
+              setIsCreatingProductionTask(true)
               await addProductionTask(form)
               setShowCreateModal(false)
             } catch (err) {
               alert(err.message)
+            } finally {
+              setIsCreatingProductionTask(false)
             }
           }}
           machines={machines}

@@ -1,5 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+import {
+    searchMatches
+} from '../utils/search';
 
 export default function SearchableSelect({ options, value, onChange, placeholder, className, error }) {
   const { t } = useTranslation()
@@ -21,7 +24,7 @@ export default function SearchableSelect({ options, value, onChange, placeholder
 
   const selectedOption = !isMultiple ? options.find((o) => o.value === value) : null
   const selectedOptions = isMultiple ? options.filter((o) => value.includes(o.value)) : []
-  const filtered = options.filter((o) => o.label.toLowerCase().includes(search.toLowerCase()))
+  const filtered = options.filter((o) => searchMatches(o.label, search))
 
   const handleSelect = (val) => {
     if (isMultiple) {

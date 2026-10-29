@@ -97,10 +97,18 @@ function OrderDetailModal({
   const canAdvanceFromCurrent = isAdmin || roleHasStatus || userHasStatus
   const canChangeStatus = isAdmin || canAdvanceFromCurrent
 
-  function confirmStatusChange() {
-    setLocalStatus(pendingStatus)
-    onStatusChange(order.id, pendingStatus)
-    setPendingStatus(null)
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
+
+  async function confirmStatusChange() {
+    if (isUpdatingStatus) return
+    setIsUpdatingStatus(true)
+    try {
+      setLocalStatus(pendingStatus)
+      await onStatusChange(order.id, pendingStatus)
+      setPendingStatus(null)
+    } finally {
+      setIsUpdatingStatus(false)
+    }
   }
 
   function toggleItemNotes(key) {
@@ -177,7 +185,7 @@ function OrderDetailModal({
             </thead>
             <tbody className="block md:table-row-group">
               {(order.items || []).map((it, i) => {
-                const lineTotal = (parseFloat(it.unitPrice) || 0) * (parseInt(it.quantity) || 0) * (1 + (it.vat || 0) / 100)
+                const lineTotal = (parseFloat(it.unitPrice) || 0) * (parseFloat(it.quantity) || 0) * (1 + (it.vat || 0) / 100)
                 const produced = it.producedQuantity || 0
                 const inProd = it.inProductionQuantity || 0
                 const remaining = it.quantity - produced - inProd
@@ -457,9 +465,15 @@ function OrderDetailModal({
                   onChange={(e) => setPendingStatus(e.target.value === localStatus ? null : e.target.value)}
                   className="w-full md:flex-1 bg-surface-container-lowest border border-theme-border rounded-lg px-2 md:px-3 py-1.5 md:py-2 text-[11px] md:text-sm text-on-surface outline-none focus:border-primary"
                 >
-                  {ORDER_EDIT_STATUSES.map((s) => <option key={s} value={s}>{t('status.' + s.replace(/-/g, ''), s)}</option>)}
-                  {!ORDER_EDIT_STATUSES.includes(localStatus) && (
-                    <option value={localStatus} disabled>{t('status.' + localStatus.replace(/[\s-]/g, ''), localStatus)}</option>
+                  {(isAdmin ? ORDER_STATUSES : ORDER_EDIT_STATUSES).map((s) => (
+                    <option key={s} value={s}>
+                      {t('status.' + s.replace(/[\s-]/g, ''), s)}
+                    </option>
+                  ))}
+                  {!isAdmin && !ORDER_EDIT_STATUSES.includes(localStatus) && (
+                    <option value={localStatus} disabled>
+                      {t('status.' + localStatus.replace(/[\s-]/g, ''), localStatus)}
+                    </option>
                   )}
                 </select>
               </div>
@@ -483,11 +497,22 @@ function OrderDetailModal({
                 <p className="text-[10px] md:text-xs text-amber-700 flex-1 min-w-[150px] md:min-w-0">
                   {t('orders.changeFrom', { from: localStatus, to: pendingStatus })}
                 </p>
-                <button onClick={() => setPendingStatus(null)} className="text-[10px] md:text-xs text-text-muted hover:text-on-surface px-1.5 py-1 rounded transition">
+                <button
+                  onClick={() => { if (!isUpdatingStatus) setPendingStatus(null) }}
+                  disabled={isUpdatingStatus}
+                  className="text-[10px] md:text-xs text-text-muted hover:text-on-surface px-1.5 py-1 rounded transition disabled:opacity-50"
+                >
                   {t('common.cancel')}
                 </button>
-                <button onClick={confirmStatusChange} className="text-[10px] md:text-xs font-semibold text-white bg-primary hover:opacity-90 px-2 py-1 rounded-lg transition">
-                  {t('common.confirm')}
+                <button
+                  onClick={confirmStatusChange}
+                  disabled={isUpdatingStatus}
+                  className="text-[10px] md:text-xs font-semibold text-white bg-primary hover:opacity-90 px-2 py-1 rounded-lg transition disabled:opacity-50 flex items-center gap-1.5"
+                >
+                  {isUpdatingStatus && (
+                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                  )}
+                  <span>{isUpdatingStatus ? t('common.updating', 'Güncelleniyor...') : t('common.confirm')}</span>
                 </button>
               </div>
             )}
@@ -499,10 +524,29 @@ function OrderDetailModal({
 }
 
 // ─── Add / Edit Modal ─────────────────────────────────────────────────────────
-const SALES_DEPTS = ['Sales Manager', 'Sales Representative']
+const isSalesManager = (user) => {
+  if (!user) return false
+  if (user.role === 'admin') return true
+  const dept = String(user.department || '').toLowerCase()
+  return dept.includes('sales manager') || dept.includes('satış müdür') || dept.includes('satis mudur')
+}
+
+const isSalesDept = (user) => {
+  if (!user) return false
+  if (user.role === 'admin') return true
+  const dept = String(user.department || '').toLowerCase()
+  return (
+    dept.includes('sale') ||
+    dept.includes('satış') ||
+    dept.includes('satis') ||
+    dept.includes('pazarlama')
+  )
+}
+
+const SALES_DEPTS = ['Sales Manager', 'Sales Representative', 'Satış Müdürü', 'Satış Temsilcisi', 'Satış']
 
 function OrderModal({
-  title, form, setForm, onClose, onSave, errors, saveError,
+  title, form, setForm, onClose, onSave, errors, saveError, isSaving = false,
   customers, employees, products, currentUser, salesTeam, isAdmin,
   canAddNote, canDeleteNote, addOrderItemNote, deleteOrderItemNote,
 }) {
@@ -518,8 +562,19 @@ function OrderModal({
     `w-full bg-surface-container-lowest border rounded px-2.5 md:px-3 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary transition ${err ? 'border-error' : 'border-theme-border'}`
 
   function setItem(idx, field, value) {
+    let sanitizedValue = value
+    if (field === 'quantity') {
+      // Standart olarak nokta (.) seçildi.
+      // Kullanıcı virgül (,) yazsa veya yapıştırsa bile anında noktaya dönüştürülür.
+      sanitizedValue = String(value).replace(/,/g, '.')
+      sanitizedValue = sanitizedValue.replace(/[^0-9.]/g, '')
+      const parts = sanitizedValue.split('.')
+      if (parts.length > 2) {
+        sanitizedValue = parts[0] + '.' + parts.slice(1).join('')
+      }
+    }
     setForm((f) => {
-      const items = f.items.map((it, i) => i === idx ? { ...it, [field]: value } : it)
+      const items = f.items.map((it, i) => i === idx ? { ...it, [field]: sanitizedValue } : it)
       return { ...f, items }
     })
   }
@@ -633,7 +688,11 @@ function OrderModal({
       <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[90%] max-w-none p-4 md:p-8 max-h-[90dvh] overflow-y-auto">
         <div className="flex items-center justify-between mb-4 md:mb-6">
           <h2 className="text-lg font-bold text-on-surface">{title}</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-error">
+          <button
+            onClick={() => { if (!isSaving) onClose() }}
+            disabled={isSaving}
+            className="text-text-muted hover:text-error disabled:opacity-50"
+          >
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
@@ -662,7 +721,7 @@ function OrderModal({
             <div>
               <label className="block text-xs font-semibold text-text-muted mb-1">{t('orders.salesRep')} *</label>
               {(() => {
-                const isAdminOrManager = isAdmin || currentUser?.department === 'Sales Manager'
+                const isAdminOrManager = isAdmin || isSalesManager(currentUser)
                 if (!isAdminOrManager) {
                   return (
                     <input
@@ -672,9 +731,12 @@ function OrderModal({
                     />
                   )
                 }
-                // Admin / Manager: salesTeam (Sales dept only) + themselves if not already included
+                // Admin / Manager: salesTeam (Sales dept members) + themselves if not already included
                 const inList = salesTeam.some((u) => u.id === currentUser?.id)
-                const options = inList ? salesTeam : [...salesTeam, { id: currentUser?.id, name: currentUser?.name, department: currentUser?.department }]
+                let options = inList ? [...salesTeam] : [...salesTeam, { id: currentUser?.id, name: currentUser?.name, department: currentUser?.department || 'Yönetici' }]
+                if (form.salesRepId && !options.some((u) => u.id === form.salesRepId)) {
+                  options = [...options, { id: form.salesRepId, name: 'Seçili Temsilci', department: '' }]
+                }
                 return (
                   <>
                     <select className={inputCls(errors.salesRepId)} value={form.salesRepId || ''} onChange={(e) => setForm((f) => ({ ...f, salesRepId: e.target.value }))}>
@@ -710,8 +772,8 @@ function OrderModal({
             </div>
             <div className="space-y-3 md:space-y-2">
               {form.items.map((item, idx) => {
-                const itemErr = errors.items && item.productName && (!item.unitPrice || parseInt(item.quantity) < 1)
-                const itemTotal = (parseFloat(item.unitPrice) || 0) * (parseInt(item.quantity) || 0) * (1 + (parseFloat(item.vat) || 0) / 100)
+                const itemErr = errors.items && item.productName && (!item.unitPrice || parseFloat(item.quantity) <= 0)
+                const itemTotal = (parseFloat(item.unitPrice) || 0) * (parseFloat(item.quantity) || 0) * (1 + (parseFloat(item.vat) || 0) / 100)
                 const notesCount = item.notes?.length || 0
 
                 return (
@@ -733,8 +795,9 @@ function OrderModal({
 
                       <div className="w-16 shrink-0">
                         <input
-                          type="number" min="1"
-                          className={`w-full border rounded px-2 py-1.5 text-xs md:text-sm bg-surface-container-lowest text-on-surface outline-none focus:border-primary text-center ${itemErr && parseInt(item.quantity) < 1 ? 'border-error' : 'border-theme-border'}`}
+                          type="text"
+                          inputMode="decimal"
+                          className={`w-full border rounded px-2 py-1.5 text-xs md:text-sm bg-surface-container-lowest text-on-surface outline-none focus:border-primary text-center ${itemErr && parseFloat(item.quantity) <= 0 ? 'border-error' : 'border-theme-border'}`}
                           placeholder="1"
                           value={item.quantity}
                           onChange={(e) => setItem(idx, 'quantity', e.target.value)}
@@ -855,8 +918,9 @@ function OrderModal({
                         <div>
                           <span className="text-[10px] font-bold uppercase tracking-wider text-text-muted mb-1 block">{t('orders.qty')}</span>
                           <input
-                            type="number" min="1"
-                            className={`w-full border rounded px-2 py-1.5 text-xs bg-surface-container-lowest text-on-surface outline-none focus:border-primary text-center ${itemErr && parseInt(item.quantity) < 1 ? 'border-error' : 'border-theme-border'}`}
+                            type="text"
+                            inputMode="decimal"
+                            className={`w-full border rounded px-2 py-1.5 text-xs bg-surface-container-lowest text-on-surface outline-none focus:border-primary text-center ${itemErr && parseFloat(item.quantity) <= 0 ? 'border-error' : 'border-theme-border'}`}
                             placeholder="1"
                             value={item.quantity}
                             onChange={(e) => setItem(idx, 'quantity', e.target.value)}
@@ -1108,11 +1172,22 @@ function OrderModal({
           </div>
         )}
         <div className="flex gap-2 md:gap-3 mt-4 md:mt-6">
-          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition">
+          <button
+            onClick={onClose}
+            disabled={isSaving}
+            className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+          >
             {t('common.cancel')}
           </button>
-          <button onClick={onSave} className="flex-1 bg-primary text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition">
-            {t('common.save')}
+          <button
+            onClick={onSave}
+            disabled={isSaving}
+            className="flex-1 bg-primary text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isSaving && (
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+            )}
+            <span>{isSaving ? t('common.saving', 'Kaydediliyor...') : t('common.save')}</span>
           </button>
         </div>
       </div>
@@ -1169,7 +1244,7 @@ function getOrderTotals(items) {
   if (!items || !items.length) return totals;
   items.forEach(it => {
     const cur = it.currency || 'TRY';
-    const itemTotal = (parseFloat(it.unitPrice) || 0) * (parseInt(it.quantity) || 0) * (1 + (parseFloat(it.vat) || 0) / 100);
+    const itemTotal = (parseFloat(it.unitPrice) || 0) * (parseFloat(it.quantity) || 0) * (1 + (parseFloat(it.vat) || 0) / 100);
     totals[cur] = (totals[cur] || 0) + itemTotal;
   });
   return totals;
@@ -1194,10 +1269,9 @@ export default function Orders() {
   } = useData()
   const { user: currentUser, token } = useAuth()
   const [salesTeam, setSalesTeam] = useState([])
-  const canDelete = isAdmin || currentUser?.department === 'Sales Manager'
+  const canDelete = isAdmin || isSalesManager(currentUser)
   const canCreate = isAdmin
-    || currentUser?.department === 'Sales Manager'
-    || currentUser?.department === 'Sales Representative'
+    || isSalesDept(currentUser)
     || (permissions[currentUser?.department] || []).includes('orders-create')
   const canEditProcessing = isAdmin || canCreate
 
@@ -1206,7 +1280,7 @@ export default function Orders() {
   const dept = currentUser?.department
 
   const checkPerm = (permKey) => {
-    if (isAdmin || dept === 'Sales Manager') return true
+    if (isAdmin || isSalesManager(currentUser)) return true
     if (empPerms.includes(`-${permKey}`)) return false
     if (empPerms.includes(permKey)) return true
     return (permissions?.[dept] || []).includes(permKey)
@@ -1219,7 +1293,7 @@ export default function Orders() {
   useEffect(() => {
     if (location.state?.newOrderForCustomer) {
       const base = emptyForm()
-      const isAdminOrManager = isAdmin || currentUser?.department === 'Sales Manager'
+      const isAdminOrManager = isAdmin || isSalesManager(currentUser)
       if (!isAdminOrManager) {
         base.salesRepId = currentUser?.id
       }
@@ -1262,6 +1336,8 @@ export default function Orders() {
   const [form, setForm] = useState(emptyForm())
   const [errors, setErrors] = useState({})
   const [saveError, setSaveError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [selected, setSelected] = useState(new Set())
   const [exportOpen, setExportOpen] = useState(false)
   const [confirmDeleteId, setConfirmDeleteId] = useState(null)
@@ -1411,7 +1487,7 @@ export default function Orders() {
           it.product?.unit || '—',
           `${it.currency || cur} ${parseFloat(it.unitPrice).toFixed(2)}`,
           it.vat > 0 ? `${it.vat}%` : '—',
-          `${it.currency || cur} ${(parseFloat(it.unitPrice) * parseInt(it.quantity)).toFixed(2)}`,
+          `${it.currency || cur} ${(parseFloat(it.unitPrice) * parseFloat(it.quantity)).toFixed(2)}`,
         ]),
         headStyles: { fillColor: [100, 116, 139], textColor: 255, fontSize: 8, fontStyle: 'bold', font: tf },
         bodyStyles: { fontSize: 8, textColor: [60, 60, 60], font: tf },
@@ -1450,7 +1526,7 @@ export default function Orders() {
   function validate(f) {
     const e = {}
     if (!f.customerId) e.customerId = t('orders.errCustomer')
-    const isAdminOrManager = isAdmin || currentUser?.department === 'Sales Manager'
+    const isAdminOrManager = isAdmin || isSalesManager(currentUser)
     if (!f.salesRepId && isAdminOrManager) e.salesRepId = t('orders.errSalesRep')
     if (!f.shipmentType) e.shipmentType = t('orders.errShipment')
     if (!f.paymentMethod) e.paymentMethod = t('orders.errPayment')
@@ -1460,7 +1536,7 @@ export default function Orders() {
     } else {
       const missingPrice = validItems.some((it) => it.unitPrice === '' || it.unitPrice === undefined)
       if (missingPrice) e.items = t('orders.errUnitPrice')
-      const missingQty = validItems.some((it) => !parseInt(it.quantity) || parseInt(it.quantity) < 1)
+      const missingQty = validItems.some((it) => !parseFloat(it.quantity) || parseFloat(it.quantity) <= 0)
       if (missingQty) e.items = t('orders.errQty')
     }
     return e
@@ -1468,7 +1544,7 @@ export default function Orders() {
 
   function openAdd() {
     const base = emptyForm()
-    const isAdminOrManager = isAdmin || currentUser?.department === 'Sales Manager'
+    const isAdminOrManager = isAdmin || isSalesManager(currentUser)
     if (!isAdminOrManager) {
       base.salesRepId = currentUser?.id
     }
@@ -1489,7 +1565,7 @@ export default function Orders() {
         ? item.items.map((it) => ({
           id: it.id,
           productName: it.productName,
-          quantity: it.quantity,
+          quantity: it.quantity != null ? String(it.quantity).replace(',', '.') : '',
           unitPrice: it.unitPrice,
           currency: it.currency || 'TRY',
           vat: it.vat ?? '0',
@@ -1503,32 +1579,56 @@ export default function Orders() {
   }
 
   async function handleAdd() {
+    if (isSaving) return
     const e = validate(form)
     if (Object.keys(e).length) { setErrors(e); return }
+    setIsSaving(true)
     try {
       setSaveError('')
-      await addOrder({ ...form, items: form.items.filter((it) => it.productName.trim()) })
+      const cleanedItems = form.items.filter((it) => it.productName.trim()).map((it) => ({
+        ...it,
+        quantity: parseFloat(String(it.quantity).replace(',', '.')) || 0,
+      }))
+      await addOrder({ ...form, items: cleanedItems })
       setShowAdd(false)
     } catch (err) {
       setSaveError(err.message)
+    } finally {
+      setIsSaving(false)
     }
   }
 
   async function handleEdit() {
+    if (isSaving) return
     const e = validate(form)
     if (Object.keys(e).length) { setErrors(e); return }
+    setIsSaving(true)
     try {
       setSaveError('')
-      await updateOrder(editItem.id, { ...form, items: form.items.filter((it) => it.productName.trim()) })
+      const cleanedItems = form.items.filter((it) => it.productName.trim()).map((it) => ({
+        ...it,
+        quantity: parseFloat(String(it.quantity).replace(',', '.')) || 0,
+      }))
+      await updateOrder(editItem.id, { ...form, items: cleanedItems })
       setEditItem(null)
     } catch (err) {
       setSaveError(err.message)
+    } finally {
+      setIsSaving(false)
     }
   }
 
   async function handleDelete() {
-    await deleteOrder(confirmDeleteId)
-    setConfirmDeleteId(null)
+    if (isDeleting) return
+    setIsDeleting(true)
+    try {
+      await deleteOrder(confirmDeleteId)
+      setConfirmDeleteId(null)
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   async function handleStatusChange(id, newStatus) {
@@ -1841,10 +1941,10 @@ export default function Orders() {
                           <span className="text-xs text-text-muted">{timeStr}</span>
                         </div>
                       </td>
-                      {(canDelete || (canEditProcessing && o.status === 'Processing')) && (
+                      {(canDelete || (canEditProcessing && (isAdmin || o.status === 'Processing'))) && (
                         <td className="block xl:table-cell w-full xl:w-auto relative mt-3 xl:mt-0 pt-3 xl:pt-0 border-t border-surface-container-low xl:border-0 xl:px-4 py-1 xl:py-2" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-2">
-                            {(canDelete || (canEditProcessing && o.status === 'Processing')) && (
+                            {(canDelete || (canEditProcessing && (isAdmin || o.status === 'Processing'))) && (
                               <button onClick={() => openEdit(o)} className="flex-1 xl:flex-none flex justify-center p-1.5 lg:p-1.5 rounded-lg border xl:border-0 border-theme-border hover:bg-hover-bg text-text-muted hover:text-primary transition">
                                 <span className="material-symbols-outlined text-[16px] lg:text-base">edit</span>
                               </button>
@@ -1866,7 +1966,7 @@ export default function Orders() {
                         onClick={(e) => e.stopPropagation()}
                       >
                         <td
-                          colSpan={(canDelete || (canEditProcessing && o.status === 'Processing')) ? 9 : 8}
+                          colSpan={(canDelete || (canEditProcessing && (isAdmin || o.status === 'Processing'))) ? 9 : 8}
                           className="block xl:table-cell p-2.5 xl:px-6 xl:py-3"
                         >
                           <div className="bg-surface-container-lowest border border-red-200/80 dark:border-red-900/50 rounded-xl p-3 shadow-xs space-y-2.5">
@@ -2013,11 +2113,22 @@ export default function Orders() {
             </div>
             <p className="text-xs md:text-sm text-text-muted mb-4 md:mb-6">{t('orders.deleteConfirm')}</p>
             <div className="flex gap-2 md:gap-3">
-              <button onClick={() => setConfirmDeleteId(null)} className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition">
+              <button
+                onClick={() => { if (!isDeleting) setConfirmDeleteId(null) }}
+                disabled={isDeleting}
+                className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-50"
+              >
                 {t('common.cancel')}
               </button>
-              <button onClick={handleDelete} className="flex-1 bg-error text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition">
-                {t('common.delete')}
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="flex-1 bg-error text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {isDeleting && (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                )}
+                <span>{isDeleting ? t('common.deleting', 'Siliniyor...') : t('common.delete')}</span>
               </button>
             </div>
           </div>
@@ -2031,7 +2142,8 @@ export default function Orders() {
           setForm={setForm}
           errors={errors}
           saveError={saveError}
-          onClose={() => { setShowAdd(false); setSaveError('') }}
+          isSaving={isSaving}
+          onClose={() => { if (!isSaving) { setShowAdd(false); setSaveError('') } }}
           onSave={handleAdd}
           customers={customers}
           employees={employees}
@@ -2052,7 +2164,8 @@ export default function Orders() {
           setForm={setForm}
           errors={errors}
           saveError={saveError}
-          onClose={() => { setEditItem(null); setSaveError('') }}
+          isSaving={isSaving}
+          onClose={() => { if (!isSaving) { setEditItem(null); setSaveError('') } }}
           onSave={handleEdit}
           customers={customers}
           employees={employees}

@@ -22,6 +22,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   orders              Order[]
   employee            Employee?            @relation(fields: [employeeId], references: [id])
+  notifications       Notification[]
 }
 
 model PasswordResetToken {
@@ -264,14 +265,14 @@ model Order {
 model OrderItem {
   id          String @id @default(cuid())
   productName String
-  quantity    Int    @default(1)
+  quantity    Float  @default(1)
   unitPrice   Float  @default(0)
   currency    String @default("USD")
   vat         Float  @default(0)
 
   status               String @default("Pending")
-  producedQuantity     Int    @default(0)
-  inProductionQuantity Int    @default(0)
+  producedQuantity     Float  @default(0)
+  inProductionQuantity Float  @default(0)
 
   order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
   orderId     String
@@ -715,4 +716,18 @@ model LogisticsLog {
   createdAt        DateTime        @default(now())
 }
 
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  type      String   @default("info") // "order", "production", "finance", "system"
+  page      String?  // "orders", "production", "purchasing", "logistics", etc.
+  link      String?  // e.g. "/orders"
+  isRead    Boolean  @default(false)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
+}

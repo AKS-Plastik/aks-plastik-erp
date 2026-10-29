@@ -70,7 +70,7 @@ function StatCard({ icon, label, value, sub, color = 'text-primary' }) {
 }
 
 // ── Request Modal ────────────────────────────────────────────────────────────
-function RequestModal({ initial, onClose, onSave }) {
+function RequestModal({ initial, onClose, onSave, isSaving = false }) {
   const { t } = useTranslation()
   const { roles, employees, customers } = useData()
   const [form, setForm] = useState({
@@ -99,6 +99,7 @@ function RequestModal({ initial, onClose, onSave }) {
   const inp = (f) => `w-full bg-surface-container-lowest border rounded-lg px-3 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary transition ${errors[f] ? 'border-error' : 'border-theme-border'}`
 
   function handleSave() {
+    if (isSaving) return
     const e = {}
     if (!form.title.trim()) e.title = t('common.required')
     if (Object.keys(e).length) { setErrors(e); return }
@@ -110,7 +111,13 @@ function RequestModal({ initial, onClose, onSave }) {
       <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none max-h-[90vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-4 md:p-6 pb-2 shrink-0">
           <h2 className="text-sm md:text-base font-bold text-on-surface">{initial?.id ? t('purchasing.editRequest') : t('purchasing.newPurchaseRequest')}</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-error"><span className="material-symbols-outlined text-lg md:text-xl">close</span></button>
+          <button
+            onClick={() => { if (!isSaving) onClose() }}
+            disabled={isSaving}
+            className="text-text-muted hover:text-error disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-lg md:text-xl">close</span>
+          </button>
         </div>
         <div className="space-y-2 md:space-y-3 overflow-y-auto p-4 md:p-6 py-3 custom-scrollbar">
           <div>
@@ -205,8 +212,23 @@ function RequestModal({ initial, onClose, onSave }) {
           </div>
         </div>
         <div className="flex gap-2 md:gap-3 p-4 md:p-6 pt-2 shrink-0">
-          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
-          <button onClick={handleSave} className="flex-1 bg-primary text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition">{t('common.save')}</button>
+          <button
+            onClick={() => { if (!isSaving) onClose() }}
+            disabled={isSaving}
+            className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-50"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex-1 bg-primary text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+          >
+            {isSaving && (
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+            )}
+            <span>{isSaving ? t('common.saving', 'Kaydediliyor...') : t('common.save')}</span>
+          </button>
         </div>
       </div>
     </div>
@@ -214,7 +236,7 @@ function RequestModal({ initial, onClose, onSave }) {
 }
 
 // ── Quotation Modal ──────────────────────────────────────────────────────────
-function QuotationModal({ suppliers, initial, onClose, onSave }) {
+function QuotationModal({ suppliers, initial, onClose, onSave, isSaving = false }) {
   const { t } = useTranslation()
   const [form, setForm] = useState(initial || {
     supplierId: '', supplierName: '', quotationNo: '', quotationDate: new Date().toISOString().split('T')[0],
@@ -224,7 +246,7 @@ function QuotationModal({ suppliers, initial, onClose, onSave }) {
   const inp = (f) => `w-full bg-surface-container-lowest border border-theme-border rounded-lg px-3 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary transition`
 
   function handleSave() {
-    if (!form.amount) return
+    if (isSaving || !form.amount) return
     if (form.supplierId) {
       const sup = suppliers.find((s) => s.id === form.supplierId)
       if (sup) form.supplierName = sup.name
@@ -237,7 +259,13 @@ function QuotationModal({ suppliers, initial, onClose, onSave }) {
       <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none max-h-[90vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-4 md:p-6 pb-2 shrink-0">
           <h2 className="text-sm md:text-base font-bold text-on-surface">{initial ? t('purchasing.editQuotation') : t('purchasing.addQuotation')}</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-error"><span className="material-symbols-outlined text-lg md:text-xl">close</span></button>
+          <button
+            onClick={() => { if (!isSaving) onClose() }}
+            disabled={isSaving}
+            className="text-text-muted hover:text-error disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-lg md:text-xl">close</span>
+          </button>
         </div>
         <div className="space-y-2 md:space-y-3 overflow-y-auto p-4 md:p-6 py-3 custom-scrollbar">
           <div>
@@ -299,8 +327,23 @@ function QuotationModal({ suppliers, initial, onClose, onSave }) {
           </div>
         </div>
         <div className="flex gap-2 md:gap-3 p-4 md:p-6 pt-2 shrink-0">
-          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
-          <button onClick={handleSave} className="flex-1 bg-primary text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition">{t('common.save')}</button>
+          <button
+            onClick={() => { if (!isSaving) onClose() }}
+            disabled={isSaving}
+            className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-50"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex-1 bg-primary text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+          >
+            {isSaving && (
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+            )}
+            <span>{isSaving ? t('common.saving', 'Kaydediliyor...') : t('common.save')}</span>
+          </button>
         </div>
       </div>
     </div>
@@ -308,7 +351,7 @@ function QuotationModal({ suppliers, initial, onClose, onSave }) {
 }
 
 // ── Supplier Modal ───────────────────────────────────────────────────────────
-function SupplierModal({ initial, onClose, onSave }) {
+function SupplierModal({ initial, onClose, onSave, isSaving = false }) {
   const { t } = useTranslation()
   const [form, setForm] = useState(initial || {
     name: '', category: 'General', contactName: '', contactPhone: '',
@@ -319,6 +362,7 @@ function SupplierModal({ initial, onClose, onSave }) {
   const inp = (f) => `w-full bg-surface-container-lowest border rounded-lg px-3 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary transition ${errors[f] ? 'border-error' : 'border-theme-border'}`
 
   function handleSave() {
+    if (isSaving) return
     const e = {}
     if (!form.name.trim()) e.name = t('common.required')
     if (Object.keys(e).length) { setErrors(e); return }
@@ -330,7 +374,13 @@ function SupplierModal({ initial, onClose, onSave }) {
       <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none max-h-[90vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between p-4 md:p-6 pb-2 shrink-0">
           <h2 className="text-sm md:text-base font-bold text-on-surface">{initial ? t('purchasing.editSupplier') : t('purchasing.newSupplier')}</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-error"><span className="material-symbols-outlined text-lg md:text-xl">close</span></button>
+          <button
+            onClick={() => { if (!isSaving) onClose() }}
+            disabled={isSaving}
+            className="text-text-muted hover:text-error disabled:opacity-50"
+          >
+            <span className="material-symbols-outlined text-lg md:text-xl">close</span>
+          </button>
         </div>
         <div className="space-y-2 md:space-y-3 overflow-y-auto p-4 md:p-6 py-3 custom-scrollbar">
           <div>
@@ -390,8 +440,23 @@ function SupplierModal({ initial, onClose, onSave }) {
           </div>
         </div>
         <div className="flex gap-2 md:gap-3 p-4 md:p-6 pt-2 shrink-0">
-          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
-          <button onClick={handleSave} className="flex-1 bg-primary text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition">{t('common.save')}</button>
+          <button
+            onClick={() => { if (!isSaving) onClose() }}
+            disabled={isSaving}
+            className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-50"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex-1 bg-primary text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+          >
+            {isSaving && (
+              <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+            )}
+            <span>{isSaving ? t('common.saving', 'Kaydediliyor...') : t('common.save')}</span>
+          </button>
         </div>
       </div>
     </div>
@@ -806,6 +871,8 @@ export default function Purchasing() {
   const [quotationModal, setQuotationModal] = useState(null)
   const [detailDrawer, setDetailDrawer] = useState(null)
   const [deleteConfirm, setDeleteConfirm] = useState(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -841,19 +908,31 @@ export default function Purchasing() {
 
   // CRUD
   async function saveRequest(form) {
-    const isEdit = requestModal && !requestModal._isNew && requestModal !== 'new'
-    const url = isEdit ? `${BASE}/requests/${requestModal.id}` : `${BASE}/requests`
-    await fetch(url, { method: isEdit ? 'PUT' : 'POST', headers, body: JSON.stringify(form) })
-    setRequestModal(null)
-    load()
+    if (isSaving) return
+    setIsSaving(true)
+    try {
+      const isEdit = requestModal && !requestModal._isNew && requestModal !== 'new'
+      const url = isEdit ? `${BASE}/requests/${requestModal.id}` : `${BASE}/requests`
+      await fetch(url, { method: isEdit ? 'PUT' : 'POST', headers, body: JSON.stringify(form) })
+      setRequestModal(null)
+      load()
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   async function saveSupplier(form) {
-    const isEdit = supplierModal && supplierModal !== 'new'
-    const url = isEdit ? `${BASE}/suppliers/${supplierModal.id}` : `${BASE}/suppliers`
-    await fetch(url, { method: isEdit ? 'PUT' : 'POST', headers, body: JSON.stringify(form) })
-    setSupplierModal(null)
-    load()
+    if (isSaving) return
+    setIsSaving(true)
+    try {
+      const isEdit = supplierModal && supplierModal !== 'new'
+      const url = isEdit ? `${BASE}/suppliers/${supplierModal.id}` : `${BASE}/suppliers`
+      await fetch(url, { method: isEdit ? 'PUT' : 'POST', headers, body: JSON.stringify(form) })
+      setSupplierModal(null)
+      load()
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   async function updateRequest(id, updates) {
@@ -867,18 +946,24 @@ export default function Purchasing() {
   }
 
   async function addQuotation(form) {
-    await fetch(`${BASE}/requests/${detailDrawer.id}/quotations`, {
-      method: 'POST', headers, body: JSON.stringify(form),
-    })
-    setQuotationModal(null)
-    load().then(() => {
-      fetch(`${BASE}/requests`, { headers: authH })
-        .then((r) => r.json())
-        .then((data) => {
-          const updated = data.find((r) => r.id === detailDrawer.id)
-          if (updated) setDetailDrawer(updated)
-        })
-    })
+    if (isSaving) return
+    setIsSaving(true)
+    try {
+      await fetch(`${BASE}/requests/${detailDrawer.id}/quotations`, {
+        method: 'POST', headers, body: JSON.stringify(form),
+      })
+      setQuotationModal(null)
+      load().then(() => {
+        fetch(`${BASE}/requests`, { headers: authH })
+          .then((r) => r.json())
+          .then((data) => {
+            const updated = data.find((r) => r.id === detailDrawer.id)
+            if (updated) setDetailDrawer(updated)
+          })
+      })
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   async function selectQuotation(qId) {
@@ -906,12 +991,17 @@ export default function Purchasing() {
   }
 
   async function handleDelete() {
-    if (!deleteConfirm) return
-    const { type, id } = deleteConfirm
-    await fetch(`${BASE}/${type}/${id}`, { method: 'DELETE', headers: authH })
-    setDeleteConfirm(null)
-    if (detailDrawer?.id === id) setDetailDrawer(null)
-    load()
+    if (!deleteConfirm || isDeleting) return
+    setIsDeleting(true)
+    try {
+      const { type, id } = deleteConfirm
+      await fetch(`${BASE}/${type}/${id}`, { method: 'DELETE', headers: authH })
+      setDeleteConfirm(null)
+      if (detailDrawer?.id === id) setDetailDrawer(null)
+      load()
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   return (
@@ -992,9 +1082,31 @@ export default function Purchasing() {
       </div>
 
       {/* Modals */}
-      {requestModal && <RequestModal initial={requestModal === 'new' || requestModal._isNew ? { requestedBy: requestModal?.requestedBy || '' } : requestModal} onClose={() => setRequestModal(null)} onSave={saveRequest} />}
-      {supplierModal && <SupplierModal initial={supplierModal === 'new' ? null : supplierModal} onClose={() => setSupplierModal(null)} onSave={saveSupplier} />}
-      {quotationModal && <QuotationModal suppliers={suppliers} initial={null} onClose={() => setQuotationModal(null)} onSave={addQuotation} />}
+      {requestModal && (
+        <RequestModal
+          initial={requestModal === 'new' || requestModal._isNew ? { requestedBy: requestModal?.requestedBy || '' } : requestModal}
+          isSaving={isSaving}
+          onClose={() => { if (!isSaving) setRequestModal(null) }}
+          onSave={saveRequest}
+        />
+      )}
+      {supplierModal && (
+        <SupplierModal
+          initial={supplierModal === 'new' ? null : supplierModal}
+          isSaving={isSaving}
+          onClose={() => { if (!isSaving) setSupplierModal(null) }}
+          onSave={saveSupplier}
+        />
+      )}
+      {quotationModal && (
+        <QuotationModal
+          suppliers={suppliers}
+          initial={null}
+          isSaving={isSaving}
+          onClose={() => { if (!isSaving) setQuotationModal(null) }}
+          onSave={addQuotation}
+        />
+      )}
       {detailDrawer && (
         <DetailDrawer
           request={detailDrawer}
@@ -1018,10 +1130,24 @@ export default function Purchasing() {
             <h2 className="text-sm md:text-base font-bold text-on-surface mb-1">{t('common.areYouSure')}</h2>
             <p className="text-xs md:text-sm text-text-muted mb-4 md:mb-6">{t('common.cantUndo')}</p>
             <div className="flex gap-2 md:gap-3">
-              <button onClick={() => setDeleteConfirm(null)} className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
-              <button onClick={handleDelete} className="flex-1 bg-error text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition flex items-center justify-center gap-1.5 md:gap-2">
-                <span className="material-symbols-outlined text-sm md:text-base">delete</span>
-                {t('common.delete')}
+              <button
+                onClick={() => { if (!isDeleting) setDeleteConfirm(null) }}
+                disabled={isDeleting}
+                className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-50"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="flex-1 bg-error text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition flex items-center justify-center gap-1.5 md:gap-2 disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                ) : (
+                  <span className="material-symbols-outlined text-sm md:text-base">delete</span>
+                )}
+                <span>{isDeleting ? t('common.deleting', 'Siliniyor...') : t('common.delete')}</span>
               </button>
             </div>
           </div>

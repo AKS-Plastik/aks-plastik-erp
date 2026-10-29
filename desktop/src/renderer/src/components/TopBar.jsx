@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
 import { useData } from '../context/DataContext'
 import { API_URL } from '../config'
+import NotificationCenter from './NotificationCenter'
 
 export default function TopBar({ setSidebarOpen }) {
   const { t, i18n } = useTranslation()
@@ -145,13 +146,17 @@ export default function TopBar({ setSidebarOpen }) {
             </button>
           )}
 
+          {/* Notification Center */}
+          <NotificationCenter />
+
           {/* Alarm Bell */}
           <div className="relative" ref={alarmsRef}>
             <button
               onClick={() => setShowAlarms((v) => !v)}
               className="p-1.5 md:p-2 text-text-muted hover:text-primary transition-colors rounded-full hover:bg-hover-bg relative"
+              title={t('topbar.alerts')}
             >
-              <span className="material-symbols-outlined text-[20px] md:text-[24px]">notifications</span>
+              <span className="material-symbols-outlined text-[20px] md:text-[24px]">event_note</span>
               {totalAlarms > 0 && (
                 <span className="absolute top-1 right-1 w-4 h-4 rounded-full bg-error text-on-error text-[9px] font-black flex items-center justify-center">
                   {totalAlarms > 9 ? '9+' : totalAlarms}

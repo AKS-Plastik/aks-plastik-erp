@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 export default function CreateProductionTaskModal({
     onClose,
     onSave,
+    isSaving = false,
     machines,
     employees,
     orders,
@@ -50,10 +51,21 @@ export default function CreateProductionTaskModal({
         setErrors
     ] = useState({});
 
-    const set = (f) => (e) => setForm((p) => ({
-        ...p,
-        [f]: e.target.value
-    }));
+    const set = (f) => (e) => {
+        let val = e.target.value;
+        if(f === 'quantity') {
+            val = String(val).replace(/,/g, '.');
+            val = val.replace(/[^0-9.]/g, '');
+            const parts = val.split('.');
+            if(parts.length > 2) {
+                val = parts[0] + '.' + parts.slice(1).join('');
+            }
+        }
+        setForm((p) => ({
+            ...p,
+            [f]: val
+        }));
+    };
 
     const extrusionMachines = machines.filter(m => m.type === 'Extrusion' || !m.type || m.type === 'General');
     const cuttingMachines = machines.filter(m => m.type === 'Cutting' || !m.type || m.type === 'General');
@@ -125,8 +137,12 @@ export default function CreateProductionTaskModal({
     ]);
 
     function handleSave() {
+        if(isSaving) {
+            return;
+        }
         const e = {};
         
+        const parsedQty = parseFloat(String(form.quantity).replace(',', '.'));
         if(mode === 'order') {
             if(!orderId) {
                 e.orderId = 'Required';
@@ -134,14 +150,14 @@ export default function CreateProductionTaskModal({
             if(!orderItemId) {
                 e.orderItemId = 'Required';
             }
-            if(!form.quantity || form.quantity < 1 || (selectedItem && form.quantity > selectedItem.remaining)) {
+            if(!form.quantity || isNaN(parsedQty) || parsedQty <= 0 || (selectedItem && parsedQty > selectedItem.remaining)) {
                 e.quantity = 'Invalid';
             }
         } else {
             if(!productId) {
                 e.productId = 'Required';
             }
-            if(!form.quantity || form.quantity < 1) {
+            if(!form.quantity || isNaN(parsedQty) || parsedQty <= 0) {
                 e.quantity = 'Invalid';
             }
         }
@@ -157,6 +173,7 @@ export default function CreateProductionTaskModal({
 
         const payload = {
             ...form,
+            quantity: parsedQty,
             source: mode
         };
 
@@ -172,7 +189,7 @@ export default function CreateProductionTaskModal({
     return (
         <div 
             className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-3 md:p-6" 
-            onClick={onClose}
+            onClick={isSaving ? undefined : onClose}
         >
             <div 
                 className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[500px] max-w-none p-4 md:p-6 flex flex-col" 
@@ -182,7 +199,8 @@ export default function CreateProductionTaskModal({
                     <h2 className="text-lg font-bold text-on-surface">Yeni Görev Oluştur</h2>
                     <button 
                         onClick={onClose} 
-                        className="text-text-muted hover:text-error"
+                        disabled={isSaving}
+                        className="text-text-muted hover:text-error disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <span className="material-symbols-outlined">close</span>
                     </button>
@@ -440,9 +458,9 @@ export default function CreateProductionTaskModal({
                                 {t('orders.qty')} *
                             </label>
                             <input 
-                                type="number" 
-                                min="1" 
-                                max={mode === 'order' && selectedItem ? selectedItem.remaining : undefined} 
+                                type="text" 
+                                inputMode="decimal"
+                                placeholder="1"
                                 className={`w-full bg-surface-container-lowest border rounded px-3 py-2 text-sm text-on-surface outline-none focus:border-primary ${errors.quantity ? 'border-error' : 'border-theme-border'}`} 
                                 value={form.quantity} 
                                 onChange={set('quantity')} 
@@ -454,15 +472,24 @@ export default function CreateProductionTaskModal({
                 <div className="flex gap-3 mt-6">
                     <button 
                         onClick={onClose} 
-                        className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition"
+                        disabled={isSaving}
+                        className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {t('common.cancel')}
                     </button>
                     <button 
                         onClick={handleSave} 
-                        className="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition"
+                        disabled={isSaving}
+                        className="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
                     >
-                        {t('common.save')}
+                        {isSaving ? (
+                            <>
+                                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                                <span>Kaydediliyor...</span>
+                            </>
+                        ) : (
+                            t('common.save')
+                        )}
                     </button>
                 </div>
             </div>

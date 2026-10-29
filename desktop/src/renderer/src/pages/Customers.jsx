@@ -9,6 +9,10 @@ import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import { addLogoToPDF } from '../utils/pdfLogo'
+import {
+    normalizeSearchText,
+    searchMatches
+} from '../utils/search'
 
 const BOLGE_OPTIONS = [
   { value: '', label: 'Seçiniz' },
@@ -427,7 +431,7 @@ function FieldInput({ field, value, onChange, error }) {
   )
 }
 
-function AddCustomerModal({ onClose, onSave, customerTags = [] }) {
+function AddCustomerModal({ onClose, onSave, customerTags = [], isSaving = false }) {
   const { t } = useTranslation()
   const tabDefs = getTabDefs(t)
   const [activeTab, setActiveTab] = useState(0)
@@ -458,6 +462,7 @@ function AddCustomerModal({ onClose, onSave, customerTags = [] }) {
   }
 
   function handleSave() {
+    if (isSaving) return
     const e = validate()
     if (Object.keys(e).length) {
       setErrors(e)
@@ -490,7 +495,11 @@ function AddCustomerModal({ onClose, onSave, customerTags = [] }) {
               <p className="text-[10px] sm:text-xs text-on-surface-variant">{t('customers.addPartner')}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 md:p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors">
+          <button
+            onClick={() => { if (!isSaving) onClose() }}
+            disabled={isSaving}
+            className="p-1.5 md:p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors disabled:opacity-50"
+          >
             <span className="material-symbols-outlined text-xl md:text-2xl">close</span>
           </button>
         </div>
@@ -554,16 +563,21 @@ function AddCustomerModal({ onClose, onSave, customerTags = [] }) {
 
           <div className="flex items-center justify-end gap-2 w-full lg:w-auto">
             <button
-              onClick={onClose}
-              className="flex-1 lg:flex-none px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-on-surface-variant text-[11px] md:text-sm font-semibold hover:bg-surface-container-low transition-colors flex items-center justify-center"
+              onClick={() => { if (!isSaving) onClose() }}
+              disabled={isSaving}
+              className="flex-1 lg:flex-none px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-on-surface-variant text-[11px] md:text-sm font-semibold hover:bg-surface-container-low transition-colors flex items-center justify-center disabled:opacity-50"
             >
               {t('common.cancel')}
             </button>
             <button
               onClick={handleSave}
-              className="flex-1 lg:flex-none px-3 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-[11px] md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center"
+              disabled={isSaving}
+              className="flex-1 lg:flex-none px-3 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-[11px] md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
-              {t('customers.saveCustomer')}
+              {isSaving && (
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+              )}
+              <span>{isSaving ? t('common.saving', 'Kaydediliyor...') : t('customers.saveCustomer')}</span>
             </button>
           </div>
         </div>
@@ -623,7 +637,7 @@ function OrdersTab({ customerOrders }) {
         if (!o.items) return;
         o.items.forEach(it => {
           const cur = it.currency || 'TRY';
-          const itemTotal = (parseFloat(it.unitPrice) || 0) * (parseInt(it.quantity) || 0) * (1 + (parseFloat(it.vat) || 0) / 100);
+          const itemTotal = (parseFloat(it.unitPrice) || 0) * (parseFloat(String(it.quantity).replace(',', '.')) || 0) * (1 + (parseFloat(it.vat) || 0) / 100);
           totals[cur] = (totals[cur] || 0) + itemTotal;
         });
       });
@@ -817,13 +831,13 @@ function AgendaTab({ customerId, siteVisits, t }) {
   
   const filteredNotes = allNotes.filter(n => {
     if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      (n.note || '').toLowerCase().includes(q) ||
-      (n.visitCode || '').toLowerCase().includes(q) ||
-      (n.visitTitle || '').toLowerCase().includes(q) ||
-      (n.createdBy?.name || '').toLowerCase().includes(q)
-    );
+    const targetText = [
+      n.note,
+      n.visitCode,
+      n.visitTitle,
+      n.createdBy?.name
+    ].filter(Boolean).join(' ');
+    return searchMatches(targetText, searchQuery);
   });
   
   const totalPages = Math.ceil(filteredNotes.length / ITEMS_PER_PAGE) || 1;
@@ -1078,12 +1092,31 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete, cus
     return e
   }
 
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
   async function handleSave() {
+    if (isSaving) return
     const e = validate()
     if (Object.keys(e).length) { setErrors(e); return }
-    await onSave(customer.id, form)
-    setEditing(false)
-    setErrors({})
+    setIsSaving(true)
+    try {
+      await onSave(customer.id, form)
+      setEditing(false)
+      setErrors({})
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (isDeleting) return
+    setIsDeleting(true)
+    try {
+      await onDelete(customer.id)
+    } finally {
+      setIsDeleting(false)
+    }
   }
 
   function handleCancel() {
@@ -1625,17 +1658,23 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete, cus
             </div>
             <div className="flex gap-2 flex-shrink-0">
               <button
-                onClick={() => setConfirming(false)}
-                className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-on-error-container text-[10px] md:text-xs font-bold hover:bg-error-container/60 transition-colors"
+                onClick={() => { if (!isDeleting) setConfirming(false) }}
+                disabled={isDeleting}
+                className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-on-error-container text-[10px] md:text-xs font-bold hover:bg-error-container/60 transition-colors disabled:opacity-50"
               >
                 {t('common.cancel')}
               </button>
               <button
-                onClick={() => onDelete(customer.id)}
-                className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl bg-error text-white text-[10px] md:text-xs font-bold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5"
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl bg-error text-white text-[10px] md:text-xs font-bold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 disabled:opacity-50"
               >
-                <span className="material-symbols-outlined text-sm">delete</span>
-                {t('common.yesDelete')}
+                {isDeleting ? (
+                  <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                ) : (
+                  <span className="material-symbols-outlined text-sm">delete</span>
+                )}
+                <span>{isDeleting ? t('common.deleting', 'Siliniyor...') : t('common.yesDelete')}</span>
               </button>
             </div>
           </div>
@@ -1676,16 +1715,21 @@ function CustomerDetailModal({ customer, reports, onClose, onSave, onDelete, cus
           ) : (
             <div className="flex items-center justify-end gap-2 w-full">
               <button
-                onClick={handleCancel}
-                className="flex-1 lg:flex-none px-4 py-2 lg:px-5 lg:py-2.5 rounded-xl text-on-surface-variant text-xs lg:text-sm font-semibold hover:bg-surface-container-low transition-colors flex items-center justify-center"
+                onClick={() => { if (!isSaving) handleCancel() }}
+                disabled={isSaving}
+                className="flex-1 lg:flex-none px-4 py-2 lg:px-5 lg:py-2.5 rounded-xl text-on-surface-variant text-xs lg:text-sm font-semibold hover:bg-surface-container-low transition-colors flex items-center justify-center disabled:opacity-50"
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={handleSave}
-                className="flex-1 lg:flex-none px-4 py-2 lg:px-6 lg:py-2.5 rounded-xl primary-gradient text-white text-xs lg:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center"
+                disabled={isSaving}
+                className="flex-1 lg:flex-none px-4 py-2 lg:px-6 lg:py-2.5 rounded-xl primary-gradient text-white text-xs lg:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
               >
-                {t('common.saveChanges')}
+                {isSaving && (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                )}
+                <span>{isSaving ? t('common.saving', 'Kaydediliyor...') : t('common.saveChanges')}</span>
               </button>
             </div>
           )}
@@ -1701,16 +1745,23 @@ function ManageTagsModal({ onClose }) {
   const { customerTags, addCustomerTag, updateCustomerTag, deleteCustomerTag } = useData()
   const [form, setForm] = useState({ name: '', color: '#e2e8f0' })
   const [editingId, setEditingId] = useState(null)
+  const [isSavingTag, setIsSavingTag] = useState(false)
+  const [deletingTagId, setDeletingTagId] = useState(null)
 
   const handleSave = async () => {
-    if (!form.name.trim()) return
-    if (editingId) {
-      await updateCustomerTag(editingId, form)
-      setEditingId(null)
-    } else {
-      await addCustomerTag(form)
+    if (!form.name.trim() || isSavingTag) return
+    setIsSavingTag(true)
+    try {
+      if (editingId) {
+        await updateCustomerTag(editingId, form)
+        setEditingId(null)
+      } else {
+        await addCustomerTag(form)
+      }
+      setForm({ name: '', color: '#e2e8f0' })
+    } finally {
+      setIsSavingTag(false)
     }
-    setForm({ name: '', color: '#e2e8f0' })
   }
 
   const handleEdit = (tag) => {
@@ -1719,8 +1770,14 @@ function ManageTagsModal({ onClose }) {
   }
 
   const handleDelete = async (id) => {
+    if (deletingTagId) return
     if (confirm(t('common.confirmDelete', 'Emin misiniz?'))) {
-      await deleteCustomerTag(id)
+      setDeletingTagId(id)
+      try {
+        await deleteCustomerTag(id)
+      } finally {
+        setDeletingTagId(null)
+      }
     }
   }
 
@@ -1731,10 +1788,38 @@ function ManageTagsModal({ onClose }) {
         <h2 className="text-lg font-bold">Etiketleri Yönet</h2>
 
         <div className="flex gap-2 items-center">
-          <input type="text" value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} placeholder="Etiket Adı" className="border px-3 py-2 rounded-lg flex-1 bg-surface-container-high" />
-          <input type="color" value={form.color} onChange={e => setForm(p => ({ ...p, color: e.target.value }))} className="w-10 h-10 rounded-lg p-0 border-0" />
-          <button onClick={handleSave} className="bg-primary text-white px-4 py-2 rounded-lg font-bold">{editingId ? 'Güncelle' : 'Ekle'}</button>
-          {editingId && <button onClick={() => { setEditingId(null); setForm({ name: '', color: '#e2e8f0' }) }} className="text-on-surface-variant font-bold px-2 py-2">İptal</button>}
+          <input
+            type="text"
+            value={form.name}
+            onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
+            placeholder="Etiket Adı"
+            className="border px-3 py-2 rounded-lg flex-1 bg-surface-container-high"
+          />
+          <input
+            type="color"
+            value={form.color}
+            onChange={e => setForm(p => ({ ...p, color: e.target.value }))}
+            className="w-10 h-10 rounded-lg p-0 border-0"
+          />
+          <button
+            onClick={handleSave}
+            disabled={isSavingTag}
+            className="bg-primary text-white px-4 py-2 rounded-lg font-bold disabled:opacity-50 flex items-center gap-1.5"
+          >
+            {isSavingTag && (
+              <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+            )}
+            <span>{isSavingTag ? t('common.saving', 'Kaydediliyor...') : (editingId ? 'Güncelle' : 'Ekle')}</span>
+          </button>
+          {editingId && (
+            <button
+              onClick={() => { setEditingId(null); setForm({ name: '', color: '#e2e8f0' }) }}
+              disabled={isSavingTag}
+              className="text-on-surface-variant font-bold px-2 py-2"
+            >
+              İptal
+            </button>
+          )}
         </div>
 
         <div className="flex flex-col gap-2 max-h-[300px] overflow-y-auto">
@@ -1745,8 +1830,24 @@ function ManageTagsModal({ onClose }) {
                 <span className="font-semibold">{tag.name}</span>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => handleEdit(tag)} className="text-primary"><span className="material-symbols-outlined text-sm">edit</span></button>
-                <button onClick={() => handleDelete(tag.id)} className="text-error"><span className="material-symbols-outlined text-sm">delete</span></button>
+                <button
+                  onClick={() => handleEdit(tag)}
+                  disabled={isSavingTag || deletingTagId === tag.id}
+                  className="text-primary disabled:opacity-40"
+                >
+                  <span className="material-symbols-outlined text-sm">edit</span>
+                </button>
+                <button
+                  onClick={() => handleDelete(tag.id)}
+                  disabled={isSavingTag || deletingTagId === tag.id}
+                  className="text-error disabled:opacity-40"
+                >
+                  {deletingTagId === tag.id ? (
+                    <span className="w-3.5 h-3.5 border-2 border-red-500 border-t-transparent rounded-full animate-spin inline-block" />
+                  ) : (
+                    <span className="material-symbols-outlined text-sm">delete</span>
+                  )}
+                </button>
               </div>
             </div>
           ))}
@@ -1764,7 +1865,7 @@ function getOrderTotals(items) {
   if (!items || !items.length) return totals;
   items.forEach(it => {
     const cur = it.currency || 'TRY';
-    const itemTotal = (parseFloat(it.unitPrice) || 0) * (parseInt(it.quantity) || 0) * (1 + (parseFloat(it.vat) || 0) / 100);
+    const itemTotal = (parseFloat(it.unitPrice) || 0) * (parseFloat(String(it.quantity).replace(',', '.')) || 0) * (1 + (parseFloat(it.vat) || 0) / 100);
     totals[cur] = (totals[cur] || 0) + itemTotal;
   });
   return Object.keys(totals).map(k => `${k} ${totals[k].toFixed(2)}`).join(' / ') || '0.00';
@@ -1779,16 +1880,32 @@ export default function Customers() {
   const [showModal, setShowModal] = useState(false)
   const [showTagsModal, setShowTagsModal] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState(null)
+  const [isAddingCustomer, setIsAddingCustomer] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
 
   const { token } = useAuth()
   const isAdmin = user?.role === 'admin'
 
+  async function handleSave(form) {
+    if (isAddingCustomer) return
+    setIsAddingCustomer(true)
+    try {
+      await addCustomer(form)
+      setShowModal(false)
+      setPage(1)
+    } finally {
+      setIsAddingCustomer(false)
+    }
+  }
 
-
-  function handleSave(form) {
-    addCustomer(form)
-    setShowModal(false)
-    setPage(1)
+  async function handleSync() {
+    if (isSyncing) return
+    setIsSyncing(true)
+    try {
+      await syncAndRefreshCustomers()
+    } finally {
+      setIsSyncing(false)
+    }
   }
 
   const filtered = customers.filter((c) => {
@@ -1797,15 +1914,25 @@ export default function Customers() {
     if (activeTab === 'potential' && !isPotential) return false
     if (activeTab === 'active' && isPotential) return false
 
-    if (!search) return true
-    const q = search.toLowerCase()
-    return (
-      c.name.toLowerCase().includes(q) ||
-      (c.contactName || c.contact || '').toLowerCase().includes(q) ||
-      (c.city || '').toLowerCase().includes(q) ||
-      (c.country || '').toLowerCase().includes(q) ||
-      code.toLowerCase().includes(q)
-    )
+    if (!search || !search.trim()) return true
+    const targetText = [
+      c.name,
+      c.fullName,
+      code,
+      c.contactName,
+      c.contact,
+      c.city,
+      c.country,
+      c.region,
+      c.district,
+      c.taxId,
+      c.taxOffice,
+      c.email,
+      c.phone,
+      ...(Array.isArray(c.tags) ? c.tags.map((t) => (typeof t === 'string' ? t : (t?.name || ''))) : [])
+    ].filter(Boolean).join(' ')
+
+    return searchMatches(targetText, search)
   }).sort((a, b) => {
     const codeA = a.accountCode || a.code || ''
     const codeB = b.accountCode || b.code || ''
@@ -1828,7 +1955,12 @@ export default function Customers() {
     <div className="p-2 sm:p-4 lg:p-8 min-h-screen bg-page-bg">
       {showTagsModal && <ManageTagsModal onClose={() => setShowTagsModal(false)} />}
       {showModal && (
-        <AddCustomerModal onClose={() => setShowModal(false)} onSave={handleSave} customerTags={customerTags} />
+        <AddCustomerModal
+          onClose={() => { if (!isAddingCustomer) setShowModal(false) }}
+          onSave={handleSave}
+          isSaving={isAddingCustomer}
+          customerTags={customerTags}
+        />
       )}
       {selectedCustomer && (
         <CustomerDetailModal
@@ -1858,9 +1990,13 @@ export default function Customers() {
           </p>
         </div>
         <div className="flex items-center gap-2 lg:gap-3 flex-shrink-0 overflow-x-auto overflow-y-hidden w-full md:w-auto max-w-full pb-2 md:pb-0">
-          <button onClick={syncAndRefreshCustomers} className="flex items-center justify-center gap-1.5 border border-theme-border px-2.5 py-2 lg:px-3 lg:py-2 rounded-xl text-[11px] lg:text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap flex-shrink-0">
-            <span className="material-symbols-outlined text-[14px] lg:text-base">sync</span>
-            <span className="hidden lg:inline">{t('common.refresh', 'Yenile/Senkronize Et')}</span>
+          <button
+            onClick={handleSync}
+            disabled={isSyncing}
+            className="flex items-center justify-center gap-1.5 border border-theme-border px-2.5 py-2 lg:px-3 lg:py-2 rounded-xl text-[11px] lg:text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap flex-shrink-0 disabled:opacity-50"
+          >
+            <span className={`material-symbols-outlined text-[14px] lg:text-base ${isSyncing ? 'animate-spin' : ''}`}>sync</span>
+            <span className="hidden lg:inline">{isSyncing ? t('common.syncing', 'Senkronize Ediliyor...') : t('common.refresh', 'Yenile/Senkronize Et')}</span>
           </button>
           <button
             onClick={() => setShowTagsModal(true)}

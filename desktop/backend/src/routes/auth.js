@@ -16,11 +16,39 @@ router.get('/me', authenticate, (req, res) => {
 router.get('/salesteam', authenticate, async (req, res) => {
   try {
     const users = await prisma.user.findMany({
-      where: { department: { contains: 'sales', mode: 'insensitive' } },
-      select: { id: true, name: true, department: true },
+      include: {
+        employee: {
+          select: {
+            id: true,
+            name: true,
+            department: true,
+            position: true,
+          },
+        },
+      },
       orderBy: { name: 'asc' },
     })
-    res.json(users)
+
+    const isSales = (str) => {
+      if (!str) return false
+      const s = String(str).toLowerCase()
+      return (
+        s.includes('sale') ||
+        s.includes('satış') ||
+        s.includes('satis') ||
+        s.includes('pazarlama')
+      )
+    }
+
+    const salesUsers = users
+      .filter((u) => isSales(u.department) || isSales(u.employee?.department) || isSales(u.employee?.position))
+      .map((u) => ({
+        id: u.id,
+        name: u.name,
+        department: u.department || u.employee?.department || 'Satış',
+      }))
+
+    res.json(salesUsers)
   } catch (err) {
     res.status(500).json({ error: err.message })
   }

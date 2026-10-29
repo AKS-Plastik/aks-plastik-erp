@@ -5,6 +5,7 @@ import { useData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
 import * as XLSX from 'xlsx'
 import SearchableSelect from '../components/SearchableSelect'
+import { searchMatches } from '../utils/search'
 
 const STATUSES = ['Scheduled', 'In Progress', 'Completed', 'Cancelled']
 
@@ -59,7 +60,7 @@ function FieldErr({ label, icon, error, children, span2 = false }) {
   )
 }
 
-function AddVisitModal({ customers, employees, onClose, onSave, initialDate, initialTime, initialCustomer }) {
+function AddVisitModal({ customers, employees, onClose, onSave, initialDate, initialTime, initialCustomer, isSaving = false }) {
   const { t } = useTranslation()
   const { user } = useAuth()
   const { isAdmin } = useData()
@@ -80,6 +81,7 @@ function AddVisitModal({ customers, employees, onClose, onSave, initialDate, ini
   }
 
   function handleSave() {
+    if (isSaving) return
     const e = {}
     if (!form.isVisit && !form.title.trim()) e.title = 'Required'
     if (form.isVisit && !form.customerId) e.customerId = 'Required'
@@ -106,7 +108,7 @@ function AddVisitModal({ customers, employees, onClose, onSave, initialDate, ini
               <p className="text-[10px] md:text-xs text-on-surface-variant">{t('workOrders.scheduleField')}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1.5 md:p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors">
+          <button onClick={onClose} disabled={isSaving} className="p-1.5 md:p-2 rounded-xl text-on-surface-variant hover:bg-surface-container-low transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             <span className="material-symbols-outlined text-xl md:text-2xl">close</span>
           </button>
         </div>
@@ -176,10 +178,19 @@ function AddVisitModal({ customers, employees, onClose, onSave, initialDate, ini
         </div>
 
         <div className="flex flex-col-reverse sm:flex-row sm:items-center justify-end gap-3 px-4 md:px-6 pb-4 md:pb-6 pt-2">
-          <button onClick={onClose} className="w-full sm:w-auto px-4 py-1.5 md:px-5 md:py-2.5 rounded-lg md:rounded-xl text-on-surface-variant text-xs md:text-sm font-semibold hover:bg-surface-container-low transition-colors">{t('common.cancel')}</button>
-          <button onClick={handleSave} className="w-full sm:w-auto px-4 py-1.5 md:px-6 md:py-2.5 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 md:gap-2">
-            <span className="material-symbols-outlined text-[14px] md:text-[18px]">save</span>
-            {t('workOrders.scheduleVisit')}
+          <button onClick={onClose} disabled={isSaving} className="w-full sm:w-auto px-4 py-1.5 md:px-5 md:py-2.5 rounded-lg md:rounded-xl text-on-surface-variant text-xs md:text-sm font-semibold hover:bg-surface-container-low transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{t('common.cancel')}</button>
+          <button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto px-4 py-1.5 md:px-6 md:py-2.5 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 md:gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+            {isSaving ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                <span>Kaydediliyor...</span>
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-[14px] md:text-[18px]">save</span>
+                {t('workOrders.scheduleVisit')}
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -214,7 +225,7 @@ const STATUS_CHANGE_ACTIVE = {
   'Cancelled': 'border-red-500 bg-red-500 text-white',
 }
 
-export function VisitDetailModal({ visit, customers, employees, onClose, onSave, onDelete }) {
+export function VisitDetailModal({ visit, customers, employees, onClose, onSave, onDelete, isSaving = false, isDeleting = false }) {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const { isAdmin } = useData()
@@ -260,6 +271,7 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
   }
 
   function handleSave() {
+    if (isSaving || isDeleting) return
     const e = {}
     if (!form.isVisit && !form.title.trim()) e.title = 'Required'
     if (form.isVisit && !form.customerId) e.customerId = 'Required'
@@ -281,12 +293,14 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
   }
 
   function handleCancel() {
+    if (isSaving || isDeleting) return
     setForm({ title: visit.title, customerId: visit.customerId || '', location: visit.location || '', employeeId: visit.employeeId || '', assignees: visit.assignees?.map(a => a.id) || [], date: visit.date, time: visit.time, status: visit.status, notes: visit.notes || '' })
     setErrors({})
     setEditing(false)
   }
 
   function handleStatusChange() {
+    if (isSaving || isDeleting) return
     if (pendingStatus === 'Cancelled' && !statusNote.trim()) {
       setStatusNoteError(true)
       return
@@ -560,17 +574,27 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={() => { setShowStatusPanel(false); setPendingStatus(visit.status); setStatusNote(''); setStatusNoteError(false) }}
-                className="px-4 py-2 rounded-lg text-on-surface-variant text-xs font-bold hover:bg-surface-container-high transition-colors"
+                disabled={isSaving}
+                className="px-4 py-2 rounded-lg text-on-surface-variant text-xs font-bold hover:bg-surface-container-high transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={handleStatusChange}
-                disabled={pendingStatus === visit.status}
+                disabled={pendingStatus === visit.status || isSaving}
                 className="px-4 py-2 rounded-lg primary-gradient text-white text-xs font-bold hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed flex items-center gap-1.5"
               >
-                <span className="material-symbols-outlined text-sm">check</span>
-                {t('common.apply')}
+                {isSaving ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                    <span>Uygulanıyor...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-sm">check</span>
+                    {t('common.apply')}
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -587,8 +611,8 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
               </div>
             </div>
             <div className="flex gap-2 flex-shrink-0">
-              <button onClick={() => setConfirmComplete(false)} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-emerald-800 text-[10px] md:text-xs font-bold hover:bg-emerald-100 transition-colors">{t('common.cancel')}</button>
-              <button onClick={() => { setForm((p) => ({ ...p, status: 'Completed' })); setConfirmComplete(false) }} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl bg-emerald-600 text-white text-[10px] md:text-xs font-bold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5">
+              <button onClick={() => setConfirmComplete(false)} disabled={isSaving} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-emerald-800 text-[10px] md:text-xs font-bold hover:bg-emerald-100 transition-colors disabled:opacity-50">{t('common.cancel')}</button>
+              <button onClick={() => { setForm((p) => ({ ...p, status: 'Completed' })); setConfirmComplete(false) }} disabled={isSaving} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl bg-emerald-600 text-white text-[10px] md:text-xs font-bold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 disabled:opacity-50">
                 <span className="material-symbols-outlined text-sm">check</span>
                 {t('workOrders.yesComplete')}
               </button>
@@ -607,10 +631,19 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
               </div>
             </div>
             <div className="flex gap-2 flex-shrink-0">
-              <button onClick={() => setConfirming(false)} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-on-error-container text-[10px] md:text-xs font-bold hover:bg-error-container/60 transition-colors">{t('common.cancel')}</button>
-              <button onClick={() => onDelete(visit.id)} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl bg-error text-white text-[10px] md:text-xs font-bold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-sm">delete</span>
-                {t('common.yesDelete')}
+              <button onClick={() => setConfirming(false)} disabled={isDeleting} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-on-error-container text-[10px] md:text-xs font-bold hover:bg-error-container/60 transition-colors disabled:opacity-50">{t('common.cancel')}</button>
+              <button onClick={() => onDelete(visit.id)} disabled={isDeleting} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl bg-error text-white text-[10px] md:text-xs font-bold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 disabled:opacity-50">
+                {isDeleting ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                    <span>Siliniyor...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-sm">delete</span>
+                    {t('common.yesDelete')}
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -626,18 +659,20 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
                     onClose()
                     navigate('/orders', { state: { newOrderForCustomer: visit.customerId, visitId: visit.id } })
                   }}
-                  className="whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border border-theme-border bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant text-[11px] md:text-sm font-bold shadow-sm transition-all flex items-center gap-1 md:gap-1.5"
+                  disabled={isSaving || isDeleting}
+                  className="whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border border-theme-border bg-surface-container-high hover:bg-surface-container-highest text-on-surface-variant text-[11px] md:text-sm font-bold shadow-sm transition-all flex items-center gap-1 md:gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <span className="material-symbols-outlined text-[14px] md:text-[18px] text-blue-500">shopping_cart</span>
                   Sipariş Oluştur
                 </button>
-                <button onClick={() => setEditing(true)} className="whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 border-primary text-primary text-[11px] md:text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center gap-1 md:gap-1.5">
+                <button onClick={() => setEditing(true)} disabled={isSaving || isDeleting} className="whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 border-primary text-primary text-[11px] md:text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center gap-1 md:gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
                   <span className="material-symbols-outlined text-[14px] md:text-[18px]">edit</span>{t('common.edit')}
                 </button>
                 {canChangeStatus && (
                   <button
                     onClick={() => { setShowStatusPanel((v) => !v); setPendingStatus(visit.status); setStatusNote(''); setStatusNoteError(false) }}
-                    className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 text-[11px] md:text-sm font-bold transition-all flex items-center gap-1 md:gap-1.5 ${showStatusPanel ? 'border-secondary bg-secondary text-white' : 'border-secondary text-secondary hover:bg-secondary hover:text-white'}`}
+                    disabled={isSaving || isDeleting}
+                    className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 text-[11px] md:text-sm font-bold transition-all flex items-center gap-1 md:gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${showStatusPanel ? 'border-secondary bg-secondary text-white' : 'border-secondary text-secondary hover:bg-secondary hover:text-white'}`}
                   >
                     <span className="material-symbols-outlined text-[14px] md:text-[18px]">flag</span>{t('common.status')}
                   </button>
@@ -645,19 +680,30 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
                 {isAdmin && (
                   <button
                     onClick={() => setConfirming((v) => !v)}
-                    className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 text-[11px] md:text-sm font-bold transition-all flex items-center gap-1 md:gap-1.5 ${confirming ? 'border-error bg-error text-white' : 'border-error text-error hover:bg-error hover:text-white'}`}
+                    disabled={isSaving || isDeleting}
+                    className={`whitespace-nowrap flex-shrink-0 px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 text-[11px] md:text-sm font-bold transition-all flex items-center gap-1 md:gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${confirming ? 'border-error bg-error text-white' : 'border-error text-error hover:bg-error hover:text-white'}`}
                   >
                     <span className="material-symbols-outlined text-[14px] md:text-[18px]">delete</span>{t('common.delete')}
                   </button>
                 )}
               </div>
-              <button onClick={onClose} className="w-full sm:w-auto px-4 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity">{t('common.close')}</button>
+              <button onClick={onClose} disabled={isSaving || isDeleting} className="w-full sm:w-auto px-4 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed">{t('common.close')}</button>
             </>
           ) : (
             <>
-              <button onClick={handleCancel} className="w-full sm:w-auto px-4 py-1.5 md:px-5 md:py-2 rounded-lg md:rounded-xl text-on-surface-variant text-xs md:text-sm font-semibold hover:bg-surface-container-low transition-colors">{t('common.cancel')}</button>
-              <button onClick={handleSave} className="w-full sm:w-auto px-4 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 md:gap-2">
-                <span className="material-symbols-outlined text-[14px] md:text-[18px]">save</span>{t('common.saveChanges')}
+              <button onClick={handleCancel} disabled={isSaving} className="w-full sm:w-auto px-4 py-1.5 md:px-5 md:py-2 rounded-lg md:rounded-xl text-on-surface-variant text-xs md:text-sm font-semibold hover:bg-surface-container-low transition-colors disabled:opacity-50 disabled:cursor-not-allowed">{t('common.cancel')}</button>
+              <button onClick={handleSave} disabled={isSaving} className="w-full sm:w-auto px-4 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-1.5 md:gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                {isSaving ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                    <span>Kaydediliyor...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[14px] md:text-[18px]">save</span>
+                    {t('common.saveChanges')}
+                  </>
+                )}
               </button>
             </>
           )}
@@ -798,6 +844,8 @@ export default function SiteVisits() {
   const [showModal, setShowModal] = useState(false)
   const [initialSlot, setInitialSlot] = useState(null)
   const [selected, setSelected] = useState(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('')
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -883,17 +931,17 @@ export default function SiteVisits() {
     { label: t('workOrders.cancelled'), value: siteVisits.filter((v) => v.status === 'Cancelled').length, icon: 'cancel', color: 'bg-red-400' },
   ]
 
-  const q = search.toLowerCase()
   const filtered = siteVisits.filter((v) => {
     const cust = customers?.find((c) => c.id === v.customerId)
     const custCode = cust?.accountCode || cust?.code || ''
-    const matchSearch = !q ||
-      v.title?.toLowerCase().includes(q) ||
-      v.customerName?.toLowerCase().includes(q) ||
-      custCode.toLowerCase().includes(q) ||
-      v.location?.toLowerCase().includes(q) ||
-      v.assignees?.some(a => a.name.toLowerCase().includes(q)) ||
-      v.employeeName?.toLowerCase().includes(q)
+    const matchSearch = !search.trim() || searchMatches([
+      v.title,
+      v.customerName,
+      custCode,
+      v.location,
+      ...(v.assignees?.map(a => a.name) || []),
+      v.employeeName
+    ], search)
     const matchStatus = !statusFilter || v.status === statusFilter
     return matchSearch && matchStatus
   })
@@ -916,8 +964,18 @@ export default function SiteVisits() {
           initialDate={initialSlot?.date}
           initialTime={initialSlot?.time}
           initialCustomer={initialSlot?.customerId}
-          onClose={() => { setShowModal(false); setInitialSlot(null); }}
-          onSave={(form) => { addSiteVisit(form); setShowModal(false); setInitialSlot(null); }}
+          isSaving={isSaving}
+          onClose={() => { if (!isSaving) { setShowModal(false); setInitialSlot(null); } }}
+          onSave={async (form) => {
+            try {
+              setIsSaving(true)
+              await addSiteVisit(form)
+              setShowModal(false)
+              setInitialSlot(null)
+            } finally {
+              setIsSaving(false)
+            }
+          }}
         />
       )}
       {selected && (
@@ -925,19 +983,34 @@ export default function SiteVisits() {
           visit={selected}
           customers={customers}
           employees={employees}
-          onClose={() => setSelected(null)}
+          isSaving={isSaving}
+          isDeleting={isDeleting}
+          onClose={() => { if (!isSaving && !isDeleting) setSelected(null); }}
           onSave={async (id, form) => {
-            const wasCompleted = selected.status === 'Completed'
-            await updateSiteVisit(id, form);
-            setSelected(null)
+            try {
+              setIsSaving(true)
+              const wasCompleted = selected.status === 'Completed'
+              await updateSiteVisit(id, form);
+              setSelected(null)
 
-            if (form.status === 'Completed' && !wasCompleted) {
-              setTimeout(() => {
-                setPromptNewVisitData({ customerId: form.customerId || selected.customerId || null })
-              }, 200)
+              if (form.status === 'Completed' && !wasCompleted) {
+                setTimeout(() => {
+                  setPromptNewVisitData({ customerId: form.customerId || selected.customerId || null })
+                }, 200)
+              }
+            } finally {
+              setIsSaving(false)
             }
           }}
-          onDelete={(id) => { deleteSiteVisit(id); setSelected(null) }}
+          onDelete={async (id) => {
+            try {
+              setIsDeleting(true)
+              await deleteSiteVisit(id)
+              setSelected(null)
+            } finally {
+              setIsDeleting(false)
+            }
+          }}
         />
       )}
 

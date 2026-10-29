@@ -356,7 +356,7 @@ export default function ProductionPlanning() {
     try {
       const payload = {
         ...newTaskForm,
-        quantity: newTaskForm.quantity ? parseInt(newTaskForm.quantity) : 0
+        quantity: newTaskForm.quantity ? (parseFloat(String(newTaskForm.quantity).replace(',', '.')) || 0) : 0
       }
       if (newTaskForm.id) {
         await updateEmployeeTask(newTaskForm.id, payload)

@@ -17,6 +17,9 @@ export default function Users() {
   const [resetEmailStatus, setResetEmailStatus] = useState(null) // null | 'sending' | 'sent' | 'error'
   const [error, setError] = useState('')
   const [editError, setEditError] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Admin Password Reset Modal State
   const [resetPasswordUser, setResetPasswordUser] = useState(null)
@@ -67,8 +70,10 @@ export default function Users() {
 
   async function handleCreate(e) {
     e.preventDefault()
+    if (isCreating) return
     setError('')
     try {
+      setIsCreating(true)
       const res = await fetch(`${API_URL}/auth/users`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -81,11 +86,15 @@ export default function Users() {
       setShowForm(false)
     } catch (err) {
       setError(err.message)
+    } finally {
+      setIsCreating(false)
     }
   }
 
   async function handleDelete(id) {
+    if (isDeleting) return
     try {
+      setIsDeleting(true)
       const res = await fetch(`${API_URL}/auth/users/${id}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` },
@@ -99,8 +108,10 @@ export default function Users() {
       setUsers((prev) => prev.filter((u) => u.id !== id))
     } catch {
       alert('Network error. Please try again.')
+    } finally {
+      setIsDeleting(false)
+      setConfirmDeleteId(null)
     }
-    setConfirmDeleteId(null)
   }
 
   const [viewUser, setViewUser] = useState(null)
@@ -207,8 +218,10 @@ export default function Users() {
   }
 
   async function handleUpdate() {
+    if (isUpdating) return
     setEditError('')
     try {
+      setIsUpdating(true)
       const res = await fetch(`${API_URL}/auth/users/${editingUser}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
@@ -221,6 +234,8 @@ export default function Users() {
     } catch (err) {
       setEditError(err.message)
       setConfirmEdit(false)
+    } finally {
+      setIsUpdating(false)
     }
   }
 
@@ -258,7 +273,7 @@ export default function Users() {
                     <p className="text-blue-200 text-[9px] mt-0.5">{t('users.createNewAccount', 'Yeni sistem hesabı oluştur')}</p>
                   </div>
                 </div>
-                <button onClick={() => { setShowForm(false); setError('') }} className="p-1 rounded-md text-white/70 hover:text-white hover:bg-surface-container-lowest/10 transition-colors">
+                <button onClick={() => { if (!isCreating) { setShowForm(false); setError(''); } }} disabled={isCreating} className="p-1 rounded-md text-white/70 hover:text-white hover:bg-surface-container-lowest/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                   <span className="material-symbols-outlined text-base">close</span>
                 </button>
               </div>
@@ -348,23 +363,40 @@ export default function Users() {
                     <option value="admin">{t('users.admin', 'Admin')}</option>
                   </select>
                 </div>
-                {form.department && (
-                  <div>
-                    <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">{t('settings.department', 'Departman')}</label>
-                    <div className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border bg-surface-container-high text-on-surface-variant text-[11px] md:text-sm flex items-center gap-2">
-                      <span className="material-symbols-outlined text-sm md:text-base text-text-muted">apartment</span>
-                      {form.department}
-                    </div>
-                  </div>
-                )}
+                <div>
+                  <label className="block text-[10px] md:text-xs font-medium text-text-muted mb-1">{t('settings.department', 'Departman')}</label>
+                  <select
+                    value={form.department}
+                    onChange={(e) => setForm({ ...form, department: e.target.value })}
+                    className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none bg-surface-container-lowest"
+                  >
+                    <option value="">— {t('common.selectDepartment', 'Departman Seçin')} —</option>
+                    {roles.map((r) => <option key={r.id} value={r.name}>{r.name}</option>)}
+                    {!roles.some((r) => r.name.toLowerCase().includes('satış') || r.name.toLowerCase().includes('sales')) && (
+                      <>
+                        <option value="Satış Temsilcisi">Satış Temsilcisi</option>
+                        <option value="Satış Müdürü">Satış Müdürü</option>
+                      </>
+                    )}
+                  </select>
+                </div>
               </div>
               <div className="flex gap-2 justify-end pt-2">
-                <button type="button" onClick={() => { setShowForm(false); setError('') }} className="px-3 py-1.5 text-xs md:text-sm text-on-surface-variant hover:text-on-surface transition-colors">
+                <button type="button" onClick={() => { setShowForm(false); setError('') }} disabled={isCreating} className="px-3 py-1.5 text-xs md:text-sm text-on-surface-variant hover:text-on-surface transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                   {t('common.cancel')}
                 </button>
-                <button type="submit" className="px-4 py-1.5 md:py-2 rounded-lg primary-gradient text-white text-xs md:text-sm font-bold hover:opacity-90 flex items-center gap-1.5">
-                  <span className="material-symbols-outlined text-sm md:text-base">person_add</span>
-                  Create User
+                <button type="submit" disabled={isCreating} className="px-4 py-1.5 md:py-2 rounded-lg primary-gradient text-white text-xs md:text-sm font-bold hover:opacity-90 flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
+                  {isCreating ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                      <span>Oluşturuluyor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-sm md:text-base">person_add</span>
+                      Create User
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -375,7 +407,7 @@ export default function Users() {
       {/* Edit User Modal */}
       {editingUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={closeEdit} />
+          <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={isUpdating ? undefined : closeEdit} />
           <div className="relative bg-surface-container-lowest rounded-2xl shadow-2xl shadow-inverse-surface/20 w-[95%] md:w-[90%] lg:w-[85%] max-w-none mx-4 overflow-hidden">
             {/* Header */}
             <div className="primary-gradient px-4 py-2.5">
@@ -389,7 +421,7 @@ export default function Users() {
                     <p className="text-blue-200 text-[9px] mt-0.5">{users.find((u) => u.id === editingUser)?.name}</p>
                   </div>
                 </div>
-                <button onClick={closeEdit} className="p-1 rounded-md text-white/70 hover:text-white hover:bg-surface-container-lowest/10 transition-colors">
+                <button onClick={closeEdit} disabled={isUpdating} className="p-1 rounded-md text-white/70 hover:text-white hover:bg-surface-container-lowest/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                   <span className="material-symbols-outlined text-base">close</span>
                 </button>
               </div>
@@ -450,8 +482,14 @@ export default function Users() {
                       onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
                       className="w-full px-3 py-1.5 md:py-2 rounded-lg border border-input-border text-[11px] md:text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 appearance-none bg-surface-container-lowest"
                     >
-                      <option value="">— Select Department —</option>
+                      <option value="">— {t('common.selectDepartment', 'Departman Seçin')} —</option>
                       {roles.map((r) => <option key={r.id} value={r.name}>{r.name}</option>)}
+                      {!roles.some((r) => r.name.toLowerCase().includes('satış') || r.name.toLowerCase().includes('sales')) && (
+                        <>
+                          <option value="Satış Temsilcisi">Satış Temsilcisi</option>
+                          <option value="Satış Müdürü">Satış Müdürü</option>
+                        </>
+                      )}
                     </select>
                   </div>
                   <div className="flex items-center justify-between pt-2">
@@ -489,12 +527,21 @@ export default function Users() {
                   <p className="text-xs md:text-sm font-bold text-on-surface mb-1">{t('common.areYouSure')}</p>
                   <p className="text-[10px] md:text-xs text-on-surface-variant mb-4 md:mb-5">{t('users.updateInfoWarning', 'Kullanıcı bilgilerini güncelleyecektir.')}</p>
                   <div className="flex gap-2 justify-center">
-                    <button onClick={() => setConfirmEdit(false)} className="flex-1 py-1.5 rounded-lg border border-theme-border text-text-muted text-[11px] md:text-xs font-semibold hover:bg-hover-bg transition-colors">
+                    <button onClick={() => setConfirmEdit(false)} disabled={isUpdating} className="flex-1 py-1.5 rounded-lg border border-theme-border text-text-muted text-[11px] md:text-xs font-semibold hover:bg-hover-bg transition-colors disabled:opacity-50">
                       {t('common.goBack')}
                     </button>
-                    <button onClick={handleUpdate} className="flex-1 py-1.5 rounded-lg primary-gradient text-white text-[11px] md:text-xs font-bold hover:opacity-90 flex items-center justify-center gap-1.5">
-                      <span className="material-symbols-outlined text-sm">check</span>
-                      {t('common.confirm')}
+                    <button onClick={handleUpdate} disabled={isUpdating} className="flex-1 py-1.5 rounded-lg primary-gradient text-white text-[11px] md:text-xs font-bold hover:opacity-90 flex items-center justify-center gap-1.5 disabled:opacity-50">
+                      {isUpdating ? (
+                        <>
+                          <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                          <span>Kaydediliyor...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-sm">check</span>
+                          {t('common.confirm')}
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -743,7 +790,8 @@ export default function Users() {
                 <button
                   type="button"
                   onClick={closeResetPassword}
-                  className="px-3.5 py-2 text-xs md:text-sm font-semibold text-text-muted hover:text-on-surface rounded-xl hover:bg-hover-bg transition-colors"
+                  disabled={resetLoading}
+                  className="px-3.5 py-2 text-xs md:text-sm font-semibold text-text-muted hover:text-on-surface rounded-xl hover:bg-hover-bg transition-colors disabled:opacity-50"
                 >
                   {t('common.cancel')}
                 </button>
@@ -752,10 +800,17 @@ export default function Users() {
                   disabled={resetLoading || resetSuccess}
                   className="px-4 py-2 rounded-xl primary-gradient text-white text-xs md:text-sm font-bold hover:opacity-90 transition-opacity flex items-center gap-1.5 disabled:opacity-50"
                 >
-                  <span className="material-symbols-outlined text-sm md:text-base">
-                    {resetLoading ? 'hourglass_top' : 'lock_reset'}
-                  </span>
-                  {resetLoading ? 'Güncelleniyor...' : t('users.updatePassword', 'Parolayı Güncelle')}
+                  {resetLoading ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                      <span>Güncelleniyor...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-sm md:text-base">lock_reset</span>
+                      {t('users.updatePassword', 'Parolayı Güncelle')}
+                    </>
+                  )}
                 </button>
               </div>
             </form>
@@ -764,7 +819,7 @@ export default function Users() {
       )}
       {confirmDeleteId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-0">
-          <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={() => setConfirmDeleteId(null)} />
+          <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={() => { if (!isDeleting) setConfirmDeleteId(null); }} />
           <div className="relative bg-surface-container-lowest rounded-2xl shadow-2xl w-full max-w-sm mx-auto p-4 text-center">
             <div className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-error-container flex items-center justify-center mx-auto mb-2 md:mb-3">
               <span className="material-symbols-outlined text-xl md:text-2xl text-error">delete_forever</span>
@@ -774,16 +829,27 @@ export default function Users() {
             <div className="flex gap-2 justify-center">
               <button
                 onClick={() => setConfirmDeleteId(null)}
-                className="flex-1 py-1.5 md:py-2 rounded-lg border border-theme-border text-text-muted text-[11px] md:text-sm font-semibold hover:bg-hover-bg transition-colors"
+                disabled={isDeleting}
+                className="flex-1 py-1.5 md:py-2 rounded-lg border border-theme-border text-text-muted text-[11px] md:text-sm font-semibold hover:bg-hover-bg transition-colors disabled:opacity-50"
               >
                 {t('common.cancel')}
               </button>
               <button
                 onClick={() => handleDelete(confirmDeleteId)}
-                className="flex-1 py-1.5 md:py-2 rounded-lg bg-error text-white text-[11px] md:text-sm font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"
+                disabled={isDeleting}
+                className="flex-1 py-1.5 md:py-2 rounded-lg bg-error text-white text-[11px] md:text-sm font-bold hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5 disabled:opacity-50"
               >
-                <span className="material-symbols-outlined text-sm md:text-base">delete</span>
-                {t('common.delete')}
+                {isDeleting ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                    <span>Siliniyor...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-sm md:text-base">delete</span>
+                    {t('common.delete')}
+                  </>
+                )}
               </button>
             </div>
           </div>

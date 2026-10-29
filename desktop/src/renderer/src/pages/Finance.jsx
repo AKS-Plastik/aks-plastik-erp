@@ -57,7 +57,7 @@ function fmt(n) {
 
 
 // ─── Modal ───────────────────────────────────────────────────────────────────
-function Modal({ title, form, setForm, onClose, onSave, errors, orders, rates, ratesBase }) {
+function Modal({ title, form, setForm, onClose, onSave, errors, orders, rates, ratesBase, isSaving = false }) {
   const { t } = useTranslation()
   const set = (field) => (e) => setForm(f => ({ ...f, [field]: e.target.value }))
   const inp = (field) =>
@@ -69,7 +69,11 @@ function Modal({ title, form, setForm, onClose, onSave, errors, orders, rates, r
       <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none max-h-[90dvh] flex flex-col overflow-hidden" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between p-4 md:p-5 pb-3 shrink-0">
           <h2 className="text-sm md:text-base font-bold text-on-surface">{title}</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-error transition">
+          <button
+            onClick={() => { if (!isSaving) onClose() }}
+            disabled={isSaving}
+            className="text-text-muted hover:text-error transition disabled:opacity-50"
+          >
             <span className="material-symbols-outlined text-[20px]">close</span>
           </button>
         </div>
@@ -258,14 +262,25 @@ function Modal({ title, form, setForm, onClose, onSave, errors, orders, rates, r
         </div>{/* end scrollable area */}
 
         <div className="flex gap-2.5 p-4 md:p-5 pt-3 border-t border-theme-border shrink-0">
-          <button onClick={onClose} className="flex-1 flex items-center justify-center gap-1.5 border border-theme-border rounded-lg py-1.5 text-[11px] md:text-xs font-semibold text-text-muted hover:bg-hover-bg transition">
+          <button
+            onClick={() => { if (!isSaving) onClose() }}
+            disabled={isSaving}
+            className="flex-1 flex items-center justify-center gap-1.5 border border-theme-border rounded-lg py-1.5 text-[11px] md:text-xs font-semibold text-text-muted hover:bg-hover-bg transition disabled:opacity-50"
+          >
             <span className="material-symbols-outlined text-[14px] md:text-[16px]">close</span>
             {t('common.cancel')}
           </button>
-          <button onClick={onSave}
-            className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] md:text-xs font-bold text-white transition hover:opacity-90 ${form.type === 'income' ? 'bg-primary' : 'bg-error'}`}>
-            <span className="material-symbols-outlined text-[14px] md:text-[16px]">check</span>
-            {t('common.save')}
+          <button
+            onClick={onSave}
+            disabled={isSaving}
+            className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[11px] md:text-xs font-bold text-white transition hover:opacity-90 disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed ${form.type === 'income' ? 'bg-primary' : 'bg-error'}`}
+          >
+            {isSaving ? (
+              <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+            ) : (
+              <span className="material-symbols-outlined text-[14px] md:text-[16px]">check</span>
+            )}
+            <span>{isSaving ? t('common.saving', 'Kaydediliyor...') : t('common.save')}</span>
           </button>
         </div>
       </div>
@@ -543,6 +558,7 @@ export default function Finance() {
   const [editItem, setEditItem] = useState(null)
   const [form, setForm] = useState({ ...emptyForm })
   const [errors, setErrors] = useState({})
+  const [isSaving, setIsSaving] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
   const [detailRecord, setDetailRecord] = useState(null)
   const [showExportMenu, setShowExportMenu] = useState(false)
@@ -606,17 +622,29 @@ export default function Finance() {
   }
 
   async function handleAdd() {
+    if (isSaving) return
     const e = validate(form)
     if (Object.keys(e).length) { setErrors(e); return }
-    await addFinanceRecord(form)
-    setShowAdd(false)
+    setIsSaving(true)
+    try {
+      await addFinanceRecord(form)
+      setShowAdd(false)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   async function handleEdit() {
+    if (isSaving) return
     const e = validate(form)
     if (Object.keys(e).length) { setErrors(e); return }
-    await updateFinanceRecord(editItem.id, form)
-    setEditItem(null)
+    setIsSaving(true)
+    try {
+      await updateFinanceRecord(editItem.id, form)
+      setEditItem(null)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   async function handleDelete(id) {
@@ -1083,14 +1111,32 @@ export default function Finance() {
       </div>
 
       {showAdd && (
-        <Modal title={t('finance.addRecord')} form={form} setForm={setForm} errors={errors}
-          onClose={() => setShowAdd(false)} onSave={handleAdd} orders={orders}
-          rates={rates} ratesBase={ratesBase} />
+        <Modal
+          title={t('finance.addRecord')}
+          form={form}
+          setForm={setForm}
+          errors={errors}
+          isSaving={isSaving}
+          onClose={() => { if (!isSaving) setShowAdd(false) }}
+          onSave={handleAdd}
+          orders={orders}
+          rates={rates}
+          ratesBase={ratesBase}
+        />
       )}
       {editItem && (
-        <Modal title={t('finance.editRecord')} form={form} setForm={setForm} errors={errors}
-          onClose={() => setEditItem(null)} onSave={handleEdit} orders={orders}
-          rates={rates} ratesBase={ratesBase} />
+        <Modal
+          title={t('finance.editRecord')}
+          form={form}
+          setForm={setForm}
+          errors={errors}
+          isSaving={isSaving}
+          onClose={() => { if (!isSaving) setEditItem(null) }}
+          onSave={handleEdit}
+          orders={orders}
+          rates={rates}
+          ratesBase={ratesBase}
+        />
       )}
       {detailRecord && (
         <RecordDetailModal

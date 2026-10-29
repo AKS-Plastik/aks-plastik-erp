@@ -1,6 +1,14 @@
+function isSalesManager(user) {
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  const dept = String(user.department || '').toLowerCase();
+  return dept.includes('sales manager') || dept.includes('satış müdür') || dept.includes('satis mudur');
+}
+
 const { Router } = require('express')
 const { PrismaClient } = require('@prisma/client')
 const { pushOrderToVio } = require('../lib/orderVioSync')
+const { dispatchNotification } = require('../lib/notificationDispatcher')
 const { pullProductsFromVio } = require('../lib/productVioSync')
 
 const prisma = new PrismaClient()
@@ -8,7 +16,7 @@ const router = Router()
 
 
 async function canAddOrderNote(user) {
-  if (user.role === 'admin' || user.department === 'Sales Manager') return true
+  if (isSalesManager(user)) return true
   if (user.employeeId) {
     const emp = await prisma.employee.findUnique({ where: { id: user.employeeId } })
     if (emp?.isManager) return true
@@ -44,7 +52,7 @@ async function canAddOrderNote(user) {
 }
 
 async function canDeleteOrderNote(user) {
-  if (user.role === 'admin' || user.department === 'Sales Manager') return true
+  if (isSalesManager(user)) return true
   if (user.employeeId) {
     const emp = await prisma.employee.findUnique({ where: { id: user.employeeId } })
     if (emp?.isManager) return true
@@ -142,7 +150,7 @@ router.post('/', async (req, res) => {
     const code = `WEB-TEMP-${String(Date.now()).slice(-5)}` // Geçici kod artık WEB-TEMP- ile başlıyor
 
     const totalAmount = (items || []).reduce((sum, item) => {
-      const qty = parseInt(item.quantity) || 1
+      const qty = parseFloat(String(item.quantity).replace(",", ".")) || 1
       const price = parseFloat(item.unitPrice) || 0
       const vatRate = parseFloat(item.vat) || 0
       return sum + qty * price * (1 + vatRate / 100)
@@ -161,7 +169,7 @@ router.post('/', async (req, res) => {
         items: {
           create: (items || []).map((item) => ({
             productName: item.productName,
-            quantity: parseInt(item.quantity) || 1,
+            quantity: parseFloat(String(item.quantity).replace(",", ".")) || 1,
             unitPrice: parseFloat(item.unitPrice) || 0,
             currency: item.currency || 'USD',
             vat: parseFloat(item.vat) || 0,
@@ -226,6 +234,15 @@ router.post('/', async (req, res) => {
       }
     }).catch(err => console.error('Failed to sync new order to Vio:', err))
 
+    dispatchNotification({
+      title: `Yeni Sipariş: #${order.code}`,
+      body: `${order.customer?.name || 'Müşteri'} için ${order.items?.length || 0} kalem sipariş oluşturuldu.`,
+      type: 'order',
+      page: 'orders',
+      link: '/orders',
+      excludeUserId: req.user?.id,
+    }).catch((err) => console.error('Failed to dispatch order notification:', err))
+
     res.status(201).json(order)
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -238,8 +255,13 @@ router.put('/:id', async (req, res) => {
 
     const current = await prisma.order.findUnique({ where: { id: req.params.id }, select: { status: true } })
 
+    const isAdmin = req.user.role === 'admin'
+    if (current?.status === 'Delivered' && status && status !== 'Delivered' && !isAdmin) {
+      return res.status(403).json({ error: 'Delivered durumundaki siparişi sadece yöneticiler geriye çekebilir.' })
+    }
+
     // Sales Managers can only set status to 'Confirmed'
-    if (req.user.department === 'Sales Manager' && status) {
+    if (isSalesManager(req.user) && status) {
       if (status !== 'Confirmed' && status !== current?.status) {
         return res.status(403).json({ error: 'Sales Managers can only change status to Confirmed' })
       }
@@ -254,7 +276,7 @@ router.put('/:id', async (req, res) => {
     }
 
     const totalAmount = (items || []).reduce((sum, item) => {
-      const qty = parseInt(item.quantity) || 1
+      const qty = parseFloat(String(item.quantity).replace(",", ".")) || 1
       const price = parseFloat(item.unitPrice) || 0
       const vatRate = parseFloat(item.vat) || 0
       return sum + qty * price * (1 + vatRate / 100)
@@ -281,7 +303,7 @@ router.put('/:id', async (req, res) => {
             where: { id: item.id },
             data: {
               productName: item.productName,
-              quantity: parseInt(item.quantity) || 1,
+              quantity: parseFloat(String(item.quantity).replace(",", ".")) || 1,
               unitPrice: parseFloat(item.unitPrice) || 0,
               currency: item.currency || 'USD',
               vat: parseFloat(item.vat) || 0,
@@ -290,7 +312,7 @@ router.put('/:id', async (req, res) => {
           })),
           create: itemsWithoutId.map((item) => ({
             productName: item.productName,
-            quantity: parseInt(item.quantity) || 1,
+            quantity: parseFloat(String(item.quantity).replace(",", ".")) || 1,
             unitPrice: parseFloat(item.unitPrice) || 0,
             currency: item.currency || 'USD',
             vat: parseFloat(item.vat) || 0,
@@ -365,6 +387,17 @@ router.put('/:id', async (req, res) => {
       },
     })
 
+    if (status && current && status !== current.status) {
+      dispatchNotification({
+        title: `Sipariş Durumu: #${order.code}`,
+        body: `Sipariş durumu "${current.status}" -> "${status}" olarak güncellendi.`,
+        type: 'order',
+        page: 'orders',
+        link: '/orders',
+        excludeUserId: req.user?.id,
+      }).catch((err) => console.error('Failed to dispatch order status notification:', err))
+    }
+
     res.json(freshOrder || order)
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -413,7 +446,7 @@ router.delete('/items/notes/:noteId', async (req, res) => {
 })
 
 router.delete('/:id', (req, res, next) => {
-  const allowed = req.user.role === 'admin' || req.user.department === 'Sales Manager'
+  const allowed = req.user.role === 'admin' || isSalesManager(req.user)
   if (!allowed) return res.status(403).json({ error: 'Access required' })
   next()
 }, async (req, res) => {

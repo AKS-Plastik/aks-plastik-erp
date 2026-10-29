@@ -30,7 +30,7 @@ const statusColor = {
 }
 
 // ─── Send To Production Modal ───────────────────────────────────────────────────
-function SendToProductionModal({ item, onClose, onSave, machines, employees }) {
+function SendToProductionModal({ item, onClose, onSave, machines, employees, isSaving = false }) {
   const { t } = useTranslation()
   const remaining = item.quantity - (item.producedQuantity || 0) - (item.inProductionQuantity || 0)
   const extrusionMachines = machines.filter(m => m.type === 'Extrusion' || !m.type || m.type === 'General')
@@ -50,6 +50,7 @@ function SendToProductionModal({ item, onClose, onSave, machines, employees }) {
   const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
 
   function handleSave() {
+    if (isSaving) return
     const e = {}
     if (!form.quantity || form.quantity < 1 || form.quantity > remaining) e.quantity = 'Invalid'
     if (!form.date) e.date = 'Invalid'
@@ -63,11 +64,11 @@ function SendToProductionModal({ item, onClose, onSave, machines, employees }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-3 md:p-6" onClick={onClose}>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-3 md:p-6" onClick={isSaving ? undefined : onClose}>
       <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[400px] max-w-none p-4 md:p-6 flex flex-col" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-on-surface">{t('orders.sendToProduction')}</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-error">
+          <button onClick={onClose} disabled={isSaving} className="text-text-muted hover:text-error disabled:opacity-50 disabled:cursor-not-allowed">
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
@@ -156,11 +157,18 @@ function SendToProductionModal({ item, onClose, onSave, machines, employees }) {
         </div>
 
         <div className="flex gap-3 mt-6">
-          <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition">
+          <button onClick={onClose} disabled={isSaving} className="flex-1 border border-theme-border rounded-lg py-2 text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-50 disabled:cursor-not-allowed">
             {t('common.cancel')}
           </button>
-          <button onClick={handleSave} className="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition">
-            {t('common.save')}
+          <button onClick={handleSave} disabled={isSaving} className="flex-1 bg-primary text-white rounded-lg py-2 text-sm font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5">
+            {isSaving ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                <span>Kaydediliyor...</span>
+              </>
+            ) : (
+              t('common.save')
+            )}
           </button>
         </div>
       </div>
@@ -173,6 +181,7 @@ function OrderDetailModal({
   order,
   onClose,
   onAdvance,
+  isAdvancing = false,
   canAct,
   canChangeTo,
   machines,
@@ -186,6 +195,7 @@ function OrderDetailModal({
   const { t } = useTranslation()
   const [confirming, setConfirming] = useState(false)
   const [productionItem, setProductionItem] = useState(null)
+  const [isSendingProduction, setIsSendingProduction] = useState(false)
   const [expandedNotes, setExpandedNotes] = useState({})
   const [newNoteInputs, setNewNoteInputs] = useState({})
   const [savingNoteId, setSavingNoteId] = useState(null)
@@ -223,7 +233,7 @@ function OrderDetailModal({
   }
 
   const subtotal = (order.items || []).reduce(
-    (s, it) => s + (parseFloat(it.unitPrice) || 0) * (parseInt(it.quantity) || 0), 0
+    (s, it) => s + (parseFloat(it.unitPrice) || 0) * (parseFloat(String(it.quantity).replace(',', '.')) || 0), 0
   )
   const vatAmount = subtotal * ((order.vat || 0) / 100)
   const currency = order.items?.[0]?.currency || 'TRY'
@@ -347,7 +357,7 @@ function OrderDetailModal({
                           <span className="md:hidden text-[10px] font-bold uppercase tracking-wider text-text-muted">{t('orders.lineTotal')}</span>
                           <span>
                             <span className="text-[10px] md:text-xs text-text-muted mr-1">{it.currency || 'TRY'}</span>
-                            {(parseFloat(it.unitPrice) * parseInt(it.quantity)).toFixed(2)}
+                            {((parseFloat(it.unitPrice) || 0) * (parseFloat(String(it.quantity).replace(',', '.')) || 0)).toFixed(2)}
                           </span>
                         </div>
                       </td>
@@ -505,13 +515,18 @@ function OrderDetailModal({
             item={productionItem}
             machines={machines}
             employees={employees}
-            onClose={() => setProductionItem(null)}
+            isSaving={isSendingProduction}
+            onClose={() => { if (!isSendingProduction) setProductionItem(null); }}
             onSave={async (form) => {
+              if (isSendingProduction) return
               try {
+                setIsSendingProduction(true)
                 await addProductionTask(form)
                 setProductionItem(null)
               } catch (err) {
                 alert(err.message)
+              } finally {
+                setIsSendingProduction(false)
               }
             }}
           />
@@ -553,11 +568,18 @@ function OrderDetailModal({
             <p className="text-xs text-amber-700 flex-1">
               {t('orders.changeStatusTo', { status: next })}
             </p>
-            <button onClick={() => setConfirming(false)} className="text-xs text-text-muted hover:text-on-surface px-2 py-1 rounded transition">
+            <button onClick={() => setConfirming(false)} disabled={isAdvancing} className="text-xs text-text-muted hover:text-on-surface px-2 py-1 rounded transition disabled:opacity-50">
               {t('common.cancel')}
             </button>
-            <button onClick={() => onAdvance(order.id, next)} className="text-xs font-semibold text-white bg-primary hover:opacity-90 px-3 py-1 rounded-lg transition">
-              {t('common.confirm')}
+            <button onClick={() => onAdvance(order.id, next)} disabled={isAdvancing} className="text-xs font-semibold text-white bg-primary hover:opacity-90 px-3 py-1 rounded-lg transition disabled:opacity-50 flex items-center gap-1.5">
+              {isAdvancing ? (
+                <>
+                  <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                  <span>Güncelleniyor...</span>
+                </>
+              ) : (
+                t('common.confirm')
+              )}
             </button>
           </div>
         )}
@@ -617,6 +639,8 @@ export default function Production() {
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('')
   const [detailOrder, setDetailOrder] = useState(null)
+  const [isAdvancing, setIsAdvancing] = useState(false)
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   useEffect(() => {
     if (detailOrder) {
@@ -648,9 +672,11 @@ export default function Production() {
   }, {})
 
   async function handleAdvance(id, nextStatus) {
+    if (isAdvancing) return
     const order = orders.find((o) => o.id === id)
     if (!order) return
     try {
+      setIsAdvancing(true)
       await updateOrder(id, {
         customerId: order.customerId,
         employeeId: order.employeeId,
@@ -669,6 +695,8 @@ export default function Production() {
       setDetailOrder((prev) => prev?.id === id ? { ...prev, status: nextStatus } : prev)
     } catch (err) {
       alert(t('common.error') + ': ' + (err.message || 'Bir hata oluştu. Önce tüm kalemleri üretin.'))
+    } finally {
+      setIsAdvancing(false)
     }
   }
 
@@ -681,11 +709,20 @@ export default function Production() {
           <p className="text-xs md:text-sm text-text-muted mt-0.5">{t('production.activeOrders', { count: productionOrders.length })}</p>
         </div>
         <button
-          onClick={refreshOrders}
-          className="flex items-center justify-center gap-1.5 border border-theme-border px-3 py-1.5 md:py-2 rounded-lg md:rounded-xl text-xs md:text-sm text-text-muted hover:bg-hover-bg transition"
+          onClick={async () => {
+            if (isRefreshing) return
+            try {
+              setIsRefreshing(true)
+              await refreshOrders()
+            } finally {
+              setIsRefreshing(false)
+            }
+          }}
+          disabled={isRefreshing}
+          className="flex items-center justify-center gap-1.5 border border-theme-border px-3 py-1.5 md:py-2 rounded-lg md:rounded-xl text-xs md:text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-50"
         >
-          <span className="material-symbols-outlined text-sm md:text-base">refresh</span>
-          {t('common.refresh')}
+          <span className={`material-symbols-outlined text-sm md:text-base ${isRefreshing ? 'animate-spin' : ''}`}>refresh</span>
+          {isRefreshing ? 'Yenileniyor...' : t('common.refresh')}
         </button>
       </div>
 
@@ -760,7 +797,7 @@ export default function Production() {
               filtered.map((o) => {
                 const currency = o.items?.[0]?.currency || 'TRY'
                 const productSummary = (o.items || []).map((it) => `${it.quantity}× ${it.productName}`).join(', ')
-                const totalQty = (o.items || []).reduce((s, it) => s + (parseInt(it.quantity) || 0), 0)
+                const totalQty = (o.items || []).reduce((s, it) => s + (parseFloat(String(it.quantity).replace(',', '.')) || 0), 0)
                 const createdAt = o.createdAt ? new Date(o.createdAt) : null
                 const dateStr = createdAt ? createdAt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '—'
                 
@@ -850,6 +887,7 @@ export default function Production() {
           order={detailOrder}
           onClose={() => setDetailOrder(null)}
           onAdvance={async (id, next) => { await handleAdvance(id, next); setDetailOrder(null) }}
+          isAdvancing={isAdvancing}
           canAct={canAct}
           canChangeTo={canChangeTo}
           machines={machines}
