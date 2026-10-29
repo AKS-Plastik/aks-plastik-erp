@@ -79,9 +79,18 @@ export function AuthProvider({ children }) {
             } catch {}
           }
 
-          // Prompt for permission if default
+          // Prompt for permission if default, or ensure opt-in if granted
           if (typeof window !== 'undefined' && 'Notification' in window) {
-            if (Notification.permission === 'default') {
+            if (Notification.permission === 'granted') {
+              try {
+                if (OneSignal.User?.PushSubscription && typeof OneSignal.User.PushSubscription.optIn === 'function') {
+                  await OneSignal.User.PushSubscription.optIn()
+                  console.log('[OneSignal] Push subscription opted in successfully')
+                }
+              } catch (optErr) {
+                console.warn('OneSignal optIn error:', optErr)
+              }
+            } else if (Notification.permission === 'default') {
               try {
                 if (OneSignal.Slidedown && typeof OneSignal.Slidedown.promptPush === 'function') {
                   await OneSignal.Slidedown.promptPush()
