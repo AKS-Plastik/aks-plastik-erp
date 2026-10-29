@@ -650,8 +650,8 @@ const TaskDetailModal = ({
     const customer = parentOrder?.customer;
     const currency = orderItem?.currency || 'TRY';
     const unitPrice = parseFloat(orderItem?.unitPrice) || 0;
-    const taskQuantity = parseInt(task.quantity, 10) || 0;
-    const parentQuantity = parseInt(orderItem?.quantity, 10) || taskQuantity;
+    const taskQuantity = parseFloat(String(task.quantity).replace(',', '.')) || 0;
+    const parentQuantity = parseFloat(String(orderItem?.quantity).replace(',', '.')) || taskQuantity;
     const taskTotal = unitPrice * taskQuantity;
     const unit = orderItem?.product?.unit || task.product?.unit || 'adet';
     const notes = orderItem?.notes || [];
@@ -1764,7 +1764,7 @@ export default function Logistics() {
                                 const customer = parentOrder?.customer;
                                 const currency = orderItem?.currency || 'TRY';
                                 const unitPrice = parseFloat(orderItem?.unitPrice) || 0;
-                                const taskTotal = unitPrice * (parseInt(task.quantity, 10) || 0);
+                                const taskTotal = unitPrice * (parseFloat(String(task.quantity).replace(',', '.')) || 0);
                                 const unit = orderItem?.product?.unit || task.product?.unit || 'adet';
                                 const dateStr = task.date || (task.createdAt ? new Date(task.createdAt).toLocaleDateString('tr-TR') : '—');
 

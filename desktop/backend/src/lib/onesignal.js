@@ -29,11 +29,15 @@ async function sendNotification(heading, content, externalIds = []) {
   }
 
   try {
+    const authHeader = ONESIGNAL_API_KEY.startsWith("os_v2_")
+      ? `Key ${ONESIGNAL_API_KEY}`
+      : `Basic ${ONESIGNAL_API_KEY}`;
+
     const response = await fetch("https://onesignal.com/api/v1/notifications", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Basic ${ONESIGNAL_API_KEY}`,
+        "Authorization": authHeader,
       },
       body: JSON.stringify(payload),
     });

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useData } from '../context/DataContext'
 import * as XLSX from 'xlsx'
 import SearchableSelect from '../components/SearchableSelect'
+import { searchMatches } from '../utils/search'
 
 const COLUMNS = [
   { id: 'open',        labelKey: 'reports.colOpen',       icon: 'radio_button_unchecked', headerClass: 'bg-surface-container-high text-on-surface-variant', dotClass: 'bg-on-surface-variant/40' },
@@ -45,11 +46,11 @@ function Field({ label, icon, error, align = 'center', children }) {
 
 const inputCls = 'bg-transparent border-none outline-none text-xs text-on-surface w-full placeholder-slate-400'
 
-function AddCardModal({ defaultColumn, customers, employees, onClose, onSave }) {
+function AddCardModal({ defaultColumn, customers, employees, onClose, onSave, isSaving = false }) {
   const { t } = useTranslation()
   const [form, setForm] = useState({
     title: '', description: '', priority: 'Low',
-    column: 'open', customerId: '', employeeId: '', dueDate: '',
+    column: defaultColumn || 'open', customerId: '', employeeId: '', dueDate: '',
   })
   const [errors, setErrors] = useState({})
   const set = (f) => (e) => {
@@ -62,13 +63,14 @@ function AddCardModal({ defaultColumn, customers, employees, onClose, onSave }) 
   }
 
   function handleSave() {
+    if (isSaving) return
     if (!form.title.trim()) { setErrors({ title: 'Required' }); return }
     onSave(form)
   }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={isSaving ? undefined : onClose} />
       <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl shadow-inverse-surface/20 w-[95%] md:w-[90%] lg:w-[85%] max-w-none mx-4 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between px-4 pt-4 pb-3 md:px-5 md:pt-5 md:pb-4 border-b border-surface-container-low">
@@ -81,7 +83,7 @@ function AddCardModal({ defaultColumn, customers, employees, onClose, onSave }) 
               <p className="text-[9px] md:text-[10px] text-on-surface-variant">{t('reports.addCardBoard')}</p>
             </div>
           </div>
-          <button onClick={onClose} className="p-1 md:p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors flex-shrink-0">
+          <button onClick={onClose} disabled={isSaving} className="p-1 md:p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
             <span className="material-symbols-outlined text-lg md:text-xl">close</span>
           </button>
         </div>
@@ -129,12 +131,21 @@ function AddCardModal({ defaultColumn, customers, employees, onClose, onSave }) 
 
         {/* Footer */}
         <div className="flex items-center justify-end gap-2 md:gap-3 px-4 pb-4 md:px-5 md:pb-5">
-          <button onClick={onClose} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-on-surface-variant text-xs md:text-sm font-semibold hover:bg-surface-container-low transition-colors">
+          <button onClick={onClose} disabled={isSaving} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-on-surface-variant text-xs md:text-sm font-semibold hover:bg-surface-container-low transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             {t('common.cancel')}
           </button>
-          <button onClick={handleSave} className="px-4 py-1.5 md:px-5 md:py-2 rounded-lg primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5">
-            <span className="material-symbols-outlined text-[14px] md:text-base">save</span>
-            {t('reports.addCard')}
+          <button onClick={handleSave} disabled={isSaving} className="px-4 py-1.5 md:px-5 md:py-2 rounded-lg primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
+            {isSaving ? (
+              <>
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                <span>Kaydediliyor...</span>
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-[14px] md:text-base">save</span>
+                {t('reports.addCard')}
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -156,7 +167,7 @@ function DetailRow({ icon, label, value }) {
   )
 }
 
-function CardDetailModal({ report, customers, employees, onClose, onSave, onDelete }) {
+function CardDetailModal({ report, customers, employees, onClose, onSave, onDelete, isSaving = false, isDeleting = false }) {
   const { t } = useTranslation()
   const { isAdmin } = useData()
   const [editing, setEditing]       = useState(false)
@@ -174,11 +185,13 @@ function CardDetailModal({ report, customers, employees, onClose, onSave, onDele
   const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
 
   function handleSave() {
+    if (isSaving || isDeleting) return
     if (!form.title.trim()) { setErrors({ title: 'Required' }); return }
     onSave(report.id, form)
   }
 
   function handleCancel() {
+    if (isSaving || isDeleting) return
     setForm({
       title:       report.title,
       description: report.description || '',
@@ -196,7 +209,7 @@ function CardDetailModal({ report, customers, employees, onClose, onSave, onDele
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={onClose} />
+      <div className="absolute inset-0 bg-inverse-surface/40 backdrop-blur-sm" onClick={(isSaving || isDeleting) ? undefined : onClose} />
       <div className="relative bg-surface-container-lowest rounded-3xl shadow-2xl shadow-inverse-surface/20 w-[95%] md:w-[90%] lg:w-[85%] max-w-none mx-4 flex flex-col max-h-[90vh]">
 
         {/* Header banner */}
@@ -213,7 +226,7 @@ function CardDetailModal({ report, customers, employees, onClose, onSave, onDele
                 <p className="text-blue-200 text-[9px] md:text-[10px] font-mono mt-0.5">#{report.id}</p>
               </div>
             </div>
-            <button onClick={onClose} className="p-1 md:p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-surface-container-lowest/10 transition-colors flex-shrink-0">
+            <button onClick={onClose} disabled={isSaving || isDeleting} className="p-1 md:p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-surface-container-lowest/10 transition-colors flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed">
               <span className="material-symbols-outlined text-lg md:text-xl">close</span>
             </button>
           </div>
@@ -310,12 +323,21 @@ function CardDetailModal({ report, customers, employees, onClose, onSave, onDele
               </div>
             </div>
             <div className="flex gap-2 flex-shrink-0">
-              <button onClick={() => setConfirming(false)} className="px-4 py-2 rounded-xl text-on-error-container text-xs font-bold hover:bg-error-container/60 transition-colors">
+              <button onClick={() => setConfirming(false)} disabled={isDeleting} className="px-4 py-2 rounded-xl text-on-error-container text-xs font-bold hover:bg-error-container/60 transition-colors disabled:opacity-50">
                 {t('common.cancel')}
               </button>
-              <button onClick={() => onDelete(report.id)} className="px-4 py-2 rounded-xl bg-error text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5">
-                <span className="material-symbols-outlined text-sm">delete</span>
-                {t('common.yesDelete')}
+              <button onClick={() => onDelete(report.id)} disabled={isDeleting} className="px-4 py-2 rounded-xl bg-error text-white text-xs font-bold hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 disabled:opacity-50">
+                {isDeleting ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                    <span>Siliniyor...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-sm">delete</span>
+                    {t('common.yesDelete')}
+                  </>
+                )}
               </button>
             </div>
           </div>
@@ -326,14 +348,15 @@ function CardDetailModal({ report, customers, employees, onClose, onSave, onDele
           {!editing ? (
             <>
               <div className="flex items-center gap-2">
-                <button onClick={() => setEditing(true)} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 border-primary text-primary text-xs md:text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center gap-1.5">
+                <button onClick={() => setEditing(true)} disabled={isSaving || isDeleting} className="px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 border-primary text-primary text-xs md:text-sm font-bold hover:bg-primary hover:text-white transition-all flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed">
                   <span className="material-symbols-outlined text-[14px] md:text-[18px]">edit</span>
                   <span className="hidden md:inline">{t('common.edit')}</span>
                 </button>
                 {isAdmin && (
                 <button
                   onClick={() => setConfirming((v) => !v)}
-                  className={`px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 text-xs md:text-sm font-bold transition-all flex items-center gap-1.5 ${
+                  disabled={isSaving || isDeleting}
+                  className={`px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl border-2 text-xs md:text-sm font-bold transition-all flex items-center gap-1.5 disabled:opacity-50 disabled:cursor-not-allowed ${
                     confirming ? 'border-error bg-error text-white' : 'border-error text-error hover:bg-error hover:text-white'
                   }`}
                 >
@@ -342,18 +365,27 @@ function CardDetailModal({ report, customers, employees, onClose, onSave, onDele
                 </button>
                 )}
               </div>
-              <button onClick={onClose} className="px-4 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity">
+              <button onClick={onClose} disabled={isSaving || isDeleting} className="px-4 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed">
                 {t('common.close')}
               </button>
             </>
           ) : (
             <>
-              <button onClick={handleCancel} className="px-3 py-1.5 md:px-5 md:py-2 rounded-lg md:rounded-xl text-on-surface-variant text-xs md:text-sm font-semibold hover:bg-surface-container-low transition-colors">
+              <button onClick={handleCancel} disabled={isSaving} className="px-3 py-1.5 md:px-5 md:py-2 rounded-lg md:rounded-xl text-on-surface-variant text-xs md:text-sm font-semibold hover:bg-surface-container-low transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 {t('common.cancel')}
               </button>
-              <button onClick={handleSave} className="px-4 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 md:gap-2">
-                <span className="material-symbols-outlined text-[14px] md:text-[18px]">save</span>
-                {t('common.saveChanges')}
+              <button onClick={handleSave} disabled={isSaving} className="px-4 py-1.5 md:px-6 md:py-2 rounded-lg md:rounded-xl primary-gradient text-white text-xs md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 active:scale-95 transition-all flex items-center gap-1.5 md:gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+                {isSaving ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                    <span>Kaydediliyor...</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[14px] md:text-[18px]">save</span>
+                    {t('common.saveChanges')}
+                  </>
+                )}
               </button>
             </>
           )}
@@ -419,6 +451,8 @@ export default function Reports() {
   const [detailReport, setDetailReport] = useState(null)
   const [dragOverColumn, setDragOverColumn] = useState(null)
   const [search, setSearch] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const activeReports = reports || []
 
@@ -440,15 +474,16 @@ export default function Reports() {
   }
 
   const filtered = activeReports.filter((r) => {
-    if (!search) return true
-    const q = search.toLowerCase()
-    return (
-      r.title.toLowerCase().includes(q) ||
-      (r.customer?.name || '').toLowerCase().includes(q) ||
-      (r.customer?.accountCode || r.customer?.code || '').toLowerCase().includes(q) ||
-      (r.employee?.name || '').toLowerCase().includes(q) ||
-      (r.priority || '').toLowerCase().includes(q)
-    )
+    if (!search.trim()) return true
+    return searchMatches([
+      r.title,
+      r.customer?.name,
+      r.customer?.accountCode,
+      r.customer?.code,
+      r.employee?.name,
+      r.priority,
+      r.description
+    ], search)
   })
 
   function handleDragOver(e) {
@@ -473,8 +508,17 @@ export default function Reports() {
           defaultColumn={addModal}
           customers={customers}
           employees={employees}
-          onClose={() => setAddModal(null)}
-          onSave={(form) => { addReport(form); setAddModal(null) }}
+          isSaving={isSaving}
+          onClose={() => { if (!isSaving) setAddModal(null); }}
+          onSave={async (form) => {
+            try {
+              setIsSaving(true)
+              await addReport(form)
+              setAddModal(null)
+            } finally {
+              setIsSaving(false)
+            }
+          }}
         />
       )}
       {detailReport && (
@@ -482,9 +526,27 @@ export default function Reports() {
           report={detailReport}
           customers={customers}
           employees={employees}
-          onClose={() => setDetailReport(null)}
-          onSave={(id, form) => { updateReport(id, form); setDetailReport(null) }}
-          onDelete={(id) => { deleteReport(id); setDetailReport(null) }}
+          isSaving={isSaving}
+          isDeleting={isDeleting}
+          onClose={() => { if (!isSaving && !isDeleting) setDetailReport(null); }}
+          onSave={async (id, form) => {
+            try {
+              setIsSaving(true)
+              await updateReport(id, form)
+              setDetailReport(null)
+            } finally {
+              setIsSaving(false)
+            }
+          }}
+          onDelete={async (id) => {
+            try {
+              setIsDeleting(true)
+              await deleteReport(id)
+              setDetailReport(null)
+            } finally {
+              setIsDeleting(false)
+            }
+          }}
         />
       )}
 

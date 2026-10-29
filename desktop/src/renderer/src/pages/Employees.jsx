@@ -119,7 +119,7 @@ function DocCheckbox({ label, checked, onChange }) {
 }
 
 // ─── Modal ────────────────────────────────────────────────────────────────────
-function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveError, employee, allEmployees, onPhotoFileSelected }) {
+function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveError, employee, allEmployees, onPhotoFileSelected, isSaving = false }) {
   const { t } = useTranslation()
   const [tab, setTab] = useState('identity')
   const { roles, permissions, employeePermissions, updateEmployeePermissions, uploadEmployeePhoto } = useData()
@@ -229,7 +229,11 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
         {/* Header */}
         <div className="flex items-center justify-between px-4 md:px-6 pt-4 md:pt-5 pb-3 md:pb-3 border-b border-theme-border shrink-0">
           <h2 className="text-sm md:text-base font-bold text-on-surface">{title}</h2>
-          <button onClick={onClose} className="text-text-muted hover:text-error transition">
+          <button
+            onClick={() => { if (!isSaving) onClose() }}
+            disabled={isSaving}
+            className="text-text-muted hover:text-error transition disabled:opacity-50"
+          >
             <span className="material-symbols-outlined text-lg md:text-xl">close</span>
           </button>
         </div>
@@ -818,11 +822,22 @@ function EmployeeModal({ title, form, setForm, onClose, onSave, errors, saveErro
         <div className="px-4 md:px-6 py-3 md:py-4 border-t border-theme-border shrink-0">
           {saveError && <p className="text-[10px] md:text-xs text-error mb-2 md:mb-3">{saveError}</p>}
           <div className="flex gap-2 md:gap-3">
-            <button onClick={onClose} className="flex-1 border border-theme-border rounded-lg md:rounded-xl py-2 md:py-2.5 text-[11px] md:text-sm text-text-muted hover:bg-hover-bg transition">
+            <button
+              onClick={() => { if (!isSaving) onClose() }}
+              disabled={isSaving}
+              className="flex-1 border border-theme-border rounded-lg md:rounded-xl py-2 md:py-2.5 text-[11px] md:text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-50"
+            >
               {t('common.cancel')}
             </button>
-            <button onClick={onSave} className="flex-1 bg-primary text-white rounded-lg md:rounded-xl py-2 md:py-2.5 text-[11px] md:text-sm font-semibold hover:opacity-90 transition">
-              {t('employees.saveEmployee')}
+            <button
+              onClick={onSave}
+              disabled={isSaving}
+              className="flex-1 bg-primary text-white rounded-lg md:rounded-xl py-2 md:py-2.5 text-[11px] md:text-sm font-semibold hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+            >
+              {isSaving && (
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+              )}
+              <span>{isSaving ? t('common.saving', 'Kaydediliyor...') : t('employees.saveEmployee')}</span>
             </button>
           </div>
         </div>
@@ -894,6 +909,8 @@ export default function Employees() {
   const [form, setForm]       = useState(emptyForm)
   const [errors, setErrors]   = useState({})
   const [saveError, setSaveError] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
 
   function validate(f) {
     const e = {}
@@ -916,8 +933,10 @@ export default function Employees() {
   }
 
   async function handleAdd() {
+    if (isSaving) return
     const e = validate(form)
     if (Object.keys(e).length) { setErrors(e); return }
+    setIsSaving(true)
     try {
       setSaveError('')
       const newEmployee = await addEmployee(withName(form))
@@ -928,24 +947,38 @@ export default function Employees() {
       setShowAdd(false)
     } catch (err) {
       setSaveError(err.message)
+    } finally {
+      setIsSaving(false)
     }
   }
 
   async function handleEdit() {
+    if (isSaving) return
     const e = validate(form)
     if (Object.keys(e).length) { setErrors(e); return }
+    setIsSaving(true)
     try {
       setSaveError('')
       await updateEmployee(editItem.id, withName(form))
       setEditItem(null)
     } catch (err) {
       setSaveError(err.message)
+    } finally {
+      setIsSaving(false)
     }
   }
 
   async function handleDelete(id) {
+    if (deletingId) return
     if (!confirm(t('employees.deleteEmployee'))) return
-    await deleteEmployee(id)
+    setDeletingId(id)
+    try {
+      await deleteEmployee(id)
+    } catch (err) {
+      alert(err.message)
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   const filtered = allEmployees.filter(emp =>
@@ -1268,14 +1301,33 @@ export default function Employees() {
       })()}
 
       {showAdd && (
-        <EmployeeModal title={t('employees.addEmployee')} form={form} setForm={setForm} errors={errors} saveError={saveError}
-          onClose={() => { setShowAdd(false); pendingPhotoFileRef.current = null }} onSave={handleAdd}
-          employee={null} allEmployees={employees}
-          onPhotoFileSelected={(file) => { pendingPhotoFileRef.current = file }} />
+        <EmployeeModal
+          title={t('employees.addEmployee')}
+          form={form}
+          setForm={setForm}
+          errors={errors}
+          saveError={saveError}
+          isSaving={isSaving}
+          onClose={() => { if (!isSaving) { setShowAdd(false); pendingPhotoFileRef.current = null } }}
+          onSave={handleAdd}
+          employee={null}
+          allEmployees={employees}
+          onPhotoFileSelected={(file) => { pendingPhotoFileRef.current = file }}
+        />
       )}
       {editItem && (
-        <EmployeeModal title={t('employees.editEmployee')} form={form} setForm={setForm} errors={errors} saveError={saveError}
-          onClose={() => setEditItem(null)} onSave={handleEdit} employee={editItem} allEmployees={employees} />
+        <EmployeeModal
+          title={t('employees.editEmployee')}
+          form={form}
+          setForm={setForm}
+          errors={errors}
+          saveError={saveError}
+          isSaving={isSaving}
+          onClose={() => { if (!isSaving) setEditItem(null) }}
+          onSave={handleEdit}
+          employee={editItem}
+          allEmployees={employees}
+        />
       )}
     </div>
   )

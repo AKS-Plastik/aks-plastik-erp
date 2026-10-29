@@ -39,6 +39,7 @@ const productionTaskRoutes = require('./routes/productionTasks')
 const employeeTaskRoutes = require('./routes/employeeTasks')
 const vehicleRoutes = require('./routes/vehicles')
 const backupRoutes = require('./routes/backup')
+const notificationRoutes = require('./routes/notifications')
 const { initBackupCron } = require('./jobs/backupCron')
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -89,6 +90,7 @@ app.use('/api/production-tasks', authenticate, productionTaskRoutes)
 app.use('/api/employee-tasks', authenticate, employeeTaskRoutes)
 app.use('/api/vehicles', authenticate, vehicleRoutes)
 app.use('/api/backup', authenticate, backupRoutes)
+app.use('/api/notifications', authenticate, notificationRoutes)
 
 app.listen(PORT, () => {
   console.log(`AKS ERP API running on http://localhost:${PORT}`)

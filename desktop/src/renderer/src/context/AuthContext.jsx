@@ -35,6 +35,10 @@ export function AuthProvider({ children }) {
           await OneSignal.init({
             appId,
             allowLocalhostAsSecureOrigin: true,
+            safari_web_id: import.meta.env.VITE_ONESIGNAL_SAFARI_WEB_ID || undefined,
+            notifyButton: {
+              enable: true,
+            },
           })
         } catch (err) {
           console.warn('OneSignal init error:', err)

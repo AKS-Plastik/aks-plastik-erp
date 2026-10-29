@@ -54,6 +54,7 @@ function MyAttendanceTab({ employeeId, token }) {
   const [records, setRecords] = useState([])
   const [editDate, setEditDate] = useState(null)
   const [editForm, setEditForm] = useState({ checkIn: '', checkOut: '', notes: '' })
+  const [isSaving, setIsSaving] = useState(false)
 
   const monthStr = `${year}-${pad(month + 1)}`
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
@@ -100,13 +101,19 @@ function MyAttendanceTab({ employeeId, token }) {
   }
 
   async function saveEdit() {
-    await fetch(`${API_URL}/attendance`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ employeeId, date: editDate, ...editForm }),
-    })
-    setEditDate(null)
-    load()
+    if (isSaving) return
+    try {
+      setIsSaving(true)
+      await fetch(`${API_URL}/attendance`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ employeeId, date: editDate, ...editForm }),
+      })
+      setEditDate(null)
+      load()
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   // Stats
@@ -245,7 +252,7 @@ function MyAttendanceTab({ employeeId, token }) {
           <div className="bg-surface-container-lowest rounded-xl md:rounded-2xl shadow-xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none p-4 md:p-6">
             <div className="flex items-center justify-between mb-3 md:mb-4">
               <h3 className="text-sm md:text-base font-bold text-on-surface">{t('common.edit', 'Düzenle')} — {editDate}</h3>
-              <button onClick={() => setEditDate(null)} className="text-text-muted hover:text-error">
+              <button onClick={() => setEditDate(null)} disabled={isSaving} className="text-text-muted hover:text-error disabled:opacity-50 disabled:cursor-not-allowed">
                 <span className="material-symbols-outlined text-[20px] md:text-[24px]">close</span>
               </button>
             </div>
@@ -264,8 +271,17 @@ function MyAttendanceTab({ employeeId, token }) {
               </div>
             </div>
             <div className="flex gap-2.5 md:gap-3 mt-4 md:mt-5">
-              <button onClick={() => setEditDate(null)} className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
-              <button onClick={saveEdit} className="flex-1 bg-primary text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition">{t('common.save')}</button>
+              <button onClick={() => setEditDate(null)} disabled={isSaving} className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-50 disabled:cursor-not-allowed">{t('common.cancel')}</button>
+              <button onClick={saveEdit} disabled={isSaving} className="flex-1 bg-primary text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5">
+                {isSaving ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                    <span>Kaydediliyor...</span>
+                  </>
+                ) : (
+                  t('common.save')
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -282,6 +298,8 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
   const [editItem, setEditItem] = useState(null)
   const [form, setForm] = useState({ type: 'Annual', startDate: '', endDate: '', reason: '' })
   const [errors, setErrors] = useState({})
+  const [isSaving, setIsSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState(null)
 
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
 
@@ -322,29 +340,41 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
   }
 
   async function handleSave() {
+    if (isSaving) return
     const e = validate(form)
     if (Object.keys(e).length) { setErrors(e); return }
     const days = countWeekdays(form.startDate, form.endDate)
-    if (editItem) {
-      const res = await fetch(`${API_URL}/leave-requests/${editItem.id}`, {
-        method: 'PUT', headers, body: JSON.stringify({ ...form, days }),
-      })
-      if (!res.ok) { const d = await res.json(); alert(d.error); return }
-    } else {
-      await fetch(`${API_URL}/leave-requests`, {
-        method: 'POST', headers, body: JSON.stringify({ ...form, employeeId, days }),
-      })
+    try {
+      setIsSaving(true)
+      if (editItem) {
+        const res = await fetch(`${API_URL}/leave-requests/${editItem.id}`, {
+          method: 'PUT', headers, body: JSON.stringify({ ...form, days }),
+        })
+        if (!res.ok) { const d = await res.json(); alert(d.error); return }
+      } else {
+        await fetch(`${API_URL}/leave-requests`, {
+          method: 'POST', headers, body: JSON.stringify({ ...form, employeeId, days }),
+        })
+      }
+      setShowForm(false)
+      setEditItem(null)
+      load()
+    } finally {
+      setIsSaving(false)
     }
-    setShowForm(false)
-    setEditItem(null)
-    load()
   }
 
   async function handleDelete(id) {
+    if (deletingId) return
     if (!confirm('Bu izin talebi silinsin mi?')) return
-    const res = await fetch(`${API_URL}/leave-requests/${id}`, { method: 'DELETE', headers })
-    if (!res.ok) { const d = await res.json(); alert(d.error); return }
-    load()
+    try {
+      setDeletingId(id)
+      const res = await fetch(`${API_URL}/leave-requests/${id}`, { method: 'DELETE', headers })
+      if (!res.ok) { const d = await res.json(); alert(d.error); return }
+      load()
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   const inputCls = (field) =>
@@ -424,11 +454,16 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
             
             {r.status === 'Pending' && (
               <div className="flex items-center justify-end gap-2 pt-3 border-t border-neutral-500/20">
-                <button onClick={() => openEdit(r)} className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:opacity-80">
+                <button onClick={() => openEdit(r)} disabled={deletingId === r.id} className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:opacity-80 disabled:opacity-50">
                   <span className="material-symbols-outlined text-sm">edit</span> Edit
                 </button>
-                <button onClick={() => handleDelete(r.id)} className="flex items-center gap-1 text-[11px] font-semibold text-error hover:opacity-80 ml-2">
-                  <span className="material-symbols-outlined text-sm">delete</span> Delete
+                <button onClick={() => handleDelete(r.id)} disabled={deletingId === r.id} className="flex items-center gap-1 text-[11px] font-semibold text-error hover:opacity-80 ml-2 disabled:opacity-50">
+                  {deletingId === r.id ? (
+                    <span className="w-3.5 h-3.5 border-2 border-error border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                  ) : (
+                    <span className="material-symbols-outlined text-sm">delete</span>
+                  )}
+                  {deletingId === r.id ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
             )}
@@ -477,11 +512,15 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
                 <td className="px-5 py-3 text-right">
                   {r.status === 'Pending' && (
                     <div className="flex items-center justify-end gap-1">
-                      <button onClick={() => openEdit(r)} className="p-1 rounded-lg hover:bg-hover-bg text-text-muted hover:text-primary transition">
+                      <button onClick={() => openEdit(r)} disabled={deletingId === r.id} className="p-1 rounded-lg hover:bg-hover-bg text-text-muted hover:text-primary transition disabled:opacity-50">
                         <span className="material-symbols-outlined text-base">edit</span>
                       </button>
-                      <button onClick={() => handleDelete(r.id)} className="p-1 rounded-lg hover:bg-hover-bg text-text-muted hover:text-error transition">
-                        <span className="material-symbols-outlined text-base">delete</span>
+                      <button onClick={() => handleDelete(r.id)} disabled={deletingId === r.id} className="p-1 rounded-lg hover:bg-hover-bg text-text-muted hover:text-error transition disabled:opacity-50">
+                        {deletingId === r.id ? (
+                          <span className="w-3.5 h-3.5 border-2 border-error border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                        ) : (
+                          <span className="material-symbols-outlined text-base">delete</span>
+                        )}
                       </button>
                     </div>
                   )}
@@ -498,7 +537,7 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
           <div className="bg-surface-container-lowest rounded-xl md:rounded-2xl shadow-xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none p-4 md:p-6">
             <div className="flex items-center justify-between mb-3 md:mb-4">
               <h3 className="text-sm md:text-base font-bold text-on-surface">{editItem ? t('common.edit') : t('common.add')} {t('attendance.leaveTab')}</h3>
-              <button onClick={() => { setShowForm(false); setEditItem(null) }} className="text-text-muted hover:text-error">
+              <button onClick={() => { if (!isSaving) { setShowForm(false); setEditItem(null); } }} disabled={isSaving} className="text-text-muted hover:text-error disabled:opacity-50 disabled:cursor-not-allowed">
                 <span className="material-symbols-outlined text-[20px] md:text-[24px]">close</span>
               </button>
             </div>
@@ -532,8 +571,17 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
               </div>
             </div>
             <div className="flex gap-2.5 md:gap-3 mt-4 md:mt-5">
-              <button onClick={() => { setShowForm(false); setEditItem(null) }} className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition">{t('common.cancel')}</button>
-              <button onClick={handleSave} className="flex-1 bg-primary text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition">{t('attendance.submitLeave')}</button>
+              <button onClick={() => { setShowForm(false); setEditItem(null) }} disabled={isSaving} className="flex-1 border border-theme-border rounded-lg py-1.5 md:py-2 text-xs md:text-sm text-text-muted hover:bg-hover-bg transition disabled:opacity-50 disabled:cursor-not-allowed">{t('common.cancel')}</button>
+              <button onClick={handleSave} disabled={isSaving} className="flex-1 bg-primary text-white rounded-lg py-1.5 md:py-2 text-xs md:text-sm font-semibold hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5">
+                {isSaving ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                    <span>Kaydediliyor...</span>
+                  </>
+                ) : (
+                  t('attendance.submitLeave')
+                )}
+              </button>
             </div>
           </div>
         </div>
@@ -546,6 +594,7 @@ function MyLeaveTab({ employeeId, token, isManager, autoOpen }) {
 function TeamRequestsTab({ employeeId, token, isAdmin }) {
   const { t } = useTranslation()
   const [requests, setRequests] = useState([])
+  const [reviewingId, setReviewingId] = useState(null)
 
   const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }
 
@@ -567,15 +616,21 @@ function TeamRequestsTab({ employeeId, token, isAdmin }) {
   useEffect(() => { load() }, [load])
 
   async function handleReview(id, status) {
-    const res = await fetch(`${API_URL}/leave-requests/${id}/review`, {
-      method: 'PATCH', headers, body: JSON.stringify({ status }),
-    })
-    if (!res.ok) {
-      const d = await res.json()
-      alert(d.error)
-      return
+    if (reviewingId) return
+    try {
+      setReviewingId(id)
+      const res = await fetch(`${API_URL}/leave-requests/${id}/review`, {
+        method: 'PATCH', headers, body: JSON.stringify({ status }),
+      })
+      if (!res.ok) {
+        const d = await res.json()
+        alert(d.error)
+        return
+      }
+      load()
+    } finally {
+      setReviewingId(null)
     }
-    load()
   }
 
   const pending = requests.filter((r) => r.status === 'Pending')
@@ -612,14 +667,20 @@ function TeamRequestsTab({ employeeId, token, isAdmin }) {
         <div className="flex items-center gap-2 w-full lg:w-auto shrink-0 pt-3 lg:pt-0 border-t border-neutral-500/20 lg:border-t-0">
           <button
             onClick={() => handleReview(r.id, 'Approved')}
-            className="flex-1 lg:flex-none flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary text-white text-[11px] md:text-xs font-semibold hover:opacity-90 transition"
+            disabled={reviewingId === r.id}
+            className="flex-1 lg:flex-none flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg bg-primary text-white text-[11px] md:text-xs font-semibold hover:opacity-90 transition disabled:opacity-50"
           >
-            <span className="material-symbols-outlined text-[13px] md:text-[14px]">check</span>
+            {reviewingId === r.id ? (
+              <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+            ) : (
+              <span className="material-symbols-outlined text-[13px] md:text-[14px]">check</span>
+            )}
             {t('attendance.approve')}
           </button>
           <button
             onClick={() => handleReview(r.id, 'Rejected')}
-            className="flex-1 lg:flex-none flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg border border-error text-error text-[11px] md:text-xs font-semibold hover:bg-error/10 transition"
+            disabled={reviewingId === r.id}
+            className="flex-1 lg:flex-none flex items-center justify-center gap-1 px-2.5 py-1.5 rounded-lg border border-error text-error text-[11px] md:text-xs font-semibold hover:bg-error/10 transition disabled:opacity-50"
           >
             <span className="material-symbols-outlined text-[13px] md:text-[14px]">close</span>
             {t('attendance.reject')}

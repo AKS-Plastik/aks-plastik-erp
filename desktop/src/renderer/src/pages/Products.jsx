@@ -36,7 +36,7 @@ const emptyForm = {
   minStock: '',
 }
 
-function Modal({ title, form, setForm, onClose, onSave, errors, isEdit }) {
+function Modal({ title, form, setForm, onClose, onSave, errors, isEdit, isSaving = false }) {
   const { t } = useTranslation()
   const set = (field) => (e) => setForm((f) => ({ ...f, [field]: e.target.value }))
 
@@ -45,14 +45,21 @@ function Modal({ title, form, setForm, onClose, onSave, errors, isEdit }) {
       errors[field] ? 'border-error' : 'border-theme-border'
     }`
 
-  const handleSave = () => onSave();
+  const handleSave = () => {
+    if (isSaving) return
+    onSave()
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
       <div className="bg-surface-container-lowest rounded-2xl shadow-xl w-[95%] md:w-[90%] lg:w-[85%] max-w-none p-4 sm:p-8 max-h-[90vh] overflow-y-auto flex flex-col">
         <div className="flex items-center justify-between mb-4 md:mb-6">
           <h2 className="text-base md:text-lg font-bold text-on-surface">{title}</h2>
-          <button onClick={onClose} className="p-1.5 md:p-2 rounded-xl text-text-muted hover:text-error hover:bg-surface-container-low transition-colors">
+          <button
+            onClick={() => { if (!isSaving) onClose() }}
+            disabled={isSaving}
+            className="p-1.5 md:p-2 rounded-xl text-text-muted hover:text-error hover:bg-surface-container-low transition-colors disabled:opacity-50"
+          >
             <span className="material-symbols-outlined text-xl md:text-2xl">close</span>
           </button>
         </div>
@@ -112,11 +119,22 @@ function Modal({ title, form, setForm, onClose, onSave, errors, isEdit }) {
           </div>
         </div>
           <div className="flex items-center gap-2 mt-4 sm:mt-6 border-t border-surface-container-low pt-4">
-            <button onClick={onClose} className="flex-1 bg-surface-container border border-theme-border text-on-surface px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[11px] md:text-sm font-semibold hover:bg-hover-bg transition">
+            <button
+              onClick={() => { if (!isSaving) onClose() }}
+              disabled={isSaving}
+              className="flex-1 bg-surface-container border border-theme-border text-on-surface px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[11px] md:text-sm font-semibold hover:bg-hover-bg transition disabled:opacity-50"
+            >
               {t('common.cancel')}
             </button>
-            <button onClick={handleSave} className="flex-1 primary-gradient text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[11px] md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition">
-              {t('common.save')}
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex-1 primary-gradient text-white px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl text-[11px] md:text-sm font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer disabled:cursor-not-allowed"
+            >
+              {isSaving && (
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+              )}
+              <span>{isSaving ? t('common.saving', 'Kaydediliyor...') : t('common.save')}</span>
             </button>
           </div>
       </div>
@@ -124,7 +142,7 @@ function Modal({ title, form, setForm, onClose, onSave, errors, isEdit }) {
   )
 }
 
-function DeleteConfirmModal({ product, onClose, onConfirm }) {
+function DeleteConfirmModal({ product, onClose, onConfirm, isDeleting = false }) {
   const { t } = useTranslation()
   const [typed, setTyped] = useState('')
   const match = typed === product.name
@@ -157,18 +175,23 @@ function DeleteConfirmModal({ product, onClose, onConfirm }) {
           />
           <div className="flex gap-3 pt-1">
             <button
-              onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-lg border border-outline-variant text-on-surface-variant text-sm font-semibold hover:bg-surface-container-low transition-colors"
+              onClick={() => { if (!isDeleting) onClose() }}
+              disabled={isDeleting}
+              className="flex-1 px-4 py-2.5 rounded-lg border border-outline-variant text-on-surface-variant text-sm font-semibold hover:bg-surface-container-low transition-colors disabled:opacity-50"
             >
               {t('common.cancel')}
             </button>
             <button
               onClick={onConfirm}
-              disabled={!match}
+              disabled={!match || isDeleting}
               className="flex-1 px-4 py-2.5 rounded-lg bg-error text-white text-sm font-bold hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              <span className="material-symbols-outlined text-base">delete</span>
-              {t('common.delete')}
+              {isDeleting ? (
+                <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+              ) : (
+                <span className="material-symbols-outlined text-base">delete</span>
+              )}
+              <span>{isDeleting ? t('common.deleting', 'Siliniyor...') : t('common.delete')}</span>
             </button>
           </div>
         </div>
@@ -302,6 +325,9 @@ export default function Products() {
   const [deleteTarget, setDeleteTarget] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [errors, setErrors] = useState({})
+  const [isSaving, setIsSaving] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
   const [importing, setImporting] = useState(false)
   const importRef = useRef(null)
 
@@ -336,26 +362,52 @@ export default function Products() {
   }
 
   async function handleAdd() {
+    if (isSaving) return
     const e = validate(form)
     if (Object.keys(e).length) { setErrors(e); return }
-    await addProduct(form)
-    setShowAdd(false)
+    setIsSaving(true)
+    try {
+      await addProduct(form)
+      setShowAdd(false)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   async function handleEdit() {
+    if (isSaving) return
     const e = validate(form)
     if (Object.keys(e).length) { setErrors(e); return }
-    await updateProduct(editItem.id, form)
-    setEditItem(null)
+    setIsSaving(true)
+    try {
+      await updateProduct(editItem.id, form)
+      setEditItem(null)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   async function handleDelete() {
+    if (isDeleting) return
+    setIsDeleting(true)
     try {
       await deleteProduct(deleteTarget.id)
       setDeleteTarget(null)
     } catch (err) {
       alert(err.message)
       setDeleteTarget(null)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  async function handleSync() {
+    if (isSyncing) return
+    setIsSyncing(true)
+    try {
+      await syncAndRefreshProducts()
+    } finally {
+      setIsSyncing(false)
     }
   }
 
@@ -457,9 +509,13 @@ export default function Products() {
             <span className="material-symbols-outlined text-[14px] lg:text-base">table_view</span>
             <span className="hidden lg:inline">{t('common.export')}</span>
           </button>
-          <button onClick={syncAndRefreshProducts} className="flex items-center justify-center gap-1.5 border border-theme-border px-2.5 py-2 lg:px-3 lg:py-2 rounded-xl text-[11px] lg:text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap flex-shrink-0">
-            <span className="material-symbols-outlined text-[14px] lg:text-base">sync</span>
-            <span className="hidden lg:inline">{t('common.refresh', 'Yenile/Senkronize Et')}</span>
+          <button
+            onClick={handleSync}
+            disabled={isSyncing}
+            className="flex items-center justify-center gap-1.5 border border-theme-border px-2.5 py-2 lg:px-3 lg:py-2 rounded-xl text-[11px] lg:text-sm text-text-muted hover:bg-hover-bg transition whitespace-nowrap flex-shrink-0 disabled:opacity-50"
+          >
+            <span className={`material-symbols-outlined text-[14px] lg:text-base ${isSyncing ? 'animate-spin' : ''}`}>sync</span>
+            <span className="hidden lg:inline">{isSyncing ? t('common.syncing', 'Senkronize Ediliyor...') : t('common.refresh', 'Yenile/Senkronize Et')}</span>
           </button>
           <button onClick={openAdd} className="flex items-center justify-center gap-1.5 primary-gradient text-white px-3 py-2 lg:px-4 lg:py-2.5 rounded-xl text-[11px] lg:text-sm font-bold shadow-xl shadow-primary/10 hover:opacity-90 transition-opacity whitespace-nowrap flex-shrink-0">
             <span className="material-symbols-outlined text-[14px] lg:text-base">add</span>
@@ -552,10 +608,27 @@ export default function Products() {
       />
 
       {showAdd && (
-        <Modal title={t('products.addProduct')} form={form} setForm={setForm} errors={errors} onClose={() => setShowAdd(false)} onSave={handleAdd} />
+        <Modal
+          title={t('products.addProduct')}
+          form={form}
+          setForm={setForm}
+          errors={errors}
+          isSaving={isSaving}
+          onClose={() => { if (!isSaving) setShowAdd(false) }}
+          onSave={handleAdd}
+        />
       )}
       {editItem && (
-        <Modal title={t('products.editProduct')} form={form} setForm={setForm} errors={errors} onClose={() => setEditItem(null)} onSave={handleEdit} isEdit={true} />
+        <Modal
+          title={t('products.editProduct')}
+          form={form}
+          setForm={setForm}
+          errors={errors}
+          isSaving={isSaving}
+          onClose={() => { if (!isSaving) setEditItem(null) }}
+          onSave={handleEdit}
+          isEdit={true}
+        />
       )}
       {viewProduct && (
         <ProductDetailModal
@@ -569,7 +642,8 @@ export default function Products() {
       {deleteTarget && (
         <DeleteConfirmModal
           product={deleteTarget}
-          onClose={() => setDeleteTarget(null)}
+          isDeleting={isDeleting}
+          onClose={() => { if (!isDeleting) setDeleteTarget(null) }}
           onConfirm={handleDelete}
         />
       )}
