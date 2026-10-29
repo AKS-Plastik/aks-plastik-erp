@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import { useData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
 import CreateProductionTaskModal from '../components/CreateProductionTaskModal'
@@ -982,6 +982,7 @@ export default function ProductionTasks() {
   } = useData()
   const { user: currentUser, token } = useAuth()
   const location = useLocation()
+  const [searchParams] = useSearchParams()
 
   const empId = currentUser?.employeeId
   const activeEmployee = employees?.find(e => e.id === empId)
@@ -1049,15 +1050,18 @@ export default function ProductionTasks() {
   }, [currentDate, todayIso])
 
   useEffect(() => {
-    if (location.state?.openTaskId && productionTasks) {
-      const taskToOpen = productionTasks.find(t => t.id === location.state.openTaskId)
+    const targetTaskId = location.state?.openTaskId || searchParams.get('taskId')
+    const targetCode = searchParams.get('code')
+    if ((targetTaskId || targetCode) && productionTasks) {
+      const taskToOpen = targetTaskId
+        ? productionTasks.find(t => t.id === targetTaskId)
+        : productionTasks.find(t => t.code === targetCode)
       if (taskToOpen) {
         setDetailTask(taskToOpen)
-        // Clear the state so it doesn't reopen on subsequent renders if closed
-        window.history.replaceState({}, document.title)
+        window.history.replaceState({}, document.title, window.location.pathname)
       }
     }
-  }, [location.state, productionTasks])
+  }, [location.state, searchParams, productionTasks])
 
   const visibleTasks = useMemo(() => {
     if (isAdmin || canAct) return productionTasks || []

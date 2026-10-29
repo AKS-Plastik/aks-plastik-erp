@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import * as XLSX from 'xlsx'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
@@ -1290,6 +1290,7 @@ export default function Orders() {
   const canDeleteNote = checkPerm('orders-note-delete')
 
   const location = useLocation()
+  const [searchParams] = useSearchParams()
   useEffect(() => {
     if (location.state?.newOrderForCustomer) {
       const base = emptyForm()
@@ -1305,15 +1306,17 @@ export default function Orders() {
       window.history.replaceState({}, document.title)
     }
 
-    if (location.state?.openOrderId || location.state?.openOrderCode) {
-      const targetOrder = location.state.openOrderId ? orders.find(o => o.id === location.state.openOrderId) : orders.find(o => o.code === location.state.openOrderCode)
+    const targetOrderId = location.state?.openOrderId || searchParams.get('orderId')
+    const targetOrderCode = location.state?.openOrderCode || searchParams.get('code')
+    if (targetOrderId || targetOrderCode) {
+      const targetOrder = targetOrderId ? orders.find(o => o.id === targetOrderId) : orders.find(o => o.code === targetOrderCode)
       if (targetOrder) {
         setDetailOrder(targetOrder)
-        window.history.replaceState({}, document.title)
+        window.history.replaceState({}, document.title, window.location.pathname)
       }
     }
 
-  }, [location, isAdmin, currentUser, orders])
+  }, [location, searchParams, isAdmin, currentUser, orders])
 
 
   useEffect(() => {

@@ -84,7 +84,7 @@ router.post('/', async (req, res) => {
       body: `${creatorName} tarafından ${date || ''} ${time ? '(' + time + ')' : ''} için saha ziyareti planlandı.`,
       page: 'work-orders',
       type: 'work_order',
-      link: '/work-orders',
+      link: `/work-orders?visitId=${visit.id}`,
       excludeUserId: req.user.id,
     }).catch(err => console.error('[Notification] SiteVisit creation dispatch error:', err))
 
@@ -161,7 +161,7 @@ router.put('/:id', async (req, res) => {
         body: `${updaterName} durumu "${existingVisit.status}" -> "${status}" olarak değiştirdi.${req.body.statusNote ? ' Not: ' + req.body.statusNote : ''}`,
         page: 'work-orders',
         type: 'work_order',
-        link: '/work-orders',
+        link: `/work-orders?visitId=${visit.id}`,
         excludeUserId: req.user.id,
       }).catch(err => console.error('[Notification] SiteVisit status dispatch error:', err))
     }
