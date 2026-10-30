@@ -31,8 +31,8 @@ const include = {
 
 // ── List all machines ──────────────────────────────────────────────────────────
 
-async function ensureMonthlyTasksForMachine(machineId, year) {
-  let templates = [
+async function getTemplatesForMachine(machineId) {
+  let defaultTemplates = [
     "Mekanik aksam, yataklar ve yağlama seviyesi kontrolü",
     "Elektrik panosu, kablo bağlantıları ve fan temizliği",
     "Filtreler, hava hatları ve pnömatik basınç kontrolü",
@@ -41,12 +41,76 @@ async function ensureMonthlyTasksForMachine(machineId, year) {
   try {
     const s = await prisma.$queryRawUnsafe(`SELECT value FROM "SystemSetting" WHERE "key" = 'monthly_maintenance_template'`)
     if (s.length && Array.isArray(s[0].value) && s[0].value.length > 0) {
-      templates = s[0].value
+      defaultTemplates = s[0].value
     }
-  } catch (err) {}
+  } catch (e) {}
+
+  if (machineId) {
+    try {
+      const mSetting = await prisma.$queryRawUnsafe(`SELECT value FROM "SystemSetting" WHERE "key" = $1`, `monthly_maintenance_template_machine_${machineId}`)
+      if (mSetting.length && Array.isArray(mSetting[0].value)) {
+        return { templates: mSetting[0].value, isCustom: true, defaultTemplates }
+      }
+    } catch (e) {}
+  }
+
+  return { templates: defaultTemplates, isCustom: false, defaultTemplates }
+}
+
+async function syncMonthlyTasksForMachine(machineId, year, templates) {
+  const cleanTemplates = (templates || []).map(t => (typeof t === 'string' ? t.trim() : '')).filter(Boolean)
 
   const existing = await prisma.$queryRawUnsafe(
-    `SELECT id, month, description, completed, "isDefault", history, "completedBy"
+    `SELECT id, month, description, completed, "isDefault"
+     FROM "MachineMonthlyMaintenance"
+     WHERE "machineId" = $1 AND "year" = $2`,
+    machineId,
+    year
+  )
+
+  const existingByMonth = new Map()
+  for (const t of existing) {
+    if (!existingByMonth.has(t.month)) existingByMonth.set(t.month, [])
+    existingByMonth.get(t.month).push(t)
+  }
+
+  for (let m = 1; m <= 12; m++) {
+    const monthTasks = existingByMonth.get(m) || []
+    const defaultTasks = monthTasks.filter(t => t.isDefault)
+
+    // Remove uncompleted default tasks that are no longer in templates
+    for (const dt of defaultTasks) {
+      if (!dt.completed && !cleanTemplates.includes(dt.description)) {
+        await prisma.$executeRawUnsafe(
+          `DELETE FROM "MachineMonthlyMaintenance" WHERE id = $1`,
+          dt.id
+        )
+      }
+    }
+
+    // Add any template task not yet in this month
+    const existingDescSet = new Set(defaultTasks.map(t => t.description))
+    for (const desc of cleanTemplates) {
+      if (!existingDescSet.has(desc)) {
+        await prisma.$executeRawUnsafe(
+          `INSERT INTO "MachineMonthlyMaintenance"
+           ("machineId", "year", "month", "description", "completed", "isDefault", "history", "completedBy", "createdAt")
+           VALUES ($1, $2, $3, $4, false, true, '[]'::jsonb, '', NOW())`,
+          machineId,
+          year,
+          m,
+          desc
+        )
+      }
+    }
+  }
+}
+
+async function ensureMonthlyTasksForMachine(machineId, year) {
+  const { templates } = await getTemplatesForMachine(machineId)
+
+  const existing = await prisma.$queryRawUnsafe(
+    `SELECT id, month, description, completed, "isDefault"
      FROM "MachineMonthlyMaintenance"
      WHERE "machineId" = $1 AND "year" = $2`,
     machineId,
@@ -79,6 +143,86 @@ async function ensureMonthlyTasksForMachine(machineId, year) {
     }
   }
 }
+
+// ── Monthly Templates Settings (Global & Per-Machine) ────────────────────────
+router.get('/settings/monthly-templates', async (req, res) => {
+  try {
+    const machineId = req.query.machineId ? parseInt(req.query.machineId) : null
+    const result = await getTemplatesForMachine(machineId)
+    res.json(result)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+router.put('/settings/monthly-templates', adminOnly, async (req, res) => {
+  try {
+    const { templates, machineId, syncYear, resetToGlobal } = req.body
+    const targetMachineId = machineId ? parseInt(machineId) : null
+    const yearToSync = syncYear ? parseInt(syncYear) : new Date().getFullYear()
+
+    if (targetMachineId) {
+      const settingKey = `monthly_maintenance_template_machine_${targetMachineId}`
+      if (resetToGlobal) {
+        await prisma.$executeRawUnsafe(`DELETE FROM "SystemSetting" WHERE "key" = $1`, settingKey)
+        const { templates: globalTpls } = await getTemplatesForMachine(null)
+        if (syncYear) {
+          await syncMonthlyTasksForMachine(targetMachineId, yearToSync, globalTpls)
+        }
+        return res.json({ success: true, templates: globalTpls, isCustom: false, machineId: targetMachineId })
+      }
+
+      const filtered = Array.isArray(templates)
+        ? templates.map(t => (typeof t === 'string' ? t.trim() : '')).filter(Boolean)
+        : []
+
+      const jsonVal = JSON.stringify(filtered)
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "SystemSetting" ("key", "value", "updatedAt")
+         VALUES ($1, $2::jsonb, NOW())
+         ON CONFLICT ("key") DO UPDATE SET "value" = $2::jsonb, "updatedAt" = NOW()`,
+        settingKey,
+        jsonVal
+      )
+
+      if (syncYear) {
+        await syncMonthlyTasksForMachine(targetMachineId, yearToSync, filtered)
+      }
+
+      return res.json({ success: true, templates: filtered, isCustom: true, machineId: targetMachineId })
+    }
+
+    // Global template update
+    const filtered = Array.isArray(templates)
+      ? templates.map(t => (typeof t === 'string' ? t.trim() : '')).filter(Boolean)
+      : []
+
+    const jsonVal = JSON.stringify(filtered)
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "SystemSetting" ("key", "value", "updatedAt")
+       VALUES ('monthly_maintenance_template', $1::jsonb, NOW())
+       ON CONFLICT ("key") DO UPDATE SET "value" = $1::jsonb, "updatedAt" = NOW()`,
+      jsonVal
+    )
+
+    if (syncYear) {
+      const allMachines = await prisma.machine.findMany({ select: { id: true } })
+      for (const m of allMachines) {
+        const mSetting = await prisma.$queryRawUnsafe(
+          `SELECT value FROM "SystemSetting" WHERE "key" = $1`,
+          `monthly_maintenance_template_machine_${m.id}`
+        )
+        if (!mSetting.length || !Array.isArray(mSetting[0].value)) {
+          await syncMonthlyTasksForMachine(m.id, yearToSync, filtered)
+        }
+      }
+    }
+
+    res.json({ success: true, templates: filtered, isCustom: false })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
 
 router.get('/', async (req, res) => {
   try {
@@ -126,6 +270,9 @@ router.post('/', adminOnly, async (req, res) => {
       },
       include,
     })
+    try {
+      await ensureMonthlyTasksForMachine(machine.id, new Date().getFullYear())
+    } catch (e) {}
     res.status(201).json(machine)
   } catch (err) {
     if (err.code === 'P2002') return res.status(400).json({ error: 'Machine code already exists' })

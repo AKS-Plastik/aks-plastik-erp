@@ -4,15 +4,39 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 const { syncExistingOrders } = require('../lib/commissionService');
 
-// Middleware to ensure admin only
-function requireAdmin(req, res, next) {
-  if (req.user?.role !== 'admin') {
-    return res.status(403).json({ error: 'Bu bölüme sadece yöneticiler erişebilir.' });
+// Helper to check if user is sales or admin
+function isSalesUser(user) {
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  const depts = [
+    user.department,
+    user.employee?.department,
+    user.employee?.position,
+  ].filter(Boolean).map(s => String(s).toLowerCase());
+
+  return depts.some(d =>
+    d.includes('satış') ||
+    d.includes('satis') ||
+    d.includes('sale') ||
+    d.includes('pazarlama')
+  );
+}
+
+function requireSalesOrAdmin(req, res, next) {
+  if (!isSalesUser(req.user)) {
+    return res.status(403).json({ error: 'Bu bölüme sadece yöneticiler ve satış personelleri erişebilir.' });
   }
   next();
 }
 
-router.use(requireAdmin);
+function requireAdmin(req, res, next) {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'Bu işlemi sadece yöneticiler gerçekleştirebilir.' });
+  }
+  next();
+}
+
+router.use(requireSalesOrAdmin);
 
 /**
  * GET /api/commissions/rates/list
@@ -20,6 +44,18 @@ router.use(requireAdmin);
  */
 router.get('/rates/list', async (req, res) => {
   try {
+    if (req.user.role !== 'admin') {
+      const users = await prisma.$queryRawUnsafe(`
+        SELECT u."id", u."name", u."email", u."role", u."department",
+               COALESCE(u."commissionRate", 3.0) as "commissionRate",
+               e."position"
+        FROM "User" u
+        LEFT JOIN "Employee" e ON u."employeeId" = e."id"
+        WHERE u."id" = $1
+      `, req.user.id);
+      return res.json(users);
+    }
+
     const users = await prisma.$queryRawUnsafe(`
       SELECT u."id", u."name", u."email", u."role", u."department",
              COALESCE(u."commissionRate", 3.0) as "commissionRate",
@@ -48,7 +84,7 @@ router.get('/rates/list', async (req, res) => {
  * PUT /api/commissions/rates/:userId
  * Update commission rate for a specific sales user
  */
-router.put('/rates/:userId', async (req, res) => {
+router.put('/rates/:userId', requireAdmin, async (req, res) => {
   try {
     const { userId } = req.params;
     const { commissionRate } = req.body;
@@ -97,9 +133,12 @@ router.get('/', async (req, res) => {
     let params = [];
     let pIdx = 1;
 
-    // Filter by sales rep
-    if (userId && userId !== 'all') {
-      conditions.push(`"userId" = $${pIdx++}`);
+    // Filter by sales rep (Sales personnel can ONLY see their own commissions!)
+    if (req.user.role !== 'admin') {
+      conditions.push(`"userId" = ${pIdx++}`);
+      params.push(req.user.id);
+    } else if (userId && userId !== 'all') {
+      conditions.push(`"userId" = ${pIdx++}`);
       params.push(userId);
     }
 
@@ -274,7 +313,7 @@ router.get('/', async (req, res) => {
  * PUT /api/commissions/:id/toggle-paid
  * Mark commission as paid or revert to pending
  */
-router.put('/:id/toggle-paid', async (req, res) => {
+router.put('/:id/toggle-paid', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { isPaid, paidAt } = req.body;
@@ -323,7 +362,7 @@ router.put('/:id/toggle-paid', async (req, res) => {
  * PUT /api/commissions/batch-pay
  * Mark multiple commissions as paid at once
  */
-router.put('/batch/batch-pay', async (req, res) => {
+router.put('/batch/batch-pay', requireAdmin, async (req, res) => {
   try {
     const { ids, paidAt } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) {
@@ -358,7 +397,7 @@ router.put('/batch/batch-pay', async (req, res) => {
  * Sets isManualOverride = true so that future changes to the order total
  * will not overwrite the custom price assigned by the admin.
  */
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { rate, amount, notes } = req.body;
@@ -404,7 +443,7 @@ router.put('/:id', async (req, res) => {
  * POST /api/commissions/sync
  * Manually trigger sync of commissions from existing orders
  */
-router.post('/sync', async (req, res) => {
+router.post('/sync', requireAdmin, async (req, res) => {
   try {
     await syncExistingOrders();
     res.json({ success: true, message: 'Prim kartları siparişlerle senkronize edildi.' });

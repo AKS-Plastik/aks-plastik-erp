@@ -26,12 +26,13 @@ import ProductionPlanning from './pages/ProductionPlanning'
 import Commissions from './pages/Commissions'
 
 function InnerRoutes() {
-  const { isAdmin, user: currentUser } = useAuth()
+  const { isAdmin, isSales, user: currentUser } = useAuth()
   const { permissions, employeePermissions, employees } = useData()
 
   const empId = currentUser?.employeeId
   const activeEmployee = employees?.find(e => e.id === empId)
   const dept = activeEmployee?.department || currentUser?.department
+  const canSeeCommissions = isAdmin || isSales
   
   const canSee = (page) => {
     if (isAdmin) return true
@@ -63,7 +64,7 @@ function InnerRoutes() {
         {canSee('production-planning') && <Route path="production-planning" element={<ProductionPlanning />} />}
         {canSee('production-tasks') && <Route path="production-tasks" element={<ProductionTasks />} />}
         {isAdmin && <Route path="finance" element={<Finance />} />}
-        {isAdmin && <Route path="commissions" element={<Commissions />} />}
+        {canSeeCommissions && <Route path="commissions" element={<Commissions />} />}
         {isAdmin && <Route path="employees" element={<Employees />} />}
 {isAdmin && <Route path="settings" element={<Settings />} />}
       </Route>

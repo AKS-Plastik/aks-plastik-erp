@@ -31,7 +31,7 @@ export default function Commissions() {
     fetchCommissionRates,
     updateCommissionRate,
   } = useData();
-  const { token } = useAuth();
+  const { token, user, isAdmin } = useAuth();
 
   // Sales team state & personnel rates
   const [salesTeam, setSalesTeam] = useState([]);
@@ -53,7 +53,13 @@ export default function Commissions() {
   });
 
   // Filter states: Default periodPreset is 'all' so all existing cards are displayed immediately!
-  const [selectedUser, setSelectedUser] = useState('all');
+  const [selectedUser, setSelectedUser] = useState(isAdmin ? 'all' : (user?.id || 'all'));
+
+  useEffect(() => {
+    if (!isAdmin && user?.id) {
+      setSelectedUser(user.id);
+    }
+  }, [isAdmin, user?.id]);
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'pending' | 'paid' | 'closed'
   const [dateBasis, setDateBasis] = useState('created'); // 'created' | 'paid'
   const [periodPreset, setPeriodPreset] = useState('all'); // 'all' | 'thisMonth' | 'lastMonth' | 'customMonth' | 'customRange'
@@ -99,8 +105,9 @@ export default function Commissions() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
+      const effUser = (!isAdmin && user?.id) ? user.id : selectedUser;
       const filters = {
-        userId: selectedUser,
+        userId: effUser,
         status: statusFilter,
         dateBasis,
         search,
@@ -299,36 +306,38 @@ export default function Commissions() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap self-stretch md:self-auto">
-          {selectedIds.length > 0 && (
+        {isAdmin && (
+          <div className="flex items-center gap-2.5 flex-wrap self-stretch md:self-auto">
+            {selectedIds.length > 0 && (
+              <button
+                onClick={handleBatchPay}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all active:scale-95"
+              >
+                <span className="material-symbols-outlined text-sm">done_all</span>
+                {t('commissions.batchPay', { count: selectedIds.length })}
+              </button>
+            )}
+
             <button
-              onClick={handleBatchPay}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all active:scale-95"
+              onClick={() => setShowRatesModal(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-theme-border bg-surface-container hover:bg-hover-bg text-on-surface text-xs font-semibold transition"
+              title="Personel Prim Yüzdeleri"
             >
-              <span className="material-symbols-outlined text-sm">done_all</span>
-              {t('commissions.batchPay', { count: selectedIds.length })}
+              <span className="material-symbols-outlined text-sm text-primary">percent</span>
+              Personel Prim Oranları
             </button>
-          )}
 
-          <button
-            onClick={() => setShowRatesModal(true)}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-theme-border bg-surface-container hover:bg-hover-bg text-on-surface text-xs font-semibold transition"
-            title="Personel Prim Yüzdeleri"
-          >
-            <span className="material-symbols-outlined text-sm text-primary">percent</span>
-            Personel Prim Oranları
-          </button>
-
-          <button
-            onClick={handleSyncOrders}
-            disabled={syncing}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-theme-border bg-surface-container hover:bg-hover-bg text-on-surface text-xs font-semibold transition disabled:opacity-50"
-            title={t('commissions.syncOrders')}
-          >
-            <span className={`material-symbols-outlined text-sm ${syncing ? 'animate-spin' : ''}`}>sync</span>
-            {syncing ? 'Senkronize ediliyor...' : t('commissions.syncOrders', 'Siparişlerle Senkronize Et')}
-          </button>
-        </div>
+            <button
+              onClick={handleSyncOrders}
+              disabled={syncing}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-theme-border bg-surface-container hover:bg-hover-bg text-on-surface text-xs font-semibold transition disabled:opacity-50"
+              title={t('commissions.syncOrders')}
+            >
+              <span className={`material-symbols-outlined text-sm ${syncing ? 'animate-spin' : ''}`}>sync</span>
+              {syncing ? 'Senkronize ediliyor...' : t('commissions.syncOrders', 'Siparişlerle Senkronize Et')}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Active Rep Highlight Info (when filtered by rep) ── */}
@@ -352,15 +361,17 @@ export default function Commissions() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 self-end sm:self-center">
-            <button
-              onClick={() => setShowRatesModal(true)}
-              className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline px-2 py-1"
-            >
-              <span className="material-symbols-outlined text-sm">tune</span>
-              Oranı Değiştir
-            </button>
-          </div>
+          {isAdmin && (
+            <div className="flex items-center gap-2 self-end sm:self-center">
+              <button
+                onClick={() => setShowRatesModal(true)}
+                className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline px-2 py-1"
+              >
+                <span className="material-symbols-outlined text-sm">tune</span>
+                Oranı Değiştir
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -435,18 +446,25 @@ export default function Commissions() {
             <label className="block text-[11px] font-bold text-text-muted uppercase tracking-wider mb-1">
               {t('commissions.salesRep', 'Satış Temsilcisi')}
             </label>
-            <select
-              value={selectedUser}
-              onChange={(e) => setSelectedUser(e.target.value)}
-              className="w-full bg-surface-container-low border border-theme-border rounded-xl px-3 py-2 text-xs font-semibold text-on-surface outline-none focus:border-primary transition"
-            >
-              <option value="all">{t('commissions.allSalesReps', 'Tüm Satış Personelleri (Genel)')}</option>
-              {uniqueReps.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name} {u.department ? `— ${u.department}` : ''}
-                </option>
-              ))}
-            </select>
+            {isAdmin ? (
+              <select
+                value={selectedUser}
+                onChange={(e) => setSelectedUser(e.target.value)}
+                className="w-full bg-surface-container-low border border-theme-border rounded-xl px-3 py-2 text-xs font-semibold text-on-surface outline-none focus:border-primary transition"
+              >
+                <option value="all">{t('commissions.allSalesReps', 'Tüm Satış Personelleri (Genel)')}</option>
+                {uniqueReps.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name} {u.department ? `— ${u.department}` : ''}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="w-full bg-surface-container-low border border-theme-border rounded-xl px-3 py-2 text-xs font-semibold text-on-surface flex items-center justify-between">
+                <span>{user?.name || 'Ben'}</span>
+                <span className="text-[10px] text-primary bg-primary/10 px-2 py-0.5 rounded-full font-bold">Kendi Kartlarım</span>
+              </div>
+            )}
           </div>
 
           {/* 2. Payout Status Filter */}
@@ -600,21 +618,23 @@ export default function Commissions() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-theme-border bg-surface-container-low/70 text-[11px] font-bold text-text-muted uppercase tracking-wider">
-                  <th className="p-3 w-10 text-center">
-                    <input
-                      type="checkbox"
-                      checked={allSelected}
-                      onChange={toggleSelectAll}
-                      className="w-4 h-4 rounded accent-primary cursor-pointer align-middle"
-                    />
-                  </th>
+                  {isAdmin && (
+                    <th className="p-3 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={allSelected}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 rounded accent-primary cursor-pointer align-middle"
+                      />
+                    </th>
+                  )}
                   <th className="p-3">{t('commissions.salesRep', 'Satış Temsilcisi')}</th>
                   <th className="p-3">{t('commissions.cardOrder', 'Sipariş & Durum')}</th>
                   <th className="p-3">{t('commissions.cardOrderTotal', 'Sipariş Tutarı')}</th>
                   <th className="p-3">{t('commissions.cardAmount', 'Prim Tutarı & Oran')}</th>
                   <th className="p-3">{t('commissions.cardOrderDate', 'Hak Ediş Tarihi')}</th>
                   <th className="p-3">{t('commissions.status', 'Ödeme Durumu')}</th>
-                  <th className="p-3 text-right">{t('common.actions', 'İşlem')}</th>
+                  {isAdmin && <th className="p-3 text-right">{t('common.actions', 'İşlem')}</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-theme-border/60 text-xs">
@@ -640,15 +660,17 @@ export default function Commissions() {
                       }`}
                     >
                       {/* Checkbox */}
-                      <td className="p-3 text-center">
-                        <input
-                          type="checkbox"
-                          disabled={isClosed || isPaid}
-                          checked={selectedIds.includes(comm.id)}
-                          onChange={() => toggleSelectRow(comm.id)}
-                          className="w-4 h-4 rounded accent-primary cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed align-middle"
-                        />
-                      </td>
+                      {isAdmin && (
+                        <td className="p-3 text-center">
+                          <input
+                            type="checkbox"
+                            disabled={isClosed || isPaid}
+                            checked={selectedIds.includes(comm.id)}
+                            onChange={() => toggleSelectRow(comm.id)}
+                            className="w-4 h-4 rounded accent-primary cursor-pointer disabled:opacity-30 disabled:cursor-not-allowed align-middle"
+                          />
+                        </td>
+                      )}
 
                       {/* Sales Rep */}
                       <td className="p-3 font-semibold text-on-surface">
@@ -771,47 +793,49 @@ export default function Commissions() {
                       </td>
 
                       {/* Actions */}
-                      <td className="p-3 text-right whitespace-nowrap">
-                        {!isClosed && (
-                          <div className="flex items-center justify-end gap-1.5">
-                            {isPaid ? (
-                              <button
-                                onClick={() => handleTogglePaid(comm)}
-                                className="px-2.5 py-1 rounded-lg border border-theme-border text-[11px] font-medium text-text-muted hover:text-error hover:border-error/40 transition"
-                                title={t('commissions.markPending', 'Ödemeyi Geri Al')}
-                              >
-                                {t('commissions.markPending', 'Geri Al')}
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleTogglePaid(comm)}
-                                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-white text-[11px] font-bold shadow-xs transition ${
-                                  comm.orderStatus !== 'Delivered'
-                                    ? 'bg-amber-600 hover:bg-amber-700'
-                                    : 'bg-emerald-600 hover:bg-emerald-700'
-                                }`}
-                                title={t('commissions.markPaid', 'Ödemeyi Tamamla')}
-                              >
-                                <span className="material-symbols-outlined text-[13px]">
-                                  {comm.orderStatus !== 'Delivered' ? 'warning' : 'check'}
-                                </span>
-                                {t('commissions.markPaid', 'Öde')}
-                              </button>
-                            )}
+                      {isAdmin && (
+                        <td className="p-3 text-right whitespace-nowrap">
+                          {!isClosed && (
+                            <div className="flex items-center justify-end gap-1.5">
+                              {isPaid ? (
+                                <button
+                                  onClick={() => handleTogglePaid(comm)}
+                                  className="px-2.5 py-1 rounded-lg border border-theme-border text-[11px] font-medium text-text-muted hover:text-error hover:border-error/40 transition"
+                                  title={t('commissions.markPending', 'Ödemeyi Geri Al')}
+                                >
+                                  {t('commissions.markPending', 'Geri Al')}
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleTogglePaid(comm)}
+                                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-white text-[11px] font-bold shadow-xs transition ${
+                                    comm.orderStatus !== 'Delivered'
+                                      ? 'bg-amber-600 hover:bg-amber-700'
+                                      : 'bg-emerald-600 hover:bg-emerald-700'
+                                  }`}
+                                  title={t('commissions.markPaid', 'Ödemeyi Tamamla')}
+                                >
+                                  <span className="material-symbols-outlined text-[13px]">
+                                    {comm.orderStatus !== 'Delivered' ? 'warning' : 'check'}
+                                  </span>
+                                  {t('commissions.markPaid', 'Öde')}
+                                </button>
+                              )}
 
-                            <button
-                              onClick={() => setEditModalComm(comm)}
-                              className="p-1 rounded-lg hover:bg-hover-bg text-text-muted hover:text-primary transition"
-                              title={t('commissions.editCommission', 'Fiyat / Oran Düzenle')}
-                            >
-                              <span className="material-symbols-outlined text-sm">edit</span>
-                            </button>
-                          </div>
-                        )}
-                        {isClosed && (
-                          <span className="text-[11px] text-text-muted italic">—</span>
-                        )}
-                      </td>
+                              <button
+                                onClick={() => setEditModalComm(comm)}
+                                className="p-1 rounded-lg hover:bg-hover-bg text-text-muted hover:text-primary transition"
+                                title={t('commissions.editCommission', 'Fiyat / Oran Düzenle')}
+                              >
+                                <span className="material-symbols-outlined text-sm">edit</span>
+                              </button>
+                            </div>
+                          )}
+                          {isClosed && (
+                            <span className="text-[11px] text-text-muted italic">—</span>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   );
                 })}

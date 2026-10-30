@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useData } from '../context/DataContext'
+import MonthlyTemplatesModal from '../components/MonthlyTemplatesModal'
 
 const MAINTENANCE_TYPES = ['Preventive', 'Corrective', 'Predictive', 'Emergency']
 const CURRENCIES = ['TRY', 'USD', 'EUR', 'GBP']
@@ -112,122 +113,6 @@ function TaskHistoryModal({ task, onClose }) {
         <div className="p-3 border-t border-theme-border flex justify-end bg-surface-container-high/20">
           <button onClick={onClose} className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-surface-container-high text-on-surface hover:bg-surface-container-highest transition">
             {t('common.close')}
-          </button>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-// ─── Default Templates Modal (Admin) ─────────────────────────────────────────
-function DefaultTasksModal({ onClose }) {
-  const { t } = useTranslation()
-  const { getMonthlyTemplates, updateMonthlyTemplates } = useData()
-  const [templates, setTemplates] = useState(['', '', '', ''])
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [savedMsg, setSavedMsg] = useState(false)
-
-  useEffect(() => {
-    async function load() {
-      try {
-        if (typeof getMonthlyTemplates === 'function') {
-          const tpls = await getMonthlyTemplates()
-          if (Array.isArray(tpls)) {
-            const arr = [...tpls]
-            while (arr.length < 4) arr.push('')
-            setTemplates(arr.slice(0, 4))
-          }
-        }
-      } catch (err) {
-        console.warn('Failed to load templates:', err)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [])
-
-  async function handleSave() {
-    setSaving(true)
-    try {
-      if (typeof updateMonthlyTemplates === 'function') {
-        await updateMonthlyTemplates(templates)
-        setSavedMsg(true)
-        setTimeout(() => setSavedMsg(false), 2500)
-      }
-    } catch (err) {
-      alert(err.message || 'Error saving templates')
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4 backdrop-blur-xs" onClick={onClose}>
-      <div className="bg-surface-container-lowest rounded-2xl shadow-2xl w-[95%] max-w-lg overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-theme-border primary-gradient">
-          <div className="flex items-center gap-2 text-white">
-            <span className="material-symbols-outlined text-lg">checklist</span>
-            <h3 className="text-sm font-bold">{t('maintenance.defaultTasksModalTitle')}</h3>
-          </div>
-          <button onClick={onClose} className="text-white/80 hover:text-white transition p-1">
-            <span className="material-symbols-outlined text-[20px]">close</span>
-          </button>
-        </div>
-
-        <div className="p-5 overflow-y-auto">
-          <p className="text-xs text-text-muted mb-4 leading-relaxed">
-            {t('maintenance.defaultTasksModalDesc')}
-          </p>
-
-          {loading ? (
-            <div className="py-8 text-center text-text-muted text-xs">
-              <span className="material-symbols-outlined animate-spin text-2xl mb-1">progress_activity</span>
-              <p>{t('common.loading', 'Yükleniyor…')}</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {templates.map((tpl, i) => (
-                <div key={i} className="space-y-1">
-                  <label className="block text-[11px] font-bold text-on-surface uppercase tracking-wider">
-                    {t('maintenance.defaultTaskLabel', { num: i + 1 })}
-                  </label>
-                  <input
-                    type="text"
-                    value={tpl}
-                    onChange={(e) => {
-                      const next = [...templates]
-                      next[i] = e.target.value
-                      setTemplates(next)
-                    }}
-                    placeholder={`Görev ${i + 1}...`}
-                    className="w-full bg-surface-container-lowest border border-theme-border rounded-xl px-3 py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary transition"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-
-          {savedMsg && (
-            <div className="mt-4 p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium flex items-center gap-2">
-              <span className="material-symbols-outlined text-sm">check_circle</span>
-              {t('maintenance.templatesSaved')}
-            </div>
-          )}
-        </div>
-
-        <div className="p-4 border-t border-theme-border flex items-center justify-end gap-2 bg-surface-container-high/20">
-          <button onClick={onClose} className="px-4 py-2 rounded-xl text-xs font-semibold text-text-muted hover:text-on-surface hover:bg-surface-container-high transition">
-            {t('common.cancel')}
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saving || loading}
-            className="flex items-center gap-1.5 primary-gradient text-white px-5 py-2 rounded-xl text-xs font-semibold hover:opacity-95 transition disabled:opacity-40 shadow-sm shadow-primary/20"
-          >
-            <span className="material-symbols-outlined text-[16px]">save</span>
-            {saving ? t('common.saving') : t('maintenance.saveTemplates')}
           </button>
         </div>
       </div>
@@ -607,7 +492,10 @@ function MonthlyScheduleTab({ machine }) {
 
       {/* Default templates configuration modal */}
       {showTemplatesModal && (
-        <DefaultTasksModal onClose={() => setShowTemplatesModal(false)} />
+        <MonthlyTemplatesModal
+          initialMachineId={machine?.id || null}
+          onClose={() => setShowTemplatesModal(false)}
+        />
       )}
 
       {/* Task history modal */}

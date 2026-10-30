@@ -8,21 +8,21 @@ datasource db {
 }
 
 model User {
-  id         String   @id @default(cuid())
-  email      String   @unique
-  password   String
-  name       String
-  phone      String?
-  role       String   @default("user") // "admin" or "user"
-  department String?
-  employeeId String?  @unique
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  passwordResetTokens PasswordResetToken[]
-  orders              Order[]
-  employee            Employee?            @relation(fields: [employeeId], references: [id])
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  password            String
+  name                String
+  phone               String?
+  role                String               @default("user")
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  department          String?
+  employeeId          String?              @unique
+  commissionRate      Float?               @default(3.0)
   notifications       Notification[]
+  orders              Order[]
+  passwordResetTokens PasswordResetToken[]
+  employee            Employee?            @relation(fields: [employeeId], references: [id])
 }
 
 model PasswordResetToken {
@@ -32,112 +32,88 @@ model PasswordResetToken {
   expiresAt DateTime
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Customer {
-  id       String @id @default(cuid())
-  code     String @unique
-  name     String
-  initials String
-
-  // Identity
-  customerType   String  @default("Company")
-  fullName       String?
-  taxId          String?
-  taxOffice      String?
-  ticaretSicil   String?
-  mersisNo       String?
-  bolge          String?
-  cariTip        String?
-  istatistikGrup String?
-  mukellefTipi   String?
-
-  // Contact
-  contact                      String  @default("—")
-  contactRole                  String  @default("—")
+  id                           String          @id @default(cuid())
+  code                         String          @unique
+  name                         String
+  initials                     String
+  contact                      String          @default("—")
+  contactRole                  String          @default("—")
   contactName                  String?
   contactPhone                 String?
   contactEmail                 String?
-  contactPersonPhone           String?
-  contactPersonEmail           String?
+  region                       String?
+  address                      String?
+  city                         String?
+  postalCode                   String?
+  country                      String?
+  phone                        String?
+  email                        String?
+  totalOrders                  Int             @default(0)
+  activeOrders                 Int             @default(0)
+  badge                        String          @default("0 OPEN")
+  badgeType                    String          @default("clear")
+  flagged                      Boolean         @default(false)
+  createdAt                    DateTime        @default(now())
+  updatedAt                    DateTime        @updatedAt
+  latitude                     Float?
+  longitude                    Float?
+  accountCode                  String?
+  accountHolder                String?
+  accountType                  String          @default("Customer")
+  bankName                     String?
+  bolge                        String?
+  branchCode                   String?
+  cariTip                      String?
   contactNamePurchasing        String?
-  contactPersonPhonePurchasing String?
+  contactPersonEmail           String?
   contactPersonEmailPurchasing String?
+  contactPersonPhone           String?
+  contactPersonPhonePurchasing String?
   contactPosition              String?
-
-  // Address
-  region     String?
-  address    String?
-  city       String?
-  district   String?
-  postalCode String?
-  country    String?
-  phone      String?
-  email      String?
-
-  // Location
-  latitude  Float?
-  longitude Float?
-
-  // Tax & e-Documents
-  eInvoiceStatus  Boolean @default(false)
-  eArchiveStatus  Boolean @default(false)
-  eDispatchStatus Boolean @default(false)
-  invoiceScenario String  @default("Basic")
-
-  // Financial
-  accountCode String?
-  accountType String  @default("Customer")
-  currency    String  @default("TRY")
-  paymentTerm String?
-  creditLimit Float?
-
-  // Bank
-  bankName      String?
-  iban          String?
-  branchCode    String?
-  accountHolder String?
-
-  // Invoicing & Payment
-  invoiceType   String?
-  paymentMethod String?
-  paymentTerms  String?
-
-  isCustomer Boolean @default(false)
-
-  // Optional
-  industry         String?
-  customerCategory String?
-  salesRepName     String?
-  notes            String?
-  gdprConsent      Boolean @default(false)
-
-  // Stats
-  totalOrders  Int      @default(0)
-  activeOrders Int      @default(0)
-  badge        String   @default("0 OPEN")
-  badgeType    String   @default("clear")
-  flagged      Boolean  @default(false)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  reports        Report[]
-  siteVisits     SiteVisit[]
-  orders         Order[]
-  tags           CustomerTag[]
-  siteVisitNotes SiteVisitNote[]
+  creditLimit                  Float?
+  currency                     String          @default("TRY")
+  customerCategory             String?
+  customerType                 String          @default("Company")
+  district                     String?
+  eArchiveStatus               Boolean         @default(false)
+  eDispatchStatus              Boolean         @default(false)
+  eInvoiceStatus               Boolean         @default(false)
+  fullName                     String?
+  gdprConsent                  Boolean         @default(false)
+  iban                         String?
+  industry                     String?
+  invoiceScenario              String          @default("Basic")
+  invoiceType                  String?
+  isCustomer                   Boolean         @default(false)
+  istatistikGrup               String?
+  mersisNo                     String?
+  mukellefTipi                 String?
+  notes                        String?
+  paymentMethod                String?
+  paymentTerm                  String?
+  paymentTerms                 String?
+  salesRepName                 String?
+  taxId                        String?
+  taxOffice                    String?
+  ticaretSicil                 String?
+  orders                       Order[]
+  reports                      Report[]
+  siteVisits                   SiteVisit[]
+  siteVisitNotes               SiteVisitNote[]
+  tags                         CustomerTag[]   @relation("CustomerToCustomerTag")
 }
 
 model CustomerTag {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  color     String   @default("#e2e8f0")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  customers Customer[]
+  id        String     @id @default(cuid())
+  name      String     @unique
+  color     String     @default("#e2e8f0")
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  customers Customer[] @relation("CustomerToCustomerTag")
 }
 
 model Report {
@@ -147,164 +123,153 @@ model Report {
   description String    @default("")
   priority    String    @default("Low")
   column      String    @default("open")
-  dueDate     DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
-  customer   Customer? @relation(fields: [customerId], references: [id])
-  customerId String?
-  employee   Employee? @relation(fields: [employeeId], references: [id])
-  employeeId String?
+  customerId  String?
+  dueDate     DateTime?
+  employeeId  String?
+  customer    Customer? @relation(fields: [customerId], references: [id])
+  employee    Employee? @relation(fields: [employeeId], references: [id])
 }
 
 model SiteVisit {
-  id        String   @id @default(cuid())
-  code      String   @unique
-  title     String
-  location  String   @default("")
-  date      String
-  time      String
-  isVisit   Boolean  @default(true)
-  status    String   @default("Scheduled")
-  notes     String   @default("")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  customer    Customer?       @relation(fields: [customerId], references: [id])
+  id          String          @id @default(cuid())
+  code        String          @unique
+  title       String
+  location    String          @default("")
+  date        String
+  time        String
+  status      String          @default("Scheduled")
+  notes       String          @default("")
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
   customerId  String?
-  employee    Employee?       @relation("SiteVisitCreator", fields: [employeeId], references: [id])
   employeeId  String?
-  assignees   Employee[]      @relation("SiteVisitAssignees")
-  statusNotes SiteVisitNote[]
+  isVisit     Boolean         @default(true)
   orders      Order[]
+  customer    Customer?       @relation(fields: [customerId], references: [id])
+  employee    Employee?       @relation("SiteVisitCreator", fields: [employeeId], references: [id])
+  statusNotes SiteVisitNote[]
+  assignees   Employee[]      @relation("SiteVisitAssignees")
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  code        String   @unique
-  stockNo     String   @default("")
-  name        String
-  description String   @default("")
-  category    String   @default("General")
-  unit        String   @default("pcs")
-  currency    String   @default("USD")
-  price       Float    @default(0)
-  stock       Float    @default(0)
-  minStock    Float    @default(0)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  orderItems           OrderItem[]
-  purchaseOrderItems   PurchaseOrderItem[]
-  productionTasks      ProductionTask[]
+  id                   String                @id @default(cuid())
+  code                 String                @unique
+  name                 String
+  description          String                @default("")
+  category             String                @default("General")
+  unit                 String                @default("pcs")
+  price                Float                 @default(0)
+  stock                Float                 @default(0)
+  minStock             Float                 @default(0)
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  currency             String                @default("USD")
+  stockNo              String                @default("")
+  isActive             Boolean               @default(true)
   employeeTasks        EmployeeTask[]
   employeeTaskGhosts   EmployeeTaskGhost[]
+  orderItems           OrderItem[]
+  productionTasks      ProductionTask[]
   productionTaskGhosts ProductionTaskGhost[]
+  purchaseOrderItems   PurchaseOrderItem[]
 }
 
 model Employee {
-  id           String   @id @default(cuid())
-  code         String   @unique
-  name         String
-  initials     String
-  department   String   @default("General")
-  position     String   @default("")
-  phone        String?
-  email        String?
-  salary       Float    @default(0)
-  status       String   @default("Active")
-  hireDate     String?
-  supervisorId String?
-  isManager    Boolean  @default(false)
-  photo        String?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  supervisor   Employee?  @relation("EmployeeSupervisor", fields: [supervisorId], references: [id])
-  subordinates Employee[] @relation("EmployeeSupervisor")
-
-  orders               Order[]
-  reports              Report[]
-  siteVisits           SiteVisit[]           @relation("SiteVisitCreator")
-  assignedVisits       SiteVisit[]           @relation("SiteVisitAssignees")
+  id                   String                @id @default(cuid())
+  code                 String                @unique
+  name                 String
+  initials             String
+  department           String                @default("General")
+  position             String                @default("")
+  phone                String?
+  email                String?
+  salary               Float                 @default(0)
+  status               String                @default("Active")
+  hireDate             String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  supervisorId         String?
+  isManager            Boolean               @default(false)
+  photo                String?
   attendances          Attendance[]
-  leaveRequests        LeaveRequest[]
-  productionTasks      ProductionTask[]
+  supervisor           Employee?             @relation("EmployeeSupervisor", fields: [supervisorId], references: [id])
+  subordinates         Employee[]            @relation("EmployeeSupervisor")
   employeeTasks        EmployeeTask[]
   employeeTaskGhosts   EmployeeTaskGhost[]
+  leaveRequests        LeaveRequest[]
+  orders               Order[]
+  productionTasks      ProductionTask[]
   productionTaskGhosts ProductionTaskGhost[]
-  user                 User?
+  reports              Report[]
+  siteVisits           SiteVisit[]           @relation("SiteVisitCreator")
   siteVisitNotes       SiteVisitNote[]
+  user                 User?
+  assignedVisits       SiteVisit[]           @relation("SiteVisitAssignees")
 }
 
 model Order {
-  id            String    @id @default(cuid())
-  code          String    @unique
-  externalId    String?   @unique
-  status        String    @default("Draft")
-  vat           Float     @default(0)
-  totalAmount   Float     @default(0)
-  notes         String    @default("")
-  shipmentType  String    @default("")
-  paymentMethod String    @default("")
-  orderDate     DateTime?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  customer   Customer?  @relation(fields: [customerId], references: [id])
-  customerId String?
-  employee   Employee?  @relation(fields: [employeeId], references: [id])
-  employeeId String?
-  salesRep   User?      @relation(fields: [salesRepId], references: [id])
-  salesRepId String?
-  visit      SiteVisit? @relation(fields: [visitId], references: [id])
-  visitId    String?
-
-  items              OrderItem[]
-  financeRecords     FinanceRecord[]
+  id                 String              @id @default(cuid())
+  code               String              @unique
+  status             String              @default("Draft")
+  totalAmount        Float               @default(0)
+  notes              String              @default("")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  customerId         String?
+  employeeId         String?
+  vat                Float               @default(0)
+  salesRepId         String?
+  externalId         String?             @unique
+  orderDate          DateTime?
+  paymentMethod      String              @default("")
+  shipmentType       String              @default("")
+  visitId            String?
   employeeTasks      EmployeeTask[]
   employeeTaskGhosts EmployeeTaskGhost[]
+  financeRecords     FinanceRecord[]
+  customer           Customer?           @relation(fields: [customerId], references: [id])
+  employee           Employee?           @relation(fields: [employeeId], references: [id])
+  salesRep           User?               @relation(fields: [salesRepId], references: [id])
+  visit              SiteVisit?          @relation(fields: [visitId], references: [id])
+  items              OrderItem[]
 }
 
 model OrderItem {
-  id          String @id @default(cuid())
-  productName String
-  quantity    Float  @default(1)
-  unitPrice   Float  @default(0)
-  currency    String @default("USD")
-  vat         Float  @default(0)
-
-  status               String @default("Pending")
-  producedQuantity     Float  @default(0)
-  inProductionQuantity Float  @default(0)
-
-  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId     String
-  product     Product? @relation(fields: [productId], references: [id])
-  productId   String?
-  productCode String?
-
-  extrusionMachineId  Int?
-  extrusionOperatorId String?
-  cuttingMachineId    Int?
-  cuttingOperatorId   String?
-
-  productionTasks      ProductionTask[]
-  productionLogs       ProductionLog[]
+  id                   String                @id @default(cuid())
+  productName          String
+  quantity             Float                 @default(1)
+  unitPrice            Float                 @default(0)
+  orderId              String
+  productId            String?
+  currency             String                @default("USD")
+  cuttingMachineId     Int?
+  cuttingOperatorId    String?
+  extrusionMachineId   Int?
+  extrusionOperatorId  String?
+  inProductionQuantity Float                 @default(0)
+  producedQuantity     Float                 @default(0)
+  productCode          String?
+  status               String                @default("Pending")
+  vat                  Float                 @default(0)
+  order                Order                 @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product              Product?              @relation(fields: [productId], references: [id])
   notes                OrderItemNote[]
+  productionLogs       ProductionLog[]
+  productionTasks      ProductionTask[]
   productionTaskGhosts ProductionTaskGhost[]
 }
 
 model OrderItemNote {
   id          String    @id @default(cuid())
   orderItemId String
-  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
-  note        String    @db.Text
+  note        String
   authorId    String?
   authorName  String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  orderItem   OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
 }
 
 model UserRole {
@@ -322,15 +287,14 @@ model RolePermission {
 }
 
 model ProductionLog {
-  id               String   @id @default(cuid())
+  id               String          @id @default(cuid())
   orderItemId      String
   productionTaskId String?
   action           String
-  details          String   @db.Text
-  createdAt        DateTime @default(now())
-
-  orderItem      OrderItem       @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
-  productionTask ProductionTask? @relation(fields: [productionTaskId], references: [id], onDelete: SetNull)
+  details          String
+  createdAt        DateTime        @default(now())
+  orderItem        OrderItem       @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  productionTask   ProductionTask? @relation(fields: [productionTaskId], references: [id])
 }
 
 model StatusPermission {
@@ -343,68 +307,61 @@ model StatusPermission {
 
 model Machine {
   id                   Int                         @id @default(autoincrement())
-  code                 String                      @unique
   name                 String
-  type                 String                      @default("General") // Extrusion, Cutting, General
-  manufacturer         String                      @default("")
-  manufacturerCountry  String                      @default("")
-  manufacturerContact  String                      @default("")
-  productionYear       Int?
-  warrantyExpiry       String                      @default("")
-  status               String                      @default("Active")
+  createdAt            DateTime                    @default(now())
+  code                 String                      @unique
   location             String                      @default("")
+  manualName           String                      @default("")
+  manualPath           String                      @default("")
+  manufacturer         String                      @default("")
+  manufacturerContact  String                      @default("")
+  manufacturerCountry  String                      @default("")
   nextMaintenanceDue   String                      @default("")
   notes                String                      @default("")
-  manualPath           String                      @default("")
-  manualName           String                      @default("")
-  createdAt            DateTime                    @default(now())
+  productionYear       Int?
+  status               String                      @default("Active")
+  type                 String                      @default("General")
+  warrantyExpiry       String                      @default("")
+  employeeTasks        EmployeeTask[]
+  employeeTaskGhosts   EmployeeTaskGhost[]
   maintenanceRecords   MachineMaintenanceRecord[]
   monthlyMaintenance   MachineMonthlyMaintenance[]
   productionTasks      ProductionTask[]
-  employeeTasks        EmployeeTask[]
-  employeeTaskGhosts   EmployeeTaskGhost[]
   productionTaskGhosts ProductionTaskGhost[]
 }
 
 model ProductionTask {
-  id        String    @id @default(cuid())
-  code      String    @unique
-  quantity  Int       @default(0)
-  status    String    @default("open") // open, extrusion, cutting, completed
-  date      String    @default("")
-  startDate DateTime?
-  endDate   DateTime?
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-
-  orderItem   OrderItem? @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
-  orderItemId String?
-
-  product   Product? @relation(fields: [productId], references: [id])
-  productId String?
-
-  machine   Machine? @relation(fields: [machineId], references: [id])
-  machineId Int?
-
-  operator   Employee? @relation(fields: [operatorId], references: [id])
-  operatorId String?
-
-  isInvoiced     Boolean   @default(false)
-  invoicedAt     DateTime?
-  invoicedById   String?
-  invoicedByName String?
-
-  logs               ProductionLog[]
+  id                 String              @id @default(cuid())
+  code               String              @unique
+  quantity           Int                 @default(0)
+  status             String              @default("open")
+  date               String              @default("")
+  startDate          DateTime?
+  endDate            DateTime?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  orderItemId        String?
+  machineId          Int?
+  operatorId         String?
+  productId          String?
+  invoicedAt         DateTime?
+  invoicedById       String?
+  invoicedByName     String?
+  isInvoiced         Boolean             @default(false)
+  deliveryRecords    DeliveryRecord[]
   employeeTasks      EmployeeTask[]
   employeeTaskGhosts EmployeeTaskGhost[]
-  deliveryRecords    DeliveryRecord[]
   logisticsLogs      LogisticsLog[]
+  logs               ProductionLog[]
+  machine            Machine?            @relation(fields: [machineId], references: [id])
+  operator           Employee?           @relation(fields: [operatorId], references: [id])
+  orderItem          OrderItem?          @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+  product            Product?            @relation(fields: [productId], references: [id])
 }
 
 model MachineMaintenanceRecord {
   id          Int      @id @default(autoincrement())
   machineId   Int
-  machine     Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
   date        String
   type        String   @default("Preventive")
   description String   @default("")
@@ -413,17 +370,22 @@ model MachineMaintenanceRecord {
   currency    String   @default("USD")
   nextDue     String   @default("")
   createdAt   DateTime @default(now())
+  expenses    Json?    @default("[]")
+  machine     Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
 }
 
 model MachineMonthlyMaintenance {
   id          Int      @id @default(autoincrement())
   machineId   Int
-  machine     Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
   year        Int
   month       Int
   description String   @default("")
   completed   Boolean  @default(false)
   createdAt   DateTime @default(now())
+  isDefault   Boolean? @default(false)
+  history     Json?    @default("[]")
+  completedBy String?  @default("")
+  machine     Machine  @relation(fields: [machineId], references: [id], onDelete: Cascade)
 }
 
 model FinanceRecord {
@@ -432,28 +394,26 @@ model FinanceRecord {
   type        String
   category    String   @default("General")
   amount      Float    @default(0)
-  currency    String   @default("USD")
   date        String
   reference   String   @default("")
   description String   @default("")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  order   Order?  @relation(fields: [orderId], references: [id])
-  orderId String?
+  orderId     String?
+  currency    String   @default("USD")
+  order       Order?   @relation(fields: [orderId], references: [id])
 }
 
 model Attendance {
-  id        String   @id @default(cuid())
-  date      String
-  checkIn   String?
-  checkOut  String?
-  notes     String   @default("")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  id         String   @id @default(cuid())
+  date       String
+  checkIn    String?
+  checkOut   String?
+  notes      String   @default("")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
   employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   @@unique([employeeId, date])
 }
@@ -467,131 +427,124 @@ model LeaveRequest {
   reason     String    @default("")
   status     String    @default("Pending")
   reviewedAt DateTime?
-  reviewedBy String?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
-
-  employee   Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
   employeeId String
+  reviewedBy String?
+  employee   Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 }
 
 model Supplier {
-  id           String   @id @default(cuid())
-  code         String   @unique
-  name         String
-  category     String   @default("General")
-  contactName  String   @default("")
-  contactPhone String   @default("")
-  contactEmail String   @default("")
-  address      String   @default("")
-  country      String   @default("")
-  currency     String   @default("USD")
-  status       String   @default("Active")
-  notes        String   @default("")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  quotations     PurchaseQuotation[]
+  id             String              @id @default(cuid())
+  code           String              @unique
+  name           String
+  category       String              @default("General")
+  contactName    String              @default("")
+  contactPhone   String              @default("")
+  contactEmail   String              @default("")
+  address        String              @default("")
+  country        String              @default("")
+  currency       String              @default("USD")
+  status         String              @default("Active")
+  notes          String              @default("")
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
   purchaseOrders PurchaseOrder[]
+  quotations     PurchaseQuotation[]
 }
 
 model PurchaseRequest {
-  id              String   @id @default(cuid())
-  code            String   @unique
+  id              String              @id @default(cuid())
+  code            String              @unique
   title           String
-  description     String   @default("")
-  department      String   @default("")
-  createdBy       String   @default("")
-  requestedBy     String   @default("")
-  priority        String   @default("Medium")
-  category        String   @default("General")
-  estimatedAmount Float    @default(0)
-  currency        String   @default("TRY")
-  budgetCode      String   @default("")
-  supplierId      String   @default("")
-  supplierName    String   @default("")
-  notes           String   @default("")
-  status          String   @default("Request")
-  budgetApproved  Boolean  @default(false)
-  budgetNotes     String   @default("")
-  approvedBy      String   @default("")
+  description     String              @default("")
+  department      String              @default("")
+  createdBy       String              @default("")
+  requestedBy     String              @default("")
+  priority        String              @default("Medium")
+  category        String              @default("General")
+  estimatedAmount Float               @default(0)
+  currency        String              @default("TRY")
+  budgetCode      String              @default("")
+  supplierId      String              @default("")
+  supplierName    String              @default("")
+  notes           String              @default("")
+  status          String              @default("Request")
+  budgetApproved  Boolean             @default(false)
+  budgetNotes     String              @default("")
+  approvedBy      String              @default("")
   approvedAt      String?
-  rejectionReason String   @default("")
+  rejectionReason String              @default("")
   receivedDate    String?
-  receivedBy      String   @default("")
-  qcResult        String   @default("")
-  qcNotes         String   @default("")
+  receivedBy      String              @default("")
+  qcResult        String              @default("")
+  qcNotes         String              @default("")
   qcDate          String?
-  invoiceNo       String   @default("")
+  invoiceNo       String              @default("")
   invoiceDate     String?
-  invoiceAmount   Float    @default(0)
-  invoiceMatched  Boolean  @default(false)
+  invoiceAmount   Float               @default(0)
+  invoiceMatched  Boolean             @default(false)
   paymentDueDate  String?
-  paymentStatus   String   @default("")
+  paymentStatus   String              @default("")
   paymentDate     String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  quotations    PurchaseQuotation[]
-  purchaseOrder PurchaseOrder?
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  purchaseOrder   PurchaseOrder?
+  quotations      PurchaseQuotation[]
 }
 
 model PurchaseQuotation {
-  id            String   @id @default(cuid())
-  supplierName  String   @default("")
-  quotationNo   String   @default("")
-  quotationDate String   @default("")
-  amount        Float    @default(0)
-  currency      String   @default("TRY")
-  vat           Float    @default(0)
-  deliveryDays  Int      @default(0)
-  paymentTerms  String   @default("")
-  warranty      String   @default("")
-  notes         String   @default("")
-  selected      Boolean  @default(false)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
-  request    PurchaseRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  requestId  String
-  supplier   Supplier?       @relation(fields: [supplierId], references: [id])
-  supplierId String?
+  id            String          @id @default(cuid())
+  supplierName  String          @default("")
+  quotationNo   String          @default("")
+  quotationDate String          @default("")
+  amount        Float           @default(0)
+  currency      String          @default("TRY")
+  vat           Float           @default(0)
+  deliveryDays  Int             @default(0)
+  paymentTerms  String          @default("")
+  warranty      String          @default("")
+  notes         String          @default("")
+  selected      Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  requestId     String
+  supplierId    String?
+  request       PurchaseRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  supplier      Supplier?       @relation(fields: [supplierId], references: [id])
 }
 
 model PurchaseOrder {
-  id           String   @id @default(cuid())
-  code         String   @unique
-  status       String   @default("Draft")
-  currency     String   @default("USD")
-  vat          Float    @default(0)
-  totalAmount  Float    @default(0)
-  notes        String   @default("")
-  expectedDate String   @default("")
-  receivedDate String   @default("")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  supplier   Supplier?        @relation(fields: [supplierId], references: [id])
-  supplierId String?
-  request    PurchaseRequest? @relation(fields: [requestId], references: [id])
-  requestId  String?          @unique
-
-  items PurchaseOrderItem[]
+  id           String              @id @default(cuid())
+  code         String              @unique
+  status       String              @default("Draft")
+  currency     String              @default("USD")
+  vat          Float               @default(0)
+  totalAmount  Float               @default(0)
+  notes        String              @default("")
+  expectedDate String              @default("")
+  receivedDate String              @default("")
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  supplierId   String?
+  requestId    String?             @unique
+  request      PurchaseRequest?    @relation(fields: [requestId], references: [id])
+  supplier     Supplier?           @relation(fields: [supplierId], references: [id])
+  items        PurchaseOrderItem[]
 }
 
 model PurchaseOrderItem {
-  id          String   @id @default(cuid())
-  productName String
-  quantity    Int      @default(1)
-  unitPrice   Float    @default(0)
-  currency    String   @default("USD")
-  receivedQty Int      @default(0)
-  createdAt   DateTime @default(now())
-
-  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  id              String        @id @default(cuid())
+  productName     String
+  quantity        Int           @default(1)
+  unitPrice       Float         @default(0)
+  currency        String        @default("USD")
+  receivedQty     Int           @default(0)
+  createdAt       DateTime      @default(now())
   purchaseOrderId String
-  product         Product?      @relation(fields: [productId], references: [id])
   productId       String?
+  product         Product?      @relation(fields: [productId], references: [id])
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
 }
 
 model UserStatusPermission {
@@ -629,48 +582,47 @@ model EmployeeStatusPermission {
 model SiteVisitNote {
   id          String    @id @default(cuid())
   visitId     String
-  visit       SiteVisit @relation(fields: [visitId], references: [id], onDelete: Cascade)
   customerId  String?
-  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
   fromStatus  String
   toStatus    String
   note        String
   createdById String?
-  createdBy   Employee? @relation(fields: [createdById], references: [id])
   createdAt   DateTime  @default(now())
+  createdBy   Employee? @relation(fields: [createdById], references: [id])
+  customer    Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  visit       SiteVisit @relation(fields: [visitId], references: [id], onDelete: Cascade)
 }
 
 model EmployeeTask {
-  id               String          @id @default(cuid())
+  id               String             @id @default(cuid())
   title            String
   date             String
-  status           String          @default("pending")
+  status           String             @default("pending")
   notes            String?
   employeeId       String?
-  employee         Employee?       @relation(fields: [employeeId], references: [id])
   machineId        Int?
-  machine          Machine?        @relation(fields: [machineId], references: [id])
   orderId          String?
-  order            Order?          @relation(fields: [orderId], references: [id])
   productionTaskId String?
-  productionTask   ProductionTask? @relation(fields: [productionTaskId], references: [id])
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
   productId        String?
-  product          Product?        @relation(fields: [productId], references: [id])
-  quantity         Int             @default(0)
-  createdAt        DateTime        @default(now())
-  updatedAt        DateTime        @updatedAt
-
-  taskNotes EmployeeTaskNote[]
+  quantity         Int                @default(0)
+  employee         Employee?          @relation(fields: [employeeId], references: [id])
+  machine          Machine?           @relation(fields: [machineId], references: [id])
+  order            Order?             @relation(fields: [orderId], references: [id])
+  product          Product?           @relation(fields: [productId], references: [id])
+  productionTask   ProductionTask?    @relation(fields: [productionTaskId], references: [id])
+  taskNotes        EmployeeTaskNote[]
 }
 
 model EmployeeTaskNote {
   id         String       @id @default(cuid())
   taskId     String
-  task       EmployeeTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
   fromStatus String
   toStatus   String
   note       String
   createdAt  DateTime     @default(now())
+  task       EmployeeTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
 }
 
 model EmployeeTaskGhost {
@@ -681,20 +633,21 @@ model EmployeeTaskGhost {
   status           String          @default("open")
   quantity         Int             @default(0)
   employeeId       String?
-  employee         Employee?       @relation(fields: [employeeId], references: [id], onDelete: SetNull)
   machineId        Int?
-  machine          Machine?        @relation(fields: [machineId], references: [id], onDelete: SetNull)
   orderId          String?
-  order            Order?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
   productionTaskId String?
-  productionTask   ProductionTask? @relation(fields: [productionTaskId], references: [id], onDelete: SetNull)
   productId        String?
-  product          Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
   targetDate       String?
   createdAt        DateTime        @default(now())
+  employee         Employee?       @relation(fields: [employeeId], references: [id], onUpdate: NoAction)
+  machine          Machine?        @relation(fields: [machineId], references: [id], onUpdate: NoAction)
+  order            Order?          @relation(fields: [orderId], references: [id], onUpdate: NoAction)
+  product          Product?        @relation(fields: [productId], references: [id], onUpdate: NoAction)
+  productionTask   ProductionTask? @relation(fields: [productionTaskId], references: [id], onUpdate: NoAction)
 
   @@index([date])
   @@index([employeeId])
+  @@index([originalTaskId])
 }
 
 model ProductionTaskGhost {
@@ -704,16 +657,16 @@ model ProductionTaskGhost {
   quantity       Int        @default(0)
   status         String     @default("open")
   date           String
-  orderItem      OrderItem? @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
   orderItemId    String?
-  product        Product?   @relation(fields: [productId], references: [id], onDelete: SetNull)
   productId      String?
-  machine        Machine?   @relation(fields: [machineId], references: [id], onDelete: SetNull)
   machineId      Int?
-  operator       Employee?  @relation(fields: [operatorId], references: [id], onDelete: SetNull)
   operatorId     String?
   targetDate     String?
   createdAt      DateTime   @default(now())
+  machine        Machine?   @relation(fields: [machineId], references: [id], onUpdate: NoAction)
+  operator       Employee?  @relation(fields: [operatorId], references: [id], onUpdate: NoAction)
+  orderItem      OrderItem? @relation(fields: [orderItemId], references: [id], onUpdate: NoAction)
+  product        Product?   @relation(fields: [productId], references: [id], onUpdate: NoAction)
 
   @@index([date])
   @@index([operatorId])
@@ -743,7 +696,6 @@ model Vehicle {
 model DeliveryRecord {
   id                String         @id @default(cuid())
   productionTaskId  String
-  productionTask    ProductionTask @relation(fields: [productionTaskId], references: [id], onDelete: Cascade)
   orderItemId       String?
   isOutsource       Boolean        @default(false)
   carrierEmployeeId String?
@@ -756,34 +708,73 @@ model DeliveryRecord {
   createdByName     String?
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
+  productionTask    ProductionTask @relation(fields: [productionTaskId], references: [id], onDelete: Cascade)
 }
 
 model LogisticsLog {
   id               String         @id @default(cuid())
   productionTaskId String
-  productionTask   ProductionTask @relation(fields: [productionTaskId], references: [id], onDelete: Cascade)
-  action           String // STATUS_CHANGE, INVOICE_TOGGLE, DELIVERY_DISPATCH, DELIVERY_DELETE, ROLLBACK
+  action           String
   fromStatus       String?
   toStatus         String?
   isInvoiced       Boolean?
-  description      String         @db.Text
+  description      String
   userId           String?
   userName         String?
   createdAt        DateTime       @default(now())
+  productionTask   ProductionTask @relation(fields: [productionTaskId], references: [id], onDelete: Cascade)
 }
 
 model Notification {
   id        String   @id @default(cuid())
   title     String
   body      String
-  type      String   @default("info") // "order", "production", "finance", "system"
-  page      String? // "orders", "production", "purchasing", "logistics", etc.
-  link      String? // e.g. "/orders"
+  type      String   @default("info")
+  page      String?
+  link      String?
   isRead    Boolean  @default(false)
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, isRead])
   @@index([userId, createdAt])
+}
+
+model Commission {
+  id               String    @id @default(cuid())
+  orderId          String
+  orderCode        String
+  userId           String
+  userName         String
+  customerId       String?
+  customerName     String?
+  orderTotal       Float     @default(0)
+  orderCurrency    String    @default("TRY")
+  rate             Float     @default(3)
+  amount           Float     @default(0)
+  currency         String    @default("TRY")
+  status           String    @default("pending")
+  isPaid           Boolean   @default(false)
+  paidAt           DateTime?
+  paidById         String?
+  paidByName       String?
+  orderCreatedAt   DateTime  @default(now())
+  notes            String?   @default("")
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
+  isManualOverride Boolean   @default(false)
+
+  @@index([createdAt])
+  @@index([orderCreatedAt])
+  @@index([orderId])
+  @@index([paidAt])
+  @@index([status])
+  @@index([userId])
+}
+
+model SystemSetting {
+  key       String    @id
+  value     Json
+  updatedAt DateTime? @default(now()) @db.Timestamp(6)
 }

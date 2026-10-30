@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
 import Users from './Users'
+import MonthlyTemplatesModal from '../components/MonthlyTemplatesModal'
 import { loadRatesConfig, saveRatesConfig, DEFAULT_RATES_URL, DEFAULT_RATES_PATH, DEFAULT_BASE } from '../hooks/useCurrencyRates'
 
 import { API_URL } from '../config'
@@ -1014,141 +1015,12 @@ function UserRolesTab() {
 
 
 // ─── Machines Tab ─────────────────────────────────────────────────────────────
-// ─── Monthly Templates Settings Modal ──────────────────────────────────────────
-function MonthlyTemplatesSettingsModal({ onClose }) {
-  const { t } = useTranslation();
-  const { getMonthlyTemplates, updateMonthlyTemplates, fetchMachines } = useData();
-  const [tasks, setTasks] = useState(['', '', '', '']);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-
-  useEffect(() => {
-    let mounted = true;
-    (async () => {
-      try {
-        const res = await getMonthlyTemplates();
-        if (mounted && Array.isArray(res) && res.length > 0) {
-          const list = [...res];
-          while (list.length < 4) list.push('');
-          setTasks(list.slice(0, 4));
-        }
-      } catch (err) {
-        console.error('Failed to load monthly templates:', err);
-      } finally {
-        if (mounted) setLoading(false);
-      }
-    })();
-    return () => { mounted = false; };
-  }, [getMonthlyTemplates]);
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      const filtered = tasks.map((s) => s.trim()).filter(Boolean);
-      await updateMonthlyTemplates(filtered);
-      setSaved(true);
-      await fetchMachines?.();
-      setTimeout(() => {
-        onClose();
-      }, 700);
-    } catch (err) {
-      alert(err.message || 'Hata oluştu');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-surface border border-theme-border rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        <div className="p-4 border-b border-theme-border flex items-center justify-between bg-surface-container-low">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-xl">settings_suggest</span>
-            <div>
-              <h3 className="font-bold text-sm text-on-surface">
-                {t('maintenance.standardTasks', 'Aylık Standart Bakım Görevleri (Şablon)')}
-              </h3>
-              <p className="text-[11px] text-text-muted">
-                {t('maintenance.standardTasksDesc', 'Tüm makineler için 12 aya otomatik atanan ve silinemeyen 4 ana görevi belirleyin.')}
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg text-text-muted hover:text-on-surface hover:bg-hover-bg transition"
-          >
-            <span className="material-symbols-outlined text-lg">close</span>
-          </button>
-        </div>
-
-        <form onSubmit={handleSave} className="p-4 space-y-3 overflow-y-auto">
-          {loading ? (
-            <div className="py-8 text-center text-xs text-text-muted">
-              {t('common.loading', 'Yükleniyor...')}
-            </div>
-          ) : (
-            <>
-              <p className="text-xs text-text-muted">
-                {t('maintenance.templateInfo', 'Bu 4 standart görev her ay için otomatik oluşturulur, personel tarafından tiklenip kaldırılabilir ve işlem geçmişi kaydedilir.')}
-              </p>
-              {tasks.map((task, idx) => (
-                <div key={idx} className="space-y-1">
-                  <label className="text-[11px] font-semibold text-text-muted uppercase tracking-wider">
-                    {idx + 1}. {t('maintenance.task', 'Görev')}
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={task}
-                    onChange={(e) => {
-                      const next = [...tasks];
-                      next[idx] = e.target.value;
-                      setTasks(next);
-                    }}
-                    placeholder={`${idx + 1}. bakım görevi başlığı...`}
-                    className="w-full bg-surface-container-lowest border border-theme-border rounded-xl px-3 py-2 text-xs text-on-surface outline-none focus:border-primary transition"
-                  />
-                </div>
-              ))}
-            </>
-          )}
-
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-theme-border">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-3.5 py-1.5 rounded-lg border border-theme-border text-xs text-text-muted hover:text-on-surface transition"
-            >
-              {t('common.cancel', 'Vazgeç')}
-            </button>
-            <button
-              type="submit"
-              disabled={loading || saving}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-primary text-white text-xs font-bold hover:bg-primary-hover transition disabled:opacity-50"
-            >
-              <span className="material-symbols-outlined text-sm">
-                {saved ? 'check' : 'save'}
-              </span>
-              {saved
-                ? t('common.saved', 'Kaydedildi!')
-                : saving
-                  ? t('common.saving', 'Kaydediliyor...')
-                  : t('common.save', 'Kaydet')}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
 function MachinesTab() {
   const { t } = useTranslation()
   const { machines: realMachines, addMachine, updateMachine, deleteMachine } = useData()
   const [modal, setModal] = useState(null) // null | 'new' | machine object
   const [viewMachine, setViewMachine] = useState(null)
+  const [showTemplatesModal, setShowTemplatesModal] = useState(false)
   const [error, setError] = useState('')
   const [deletingId, setDeletingId] = useState(null)
   const [search, setSearch] = useState('')
@@ -1196,13 +1068,22 @@ function MachinesTab() {
     <div>
       <div className="flex items-center justify-between mb-4">
         <p className="text-xs text-text-muted">{t('settings.manageMachinesMsg', 'Fabrika makineleri ve bakım kayıtlarını yönetin.')}</p>
-        <button
-          onClick={() => { setError(''); setModal('new') }}
-          className="flex items-center gap-1.5 primary-gradient text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm shadow-primary/10 hover:opacity-90 transition-opacity whitespace-nowrap shrink-0"
-        >
-          <span className="material-symbols-outlined text-sm">add</span>
-          {t('settings.addMachine', 'Makine Ekle')}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowTemplatesModal(true)}
+            className="flex items-center gap-1.5 bg-surface-container-high hover:bg-surface-container border border-theme-border text-on-surface hover:text-primary px-3 py-1.5 rounded-lg text-xs font-bold transition whitespace-nowrap shrink-0"
+          >
+            <span className="material-symbols-outlined text-sm text-primary">settings_suggest</span>
+            {t('maintenance.standardTasks', 'Aylık Standart Görevler')}
+          </button>
+          <button
+            onClick={() => { setError(''); setModal('new') }}
+            className="flex items-center gap-1.5 primary-gradient text-white px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-sm shadow-primary/10 hover:opacity-90 transition-opacity whitespace-nowrap shrink-0"
+          >
+            <span className="material-symbols-outlined text-sm">add</span>
+            {t('settings.addMachine', 'Makine Ekle')}
+          </button>
+        </div>
       </div>
 
       {error && <p className="text-xs text-error mb-3">{error}</p>}
@@ -1299,6 +1180,10 @@ function MachinesTab() {
           onClose={() => setModal(null)}
           onSave={handleSave}
         />
+      )}
+
+      {showTemplatesModal && (
+        <MonthlyTemplatesModal onClose={() => setShowTemplatesModal(false)} />
       )}
     </div>
   )
