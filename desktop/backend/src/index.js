@@ -40,6 +40,9 @@ const employeeTaskRoutes = require('./routes/employeeTasks')
 const vehicleRoutes = require('./routes/vehicles')
 const backupRoutes = require('./routes/backup')
 const notificationRoutes = require('./routes/notifications')
+const commissionRoutes = require('./routes/commissions')
+const errorReportRoutes = require('./routes/errorReports')
+const { initCommissionTable, syncExistingOrders } = require('./lib/commissionService')
 const { initBackupCron } = require('./jobs/backupCron')
 const { initTaskReminderCron } = require('./jobs/taskReminderCron')
 const app = express()
@@ -92,6 +95,8 @@ app.use('/api/employee-tasks', authenticate, employeeTaskRoutes)
 app.use('/api/vehicles', authenticate, vehicleRoutes)
 app.use('/api/backup', authenticate, backupRoutes)
 app.use('/api/notifications', authenticate, notificationRoutes)
+app.use('/api/commissions', authenticate, commissionRoutes)
+app.use('/api/errors', errorReportRoutes)
 
 app.listen(PORT, () => {
   console.log(`AKS ERP API running on http://localhost:${PORT}`)
@@ -104,6 +109,9 @@ app.listen(PORT, () => {
 
   // Initialize Task Due Date Reminder Cron (Daily at 09:00)
   initTaskReminderCron()
+
+  // Initialize Commission Table & Backfill
+  initCommissionTable().then(() => syncExistingOrders()).catch(err => console.error('[Commissions] Init error:', err))
 
   // 30 minute cron for Vio Sync using node-cron
   console.log('Starting 30-minute Vio sync cron job (*/30 * * * *)...')

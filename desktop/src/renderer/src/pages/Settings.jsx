@@ -2424,6 +2424,159 @@ function BackupTab() {
   )
 }
 
+// ─── Commission Rates Tab ─────────────────────────────────────────────────────
+function CommissionRatesTab() {
+  const { t } = useTranslation();
+  const { fetchCommissionRates, updateCommissionRate } = useData();
+  const [users, setUsers] = useState([]);
+  const [rates, setRates] = useState({});
+  const [loading, setLoading] = useState(true);
+  const [savingId, setSavingId] = useState(null);
+  const [savedId, setSavedId] = useState(null);
+  const [search, setSearch] = useState('');
+
+  const loadRates = useCallback(async () => {
+    setLoading(true);
+    try {
+      const list = await fetchCommissionRates();
+      if (Array.isArray(list)) {
+        setUsers(list);
+        const initial = {};
+        list.forEach((u) => {
+          initial[u.id] = u.commissionRate !== undefined && u.commissionRate !== null ? u.commissionRate : 3;
+        });
+        setRates(initial);
+      }
+    } catch (err) {
+      console.error('Failed to load commission rates:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [fetchCommissionRates]);
+
+  useEffect(() => {
+    loadRates();
+  }, [loadRates]);
+
+  const handleSave = async (userId) => {
+    setSavingId(userId);
+    try {
+      const val = parseFloat(rates[userId]);
+      if (isNaN(val) || val < 0 || val > 100) {
+        alert('Lütfen 0 ile 100 arasında geçerli bir prim yüzdesi girin.');
+        return;
+      }
+      await updateCommissionRate(userId, val);
+      setSavedId(userId);
+      setTimeout(() => setSavedId(null), 2000);
+    } catch (err) {
+      alert(err.message || 'Hata oluştu');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const filtered = users.filter((u) =>
+    (u.name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (u.email || '').toLowerCase().includes(search.toLowerCase()) ||
+    (u.department || '').toLowerCase().includes(search.toLowerCase())
+  );
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-low p-4 rounded-2xl border border-theme-border">
+        <div>
+          <h3 className="font-bold text-sm text-on-surface flex items-center gap-2">
+            <span className="material-symbols-outlined text-primary text-lg">percent</span>
+            {t('settings.commissions', 'Satış Temsilcisi Prim Oranları')}
+          </h3>
+          <p className="text-xs text-text-muted mt-1 leading-relaxed max-w-2xl">
+            Her satış temsilcisine özel sipariş hak ediş prim yüzdesini (% oran) belirleyin. Burada yapılan güncellemeler <strong>geçmiş sipariş kartlarını etkilemez</strong>; bundan sonra oluşturulacak siparişler için otomatik olarak uygulanır.
+          </p>
+        </div>
+
+        <div className="relative min-w-[200px]">
+          <span className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-text-muted text-sm">search</span>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Personel ara..."
+            className="w-full bg-surface-container-lowest border border-theme-border rounded-xl pl-8 pr-3 py-1.5 text-xs text-on-surface outline-none focus:border-primary"
+          />
+        </div>
+      </div>
+
+      <div className="bg-surface-container-lowest border border-theme-border rounded-2xl overflow-hidden shadow-xs">
+        {loading ? (
+          <div className="py-16 text-center text-xs text-text-muted">
+            {t('common.loading', 'Yükleniyor...')}
+          </div>
+        ) : filtered.length === 0 ? (
+          <div className="py-16 text-center text-xs text-text-muted">
+            Personel bulunamadı.
+          </div>
+        ) : (
+          <div className="divide-y divide-theme-border/60">
+            {filtered.map((u) => {
+              const currentVal = rates[u.id] !== undefined ? rates[u.id] : (u.commissionRate || 3);
+              const isSaving = savingId === u.id;
+              const isSaved = savedId === u.id;
+
+              return (
+                <div key={u.id} className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-hover-bg/40 transition">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center font-bold text-sm shrink-0">
+                      {u.name ? u.name.charAt(0).toUpperCase() : 'S'}
+                    </div>
+                    <div>
+                      <p className="font-bold text-xs md:text-sm text-on-surface leading-tight">{u.name}</p>
+                      <div className="flex items-center gap-2 text-[11px] text-text-muted mt-0.5">
+                        <span>{u.department || 'Satış'}</span>
+                        {u.email && <span>· {u.email}</span>}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 self-end sm:self-center">
+                    <div className="flex items-center gap-1 bg-surface-container-low border border-theme-border rounded-xl px-2.5 py-1">
+                      <span className="text-xs font-bold text-text-muted">%</span>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0"
+                        max="100"
+                        value={currentVal}
+                        onChange={(e) => setRates({ ...rates, [u.id]: e.target.value })}
+                        className="w-16 bg-transparent text-xs font-bold text-on-surface outline-none text-right"
+                      />
+                    </div>
+
+                    <button
+                      onClick={() => handleSave(u.id)}
+                      disabled={isSaving}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-xs ${
+                        isSaved
+                          ? 'bg-emerald-600 text-white'
+                          : 'bg-primary hover:bg-primary-hover text-white disabled:opacity-50'
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-sm">
+                        {isSaved ? 'check' : isSaving ? 'progress_activity' : 'save'}
+                      </span>
+                      {isSaved ? 'Kaydedildi' : isSaving ? '...' : t('common.save', 'Kaydet')}
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function Settings() {
   const { t } = useTranslation()
   const { isAdmin } = useAuth()
@@ -2435,6 +2588,7 @@ export default function Settings() {
     { key: 'order-status',        label: t('settings.orderStatus', 'Order Status'), icon: 'swap_horiz' },
     { key: 'purchasing-status',   label: t('settings.purchasingStatus', 'Purchasing Status'), icon: 'shopping_cart' },
     { key: 'machines',            label: t('settings.machines'), icon: 'precision_manufacturing' },
+    ...(isAdmin ? [{ key: 'commissions', label: t('settings.commissions', 'Satış Primleri'), icon: 'payments' }] : []),
     ...(isAdmin ? [{ key: 'vehicles', label: t('settings.vehicles', 'Araçlar'), icon: 'local_shipping' }] : []),
     ...(isAdmin ? [{ key: 'backup', label: t('settings.backup', 'Yedekleme & Kurtarma'), icon: 'database' }] : []),
   ]
@@ -2469,6 +2623,7 @@ export default function Settings() {
       {tab === 'order-status'      && <OrderStatusTab />}
       {tab === 'purchasing-status' && <PurchasingStatusTab />}
       {tab === 'machines'          && <MachinesTab />}
+      {tab === 'commissions'       && <CommissionRatesTab />}
       {tab === 'vehicles' && (
         isAdmin ? <VehiclesTab /> : (
           <div className="p-8 text-center text-text-muted">

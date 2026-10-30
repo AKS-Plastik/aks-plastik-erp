@@ -153,7 +153,17 @@ export function AuthProvider({ children }) {
         if (!profileRes.ok) throw new Error('Failed to fetch profile')
         
         setToken(newAt)
-        setUser(await profileRes.json())
+        const profileData = await profileRes.json()
+        setUser(profileData)
+        try {
+          localStorage.setItem('aks_user_info', JSON.stringify({
+            id: profileData.id,
+            name: profileData.name,
+            email: profileData.email,
+            role: profileData.role,
+            department: profileData.department,
+          }))
+        } catch {}
       } catch (err) {
         logout()
       } finally {
@@ -245,6 +255,15 @@ export function AuthProvider({ children }) {
 
       setToken(access_token)
       setUser(profile)
+      try {
+        localStorage.setItem('aks_user_info', JSON.stringify({
+          id: profile.id,
+          name: profile.name,
+          email: profile.email,
+          role: profile.role,
+          department: profile.department,
+        }))
+      } catch {}
     } catch (err) {
       throw err
     } finally {
@@ -261,6 +280,7 @@ export function AuthProvider({ children }) {
       localStorage.removeItem('aks_refresh_token')
       sessionStorage.removeItem('aks_refresh_token')
     }
+    localStorage.removeItem('aks_user_info')
     if (rt) {
       if (window.api) {
         window.api.authLogout(rt).catch(() => {})

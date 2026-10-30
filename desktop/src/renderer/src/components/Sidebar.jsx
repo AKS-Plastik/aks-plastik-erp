@@ -25,6 +25,7 @@ const ALL_NAV_ITEMS = [
 
 const adminNavItems = [
   { to: '/finance', icon: 'account_balance_wallet', tKey: 'nav.finance' },
+  { to: '/commissions', icon: 'payments', tKey: 'nav.commissions' },
   { to: '/employees', icon: 'badge', tKey: 'nav.employees' },
   { to: '/settings', icon: 'settings', tKey: 'nav.settings' },
 ]

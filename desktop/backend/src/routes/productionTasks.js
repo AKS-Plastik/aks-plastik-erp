@@ -336,8 +336,17 @@ router.patch('/:id/move', async (req, res) => {
       const allItems = await prisma.orderItem.findMany({ where: { orderId: task.orderItem.orderId } })
       const allCompleted = allItems.every(i => i.producedQuantity >= i.quantity)
       const order = await prisma.order.findUnique({ where: { id: task.orderItem.orderId } })
-      
-      if (allCompleted && (order.status === 'Draft' || order.status === 'Processing' || order.status === 'Confirmed' || order.status === 'In-Production')) {
+
+      // Check if all production tasks of the entire order are Delivered
+      const allOrderTasks = await prisma.productionTask.findMany({
+        where: { orderItem: { orderId: task.orderItem.orderId } },
+        select: { status: true }
+      })
+      const isAllDelivered = allOrderTasks.length > 0 && allOrderTasks.every(t => t.status === 'Delivered')
+
+      if (isAllDelivered) {
+        await prisma.order.update({ where: { id: task.orderItem.orderId }, data: { status: 'Delivered' } })
+      } else if (allCompleted && (order.status === 'Draft' || order.status === 'Processing' || order.status === 'Confirmed' || order.status === 'In-Production')) {
         await prisma.order.update({ where: { id: task.orderItem.orderId }, data: { status: 'Production Completed' } })
       } else if (!allCompleted && order.status === 'Production Completed') {
         await prisma.order.update({ where: { id: task.orderItem.orderId }, data: { status: 'In-Production' } })

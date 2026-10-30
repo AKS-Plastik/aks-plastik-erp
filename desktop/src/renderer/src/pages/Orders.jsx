@@ -14,7 +14,7 @@ import SearchableSelect from "../components/SearchableSelect"
 
 const ITEMS_PER_PAGE = 10
 const ORDER_STATUSES = ['Processing', 'Confirmed', 'In-Production', 'Production Completed', 'E-WayBill', 'In Delivery', 'E-Invoice', 'Delivered']
-const ORDER_EDIT_STATUSES = ['Processing', 'Confirmed', 'In-Production', 'Production Completed']
+const ORDER_EDIT_STATUSES = ['Processing', 'Confirmed', 'In-Production', 'Production Completed', 'E-WayBill', 'In Delivery', 'E-Invoice', 'Delivered']
 const ORDER_COLUMNS = ['Order Code', 'Customer', 'Sales Rep', 'Status', 'Notes', 'Product Name', 'Quantity', 'Unit', 'Unit Price', 'VAT %', 'Currency']
 
 const SHIPMENT_TYPES = [
@@ -89,7 +89,8 @@ function OrderDetailModal({
   const [savingNoteId, setSavingNoteId] = useState(null)
   const [deletingNoteId, setDeletingNoteId] = useState(null)
   const isAdmin = currentUser?.role === 'admin'
-  const nextStatus = ORDER_EDIT_STATUSES[ORDER_EDIT_STATUSES.indexOf(localStatus) + 1]
+  const ORDER_STAFF_STATUSES = ['Processing', 'Confirmed', 'In-Production']
+  const nextStatus = (isAdmin ? ORDER_STATUSES : ORDER_STAFF_STATUSES)[(isAdmin ? ORDER_STATUSES : ORDER_STAFF_STATUSES).indexOf(localStatus) + 1]
 
   const userDept = currentUser?.department
   const roleHasStatus = userDept ? (statusPermissions[userDept] || []).includes(localStatus) : false
@@ -97,10 +98,22 @@ function OrderDetailModal({
   const canAdvanceFromCurrent = isAdmin || roleHasStatus || userHasStatus
   const canChangeStatus = isAdmin || canAdvanceFromCurrent
 
+  const hasProductionInProgress = (order.items || []).some((it) => {
+    const produced = Number(it.producedQuantity) || 0
+    const inProd = Number(it.inProductionQuantity) || 0
+    const qty = Number(it.quantity) || 0
+    const activeTasks = (it.productionTasks || []).filter(t => t.status !== 'completed' && t.status !== 'Delivered')
+    return (produced > 0 && produced < qty) || inProd > 0 || activeTasks.length > 0
+  })
+
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false)
 
   async function confirmStatusChange() {
     if (isUpdatingStatus) return
+    if (isAdmin && hasProductionInProgress) {
+      const ok = window.confirm('DİKKAT: Bu siparişe ait devam eden veya kısmen tamamlanmış bir üretim süreci bulunmaktadır. Durumu değiştirmek üretim ve lojistik sürecini doğrudan etkileyebilir. Ne yaptığınızdan emin misiniz?')
+      if (!ok) return
+    }
     setIsUpdatingStatus(true)
     try {
       setLocalStatus(pendingStatus)
@@ -492,28 +505,42 @@ function OrderDetailModal({
               )
             )}
             {pendingStatus && (
-              <div className="flex flex-wrap md:flex-nowrap items-center gap-1.5 md:gap-2 bg-amber-50 border border-amber-200 rounded-xl px-2.5 md:px-4 py-1.5 md:py-3">
-                <span className="material-symbols-outlined text-amber-500 text-[14px] md:text-base">warning</span>
-                <p className="text-[10px] md:text-xs text-amber-700 flex-1 min-w-[150px] md:min-w-0">
-                  {t('orders.changeFrom', { from: localStatus, to: pendingStatus })}
-                </p>
-                <button
-                  onClick={() => { if (!isUpdatingStatus) setPendingStatus(null) }}
-                  disabled={isUpdatingStatus}
-                  className="text-[10px] md:text-xs text-text-muted hover:text-on-surface px-1.5 py-1 rounded transition disabled:opacity-50"
-                >
-                  {t('common.cancel')}
-                </button>
-                <button
-                  onClick={confirmStatusChange}
-                  disabled={isUpdatingStatus}
-                  className="text-[10px] md:text-xs font-semibold text-white bg-primary hover:opacity-90 px-2 py-1 rounded-lg transition disabled:opacity-50 flex items-center gap-1.5"
-                >
-                  {isUpdatingStatus && (
-                    <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
-                  )}
-                  <span>{isUpdatingStatus ? t('common.updating', 'Güncelleniyor...') : t('common.confirm')}</span>
-                </button>
+              <div className={`flex flex-col gap-2 rounded-xl p-3 border ${
+                hasProductionInProgress ? 'bg-rose-50 border-rose-300 dark:bg-rose-950/40 dark:border-rose-800' : 'bg-amber-50 border-amber-200'
+              }`}>
+                {hasProductionInProgress && (
+                  <div className="flex items-start gap-2 text-rose-700 dark:text-rose-400">
+                    <span className="material-symbols-outlined text-base shrink-0 mt-0.5">warning</span>
+                    <p className="text-[11px] md:text-xs font-semibold leading-tight">
+                      DİKKAT: Bu siparişin üretimi devam etmekte veya kısmen tamamlanmış durumdadır. Sipariş durumunu değiştirmek üretim ve lojistik sürecini doğrudan etkileyebilir.
+                    </p>
+                  </div>
+                )}
+                <div className="flex flex-wrap md:flex-nowrap items-center gap-1.5 md:gap-2">
+                  <span className="material-symbols-outlined text-amber-500 text-[14px] md:text-base">swap_horiz</span>
+                  <p className="text-[10px] md:text-xs text-on-surface flex-1 min-w-[150px] md:min-w-0 font-medium">
+                    {t('orders.changeFrom', { from: localStatus, to: pendingStatus })}
+                  </p>
+                  <button
+                    onClick={() => { if (!isUpdatingStatus) setPendingStatus(null) }}
+                    disabled={isUpdatingStatus}
+                    className="text-[10px] md:text-xs text-text-muted hover:text-on-surface px-1.5 py-1 rounded transition disabled:opacity-50"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                  <button
+                    onClick={confirmStatusChange}
+                    disabled={isUpdatingStatus}
+                    className={`text-[10px] md:text-xs font-semibold text-white px-3 py-1.5 rounded-lg transition disabled:opacity-50 flex items-center gap-1.5 ${
+                      hasProductionInProgress ? 'bg-rose-600 hover:bg-rose-700' : 'bg-primary hover:opacity-90'
+                    }`}
+                  >
+                    {isUpdatingStatus && (
+                      <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin flex-shrink-0" />
+                    )}
+                    <span>{isUpdatingStatus ? t('common.updating', 'Güncelleniyor...') : (hasProductionInProgress ? 'Eminim, Değiştir' : t('common.confirm'))}</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -1329,6 +1356,7 @@ export default function Orders() {
       .catch(() => { })
   }, [token])
   const [search, setSearch] = useState('')
+  const [orderViewTab, setOrderViewTab] = useState('all') // 'all' | 'active' | 'completed'
   const [filterStatus, setFilterStatus] = useState('')
   const [filterDateFrom, setFilterDateFrom] = useState('')
   const [filterDateTo, setFilterDateTo] = useState('')
@@ -1659,13 +1687,18 @@ export default function Orders() {
     })
   }
 
-  const filtered = orders.filter((o) => {
+  const activeOrdersCount = (orders || []).filter((o) => o.status !== 'Delivered').length
+  const completedOrdersCount = (orders || []).filter((o) => o.status === 'Delivered').length
+
+  const filtered = (orders || []).filter((o) => {
+    if (orderViewTab === 'active' && o.status === 'Delivered') return false
+    if (orderViewTab === 'completed' && o.status !== 'Delivered') return false
     if (search) {
       const q = search.toLowerCase()
-      const inCode = o.code.toLowerCase().includes(q)
+      const inCode = (o.code || '').toLowerCase().includes(q)
       const inCustomer = (o.customer?.name || '').toLowerCase().includes(q) || (o.customer?.accountCode || o.customer?.code || '').toLowerCase().includes(q)
       const inRep = (o.salesRep?.name || o.employee?.name || '').toLowerCase().includes(q)
-      const inProduct = (o.items || []).some((it) => it.productName.toLowerCase().includes(q))
+      const inProduct = (o.items || []).some((it) => (it.productName || '').toLowerCase().includes(q))
       const inOrderNotes = (o.notes || '').toLowerCase().includes(q)
       const inItemNotes = (o.items || []).some((it) => (it.notes || []).some((n) => (n.note || '').toLowerCase().includes(q)))
       if (!inCode && !inCustomer && !inRep && !inProduct && !inOrderNotes && !inItemNotes) return false
@@ -1745,6 +1778,54 @@ export default function Orders() {
             </button>
           )}
         </div>
+      </div>
+
+      {/* ── Quick Tabs: Aktif Siparişler / Geçmiş & Tamamlanan Siparişler / Tümü ── */}
+      <div className="flex items-center gap-2 mb-3 overflow-x-auto pb-1">
+        <button
+          onClick={() => { setOrderViewTab('all'); setFilterStatus(''); setPage(1); }}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+            orderViewTab === 'all'
+              ? 'bg-primary text-white shadow-sm'
+              : 'bg-surface-container-low text-text-muted hover:text-on-surface border border-theme-border'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[15px]">inventory_2</span>
+          <span>{t('orders.allOrdersTab', 'Tüm Siparişler')}</span>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${orderViewTab === 'all' ? 'bg-white/20 text-white' : 'bg-surface-container-high text-text-muted'}`}>
+            {(orders || []).length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => { setOrderViewTab('active'); setFilterStatus(''); setPage(1); }}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+            orderViewTab === 'active'
+              ? 'bg-primary text-white shadow-sm'
+              : 'bg-surface-container-low text-text-muted hover:text-on-surface border border-theme-border'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[15px]">pending_actions</span>
+          <span>{t('orders.activeOrdersTab', 'Aktif Siparişler')}</span>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${orderViewTab === 'active' ? 'bg-white/20 text-white' : 'bg-surface-container-high text-text-muted'}`}>
+            {activeOrdersCount}
+          </span>
+        </button>
+
+        <button
+          onClick={() => { setOrderViewTab('completed'); setFilterStatus(''); setPage(1); }}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+            orderViewTab === 'completed'
+              ? 'bg-emerald-600 text-white shadow-sm'
+              : 'bg-surface-container-low text-text-muted hover:text-on-surface border border-theme-border'
+          }`}
+        >
+          <span className="material-symbols-outlined text-[15px]">check_circle</span>
+          <span>{t('orders.pastOrdersTab', 'Tamamlanan / Geçmiş Siparişler')}</span>
+          <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${orderViewTab === 'completed' ? 'bg-white/20 text-white' : 'bg-surface-container-high text-emerald-600 font-bold'}`}>
+            {completedOrdersCount}
+          </span>
+        </button>
       </div>
 
       <div className="flex flex-col md:flex-row md:flex-wrap items-stretch md:items-end gap-2 mb-4">

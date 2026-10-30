@@ -718,6 +718,72 @@ export function DataProvider({ children }) {
     return (await res.json()).templates
   }
 
+  // ── Commissions (Primler) ──
+  async function fetchCommissions(filters = {}) {
+    const params = new URLSearchParams()
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') params.append(k, v)
+    })
+    const res = await fetch(`${API_URL}/commissions?${params.toString()}`, { headers })
+    if (!res.ok) throw new Error((await res.json()).error || 'Failed to fetch commissions')
+    return await res.json()
+  }
+
+  async function toggleCommissionPaid(id, isPaid, paidAt) {
+    const res = await fetch(`${API_URL}/commissions/${id}/toggle-paid`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ isPaid, paidAt }),
+    })
+    if (!res.ok) throw new Error((await res.json()).error || 'Failed')
+    return await res.json()
+  }
+
+  async function batchPayCommissions(ids, paidAt) {
+    const res = await fetch(`${API_URL}/commissions/batch/batch-pay`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ ids, paidAt }),
+    })
+    if (!res.ok) throw new Error((await res.json()).error || 'Failed')
+    return await res.json()
+  }
+
+  async function updateCommission(id, data) {
+    const res = await fetch(`${API_URL}/commissions/${id}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) throw new Error((await res.json()).error || 'Failed')
+    return await res.json()
+  }
+
+  async function syncCommissions() {
+    const res = await fetch(`${API_URL}/commissions/sync`, {
+      method: 'POST',
+      headers,
+    })
+    if (!res.ok) throw new Error((await res.json()).error || 'Failed')
+    return await res.json()
+  }
+
+  async function fetchCommissionRates() {
+    const res = await fetch(`${API_URL}/commissions/rates/list`, { headers })
+    if (!res.ok) throw new Error((await res.json()).error || 'Failed to fetch commission rates')
+    return await res.json()
+  }
+
+  async function updateCommissionRate(userId, commissionRate) {
+    const res = await fetch(`${API_URL}/commissions/rates/${userId}`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ commissionRate }),
+    })
+    if (!res.ok) throw new Error((await res.json()).error || 'Failed to update commission rate')
+    return await res.json()
+  }
+
   // ── Production Tasks ──
   async function addProductionTask(form) {
     const res = await fetch(`${API_URL}/production-tasks`, { method: 'POST', headers, body: JSON.stringify(form) })
@@ -889,6 +955,7 @@ export function DataProvider({ children }) {
       uploadMachineManual, downloadMachineManual, deleteMachineManual,
       addMaintenanceRecord, deleteMaintenanceRecord,
       addMonthlyTask, updateMonthlyTask, deleteMonthlyTask, getMonthlyTemplates, updateMonthlyTemplates,
+      fetchCommissions, toggleCommissionPaid, batchPayCommissions, updateCommission, syncCommissions, fetchCommissionRates, updateCommissionRate,
       vehicles, refreshVehicles,
       productionTasks, addProductionTask, updateProductionTask, moveProductionTask, deleteProductionTask, rolloverProductionTask, refreshProductionTasks,
       createProductionTaskDelivery, deleteProductionTaskDelivery, toggleProductionTaskInvoice,

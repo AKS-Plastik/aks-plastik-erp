@@ -10,6 +10,7 @@ const { PrismaClient } = require('@prisma/client')
 const { pushOrderToVio } = require('../lib/orderVioSync')
 const { dispatchNotification } = require('../lib/notificationDispatcher')
 const { pullProductsFromVio } = require('../lib/productVioSync')
+const { handleOrderCreated, handleOrderUpdated, handleOrderDeleted } = require('../lib/commissionService')
 
 const prisma = new PrismaClient()
 const router = Router()
@@ -243,6 +244,7 @@ router.post('/', async (req, res) => {
       excludeUserId: req.user?.id,
     }).catch((err) => console.error('Failed to dispatch order notification:', err))
 
+    handleOrderCreated(order).catch(err => console.error('[Orders] Failed to create commission:', err))
     res.status(201).json(order)
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -253,24 +255,26 @@ router.put('/:id', async (req, res) => {
   try {
     const { customerId, employeeId, salesRepId, status, notes, items, shipmentType, paymentMethod, visitId } = req.body
 
-    const current = await prisma.order.findUnique({ where: { id: req.params.id }, select: { status: true } })
+    const current = await prisma.order.findUnique({ where: { id: req.params.id }, select: { status: true, id: true, salesRepId: true, totalAmount: true, code: true, customerId: true } })
+    const prevOrder = current
 
     const isAdmin = req.user.role === 'admin'
     if (current?.status === 'Delivered' && status && status !== 'Delivered' && !isAdmin) {
       return res.status(403).json({ error: 'Delivered durumundaki siparişi sadece yöneticiler geriye çekebilir.' })
     }
 
-    // Sales Managers can only set status to 'Confirmed'
-    if (isSalesManager(req.user) && status) {
-      if (status !== 'Confirmed' && status !== current?.status) {
-        return res.status(403).json({ error: 'Sales Managers can only change status to Confirmed' })
+    // Non-admin sales/orders staff can only advance statuses up to 'In-Production'
+    const allowedStaffStatuses = ['Processing', 'Confirmed', 'In-Production']
+    if (!isAdmin && status && status !== current?.status) {
+      if (!allowedStaffStatuses.includes(status) || (current?.status && !allowedStaffStatuses.includes(current.status))) {
+        return res.status(403).json({ error: 'Sipariş yetkilileri siparişi en fazla Üretimde aşamasına getirebilir. Sonraki aşamalar üretim ve lojistik tarafından yönetilir.' })
       }
     }
 
     if (status === 'Production Completed' && current?.status !== 'Production Completed') {
       const orderItems = await prisma.orderItem.findMany({ where: { orderId: req.params.id } })
       const incomplete = orderItems.some(item => item.producedQuantity < item.quantity)
-      if (incomplete) {
+      if (incomplete && !isAdmin) {
         return res.status(400).json({ error: 'Cannot mark order as Production Completed. Not all items are fully produced.' })
       }
     }
@@ -398,6 +402,7 @@ router.put('/:id', async (req, res) => {
       }).catch((err) => console.error('Failed to dispatch order status notification:', err))
     }
 
+    handleOrderUpdated(prevOrder, freshOrder || order).catch(err => console.error('[Orders] Failed to update commission:', err))
     res.json(freshOrder || order)
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -451,6 +456,7 @@ router.delete('/:id', (req, res, next) => {
   next()
 }, async (req, res) => {
   try {
+    await handleOrderDeleted(req.params.id).catch(err => console.error('[Orders] Failed to delete commission:', err))
     await prisma.order.delete({ where: { id: req.params.id } })
     res.json({ success: true })
   } catch (err) {

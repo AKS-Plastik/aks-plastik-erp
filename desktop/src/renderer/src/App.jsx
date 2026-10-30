@@ -2,6 +2,7 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { ThemeProvider } from './context/ThemeContext'
 import { DataProvider, useData } from './context/DataContext'
+import ErrorBoundary from './components/ErrorBoundary'
 import Layout from './components/Layout'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
@@ -22,6 +23,7 @@ import Attendance from './pages/Attendance'
 import Purchasing from './pages/Purchasing'
 import ProductionTasks from './pages/ProductionTasks'
 import ProductionPlanning from './pages/ProductionPlanning'
+import Commissions from './pages/Commissions'
 
 function InnerRoutes() {
   const { isAdmin, user: currentUser } = useAuth()
@@ -61,6 +63,7 @@ function InnerRoutes() {
         {canSee('production-planning') && <Route path="production-planning" element={<ProductionPlanning />} />}
         {canSee('production-tasks') && <Route path="production-tasks" element={<ProductionTasks />} />}
         {isAdmin && <Route path="finance" element={<Finance />} />}
+        {isAdmin && <Route path="commissions" element={<Commissions />} />}
         {isAdmin && <Route path="employees" element={<Employees />} />}
 {isAdmin && <Route path="settings" element={<Settings />} />}
       </Route>
@@ -75,23 +78,27 @@ function ProtectedRoutes() {
   if (!user) return <Navigate to="/login" replace />
 
   return (
-    <DataProvider>
-      <InnerRoutes />
-    </DataProvider>
+    <ErrorBoundary>
+      <DataProvider>
+        <InnerRoutes />
+      </DataProvider>
+    </ErrorBoundary>
   )
 }
 
 export default function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <HashRouter>
-          <Routes>
-            <Route path="/login" element={<LoginGuard />} />
-            <Route path="/*" element={<ProtectedRoutes />} />
-          </Routes>
-        </HashRouter>
-      </AuthProvider>
+      <ErrorBoundary>
+        <AuthProvider>
+          <HashRouter>
+            <Routes>
+              <Route path="/login" element={<LoginGuard />} />
+              <Route path="/*" element={<ProtectedRoutes />} />
+            </Routes>
+          </HashRouter>
+        </AuthProvider>
+      </ErrorBoundary>
     </ThemeProvider>
   )
 }
