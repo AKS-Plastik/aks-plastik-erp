@@ -40,7 +40,7 @@ async function ensureSystemSettingTable() {
         "updatedAt" TIMESTAMP DEFAULT NOW()
       )
     `)
-  } catch (e) {}
+  } catch (e) { }
 }
 
 async function getTemplatesForMachine(machineId) {
@@ -56,7 +56,7 @@ async function getTemplatesForMachine(machineId) {
     if (s.length && Array.isArray(s[0].value) && s[0].value.length > 0) {
       defaultTemplates = s[0].value
     }
-  } catch (e) {}
+  } catch (e) { }
 
   if (machineId) {
     try {
@@ -64,7 +64,7 @@ async function getTemplatesForMachine(machineId) {
       if (mSetting.length && Array.isArray(mSetting[0].value)) {
         return { templates: mSetting[0].value, isCustom: true, defaultTemplates }
       }
-    } catch (e) {}
+    } catch (e) { }
   }
 
   return { templates: defaultTemplates, isCustom: false, defaultTemplates }
@@ -264,7 +264,7 @@ router.get('/', async (req, res) => {
 router.post('/', adminOnly, async (req, res) => {
   try {
     const { code, name, type, manufacturer, manufacturerCountry, manufacturerContact,
-            productionYear, warrantyExpiry, status, location, nextMaintenanceDue, notes } = req.body
+      productionYear, warrantyExpiry, status, location, nextMaintenanceDue, notes } = req.body
     if (!code?.trim()) return res.status(400).json({ error: 'Machine code is required' })
     if (!name?.trim()) return res.status(400).json({ error: 'Machine name is required' })
     const machine = await prisma.machine.create({
@@ -286,7 +286,7 @@ router.post('/', adminOnly, async (req, res) => {
     })
     try {
       await ensureMonthlyTasksForMachine(machine.id, new Date().getFullYear())
-    } catch (e) {}
+    } catch (e) { }
     res.status(201).json(machine)
   } catch (err) {
     if (err.code === 'P2002') return res.status(400).json({ error: 'Machine code already exists' })
@@ -298,7 +298,7 @@ router.post('/', adminOnly, async (req, res) => {
 router.put('/:id', adminOnly, async (req, res) => {
   try {
     const { code, name, type, manufacturer, manufacturerCountry, manufacturerContact,
-            productionYear, warrantyExpiry, status, location, nextMaintenanceDue, notes } = req.body
+      productionYear, warrantyExpiry, status, location, nextMaintenanceDue, notes } = req.body
     const machine = await prisma.machine.update({
       where: { id: parseInt(req.params.id) },
       data: {
@@ -391,13 +391,13 @@ router.post('/:id/maintenance', adminOnly, async (req, res) => {
 
     const parsedExpenses = Array.isArray(expenses)
       ? expenses
-          .filter(e => e && (e.title?.trim() || parseFloat(e.cost) > 0))
-          .map(e => ({
-            id: e.id || `exp_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
-            title: (e.title || '').trim(),
-            cost: parseFloat(e.cost) || 0,
-            currency: e.currency || currency || 'TRY',
-          }))
+        .filter(e => e && (e.title?.trim() || parseFloat(e.cost) > 0))
+        .map(e => ({
+          id: e.id || `exp_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+          title: (e.title || '').trim(),
+          cost: parseFloat(e.cost) || 0,
+          currency: e.currency || currency || 'TRY',
+        }))
       : []
 
     const computedCost = parsedExpenses.length > 0
