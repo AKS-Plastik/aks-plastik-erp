@@ -1356,7 +1356,7 @@ export default function Orders() {
       .catch(() => { })
   }, [token])
   const [search, setSearch] = useState('')
-  const [orderViewTab, setOrderViewTab] = useState('all') // 'all' | 'active' | 'completed'
+  const [orderViewTab, setOrderViewTab] = useState('active') // 'all' | 'active' | 'completed'
   const [filterStatus, setFilterStatus] = useState('')
   const [filterDateFrom, setFilterDateFrom] = useState('')
   const [filterDateTo, setFilterDateTo] = useState('')
@@ -1691,8 +1691,12 @@ export default function Orders() {
   const completedOrdersCount = (orders || []).filter((o) => o.status === 'Delivered').length
 
   const filtered = (orders || []).filter((o) => {
-    if (orderViewTab === 'active' && o.status === 'Delivered') return false
-    if (orderViewTab === 'completed' && o.status !== 'Delivered') return false
+    if (!filterStatus) {
+      if (orderViewTab === 'active' && o.status === 'Delivered') return false
+      if (orderViewTab === 'completed' && o.status !== 'Delivered') return false
+    } else {
+      if (o.status !== filterStatus) return false
+    }
     if (search) {
       const q = search.toLowerCase()
       const inCode = (o.code || '').toLowerCase().includes(q)
@@ -1850,7 +1854,16 @@ export default function Orders() {
         <select
           className="w-full md:w-auto bg-surface-container-lowest border border-theme-border rounded-xl px-2.5 md:px-3 py-1.5 md:py-2 text-xs md:text-sm text-on-surface outline-none focus:border-primary"
           value={filterStatus}
-          onChange={(e) => { setFilterStatus(e.target.value); setPage(1) }}
+          onChange={(e) => {
+            const val = e.target.value
+            setFilterStatus(val)
+            if (val === 'Delivered') {
+              setOrderViewTab('completed')
+            } else if (val) {
+              setOrderViewTab('active')
+            }
+            setPage(1)
+          }}
         >
           <option value="">{t('orders.allStatuses')}</option>
           {ORDER_STATUSES.map((s) => <option key={s} value={s}>{t('status.' + s.replace(/-/g, ''), s)}</option>)}

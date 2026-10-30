@@ -62,6 +62,30 @@ router.get('/', async (req, res) => {
   }
 })
 
+// Get all production task ghosts (historical snapshots before rollover)
+router.get('/ghosts', async (req, res) => {
+  try {
+    const ghosts = await prisma.productionTaskGhost.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        orderItem: {
+          include: {
+            order: { select: { id: true, code: true, customer: true, salesRep: true, employee: true } },
+            product: true,
+            notes: { orderBy: { createdAt: 'asc' } }
+          }
+        },
+        product: true,
+        machine: true,
+        operator: true
+      }
+    })
+    res.json(ghosts)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // Create a new production task
 router.post('/', async (req, res) => {
   try {
@@ -441,6 +465,34 @@ router.post('/rollover', async (req, res) => {
     const { taskId, action, targetDate, targetStatus, completedQuantity } = req.body
     const task = await prisma.productionTask.findUnique({ where: { id: taskId }, include: { orderItem: true } })
     if (!task) return res.status(404).json({ error: 'Task not found' })
+
+    // Create a ghost record preserving the pre-rollover state on its original date
+    try {
+      const existingGhost = await prisma.productionTaskGhost.findFirst({
+        where: {
+          originalTaskId: task.id,
+          date: task.date
+        }
+      })
+      if (!existingGhost) {
+        await prisma.productionTaskGhost.create({
+          data: {
+            originalTaskId: task.id,
+            code: task.code,
+            quantity: task.quantity,
+            status: task.status,
+            date: task.date,
+            orderItemId: task.orderItemId,
+            productId: task.productId,
+            machineId: task.machineId,
+            operatorId: task.operatorId,
+            targetDate: targetDate
+          }
+        })
+      }
+    } catch (ghostErr) {
+      console.error('[ProductionTasks] Failed to create ghost card:', ghostErr)
+    }
 
     if (action === 'rollover') {
       const newStatus = targetStatus || task.status

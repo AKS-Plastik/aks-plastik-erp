@@ -15,7 +15,9 @@ export function DataProvider({ children }) {
   const [orders, setOrders] = useState([])
   const [financeRecords, setFinanceRecords] = useState([])
   const [productionTasks, setProductionTasks] = useState([])
+  const [productionTaskGhosts, setProductionTaskGhosts] = useState([])
   const [employeeTasks, setEmployeeTasks] = useState([])
+  const [employeeTaskGhosts, setEmployeeTaskGhosts] = useState([])
   const [roles, setRoles] = useState([])
   const [permissions, setPermissions] = useState({})
   const [statusPermissions, setStatusPermissions] = useState({})
@@ -169,6 +171,8 @@ export function DataProvider({ children }) {
       .catch(() => { })
   }, [token])
   useEffect(() => { refreshProductionTasks() }, [token])
+
+  
 
   const [employeePermissions, setEmployeePermissions] = useState({})
 
@@ -800,6 +804,7 @@ export function DataProvider({ children }) {
     const updated = await res.json(); if (!res.ok) { alert('Hata: ' + updated.error); return; }
     setProductionTasks((prev) => prev.map((t) => (t.id === id ? updated : t)))
     refreshOrders()
+    refreshProductionTaskGhosts()
   }
 
   async function moveProductionTask(id, status, extraData = {}) {
@@ -809,6 +814,7 @@ export function DataProvider({ children }) {
     
     // Refresh entirely since a move might split tasks and change orders
     refreshProductionTasks()
+    refreshProductionTaskGhosts()
     refreshOrders()
   }
 
@@ -818,12 +824,21 @@ export function DataProvider({ children }) {
     refreshOrders()
   }
 
+  const refreshProductionTaskGhosts = useCallback(() => {
+    fetch(`${API_URL}/production-tasks/ghosts`, { headers: authHeaders })
+      .then((r) => r.json())
+      .then((data) => setProductionTaskGhosts(Array.isArray(data) ? data : []))
+      .catch(() => {})
+  }, [token])
+  useEffect(() => { refreshProductionTaskGhosts() }, [token])
+
   async function rolloverProductionTask(data) {
     const res = await fetch(`${API_URL}/production-tasks/rollover`, { method: 'POST', headers, body: JSON.stringify(data) })
     if (!res.ok) throw new Error((await res.json()).error || 'Failed')
     
     // Refresh entirely since a rollover might split tasks and change orders
     refreshProductionTasks()
+    refreshProductionTaskGhosts()
     refreshOrders()
   }
 
@@ -872,6 +887,14 @@ export function DataProvider({ children }) {
   }, [token])
   useEffect(() => { refreshEmployeeTasks() }, [token])
 
+  const refreshEmployeeTaskGhosts = useCallback(() => {
+    fetch(`${API_URL}/employee-tasks/ghosts`, { headers: authHeaders })
+      .then((r) => r.json())
+      .then((data) => setEmployeeTaskGhosts(Array.isArray(data) ? data : []))
+      .catch(() => {})
+  }, [token])
+  useEffect(() => { refreshEmployeeTaskGhosts() }, [token])
+
   const createEmployeeTask = async (data) => {
     const res = await fetch(`${API_URL}/employee-tasks`, { method: 'POST', headers, body: JSON.stringify(data) })
     if (res.ok) refreshEmployeeTasks()
@@ -895,6 +918,7 @@ export function DataProvider({ children }) {
       throw new Error(d.error || 'Failed to move task')
     }
     refreshEmployeeTasks()
+    refreshEmployeeTaskGhosts()
     return res.json()
   }
 
@@ -914,6 +938,7 @@ export function DataProvider({ children }) {
       throw new Error(d.error || 'Rollover failed')
     }
     refreshEmployeeTasks()
+    refreshEmployeeTaskGhosts()
   }
 
   // ── Finance Records ──
@@ -957,9 +982,9 @@ export function DataProvider({ children }) {
       addMonthlyTask, updateMonthlyTask, deleteMonthlyTask, getMonthlyTemplates, updateMonthlyTemplates,
       fetchCommissions, toggleCommissionPaid, batchPayCommissions, updateCommission, syncCommissions, fetchCommissionRates, updateCommissionRate,
       vehicles, refreshVehicles,
-      productionTasks, addProductionTask, updateProductionTask, moveProductionTask, deleteProductionTask, rolloverProductionTask, refreshProductionTasks,
+      productionTasks, productionTaskGhosts, refreshProductionTaskGhosts, addProductionTask, updateProductionTask, moveProductionTask, deleteProductionTask, rolloverProductionTask, refreshProductionTasks,
       createProductionTaskDelivery, deleteProductionTaskDelivery, toggleProductionTaskInvoice,
-      employeeTasks, refreshEmployeeTasks, createEmployeeTask, updateEmployeeTask, moveEmployeeTask, deleteEmployeeTask, rolloverEmployeeTasks,
+      employeeTasks, refreshEmployeeTasks, employeeTaskGhosts, refreshEmployeeTaskGhosts, createEmployeeTask, updateEmployeeTask, moveEmployeeTask, deleteEmployeeTask, rolloverEmployeeTasks,
       isAdmin,
     }}>
       {children}

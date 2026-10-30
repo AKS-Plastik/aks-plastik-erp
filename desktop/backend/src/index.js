@@ -43,6 +43,8 @@ const notificationRoutes = require('./routes/notifications')
 const commissionRoutes = require('./routes/commissions')
 const errorReportRoutes = require('./routes/errorReports')
 const { initCommissionTable, syncExistingOrders } = require('./lib/commissionService')
+const { initEmployeeTaskGhostTable } = require('./lib/employeeTaskGhostService')
+const { initProductionTaskGhostTable } = require('./lib/productionTaskGhostService')
 const { initBackupCron } = require('./jobs/backupCron')
 const { initTaskReminderCron } = require('./jobs/taskReminderCron')
 const app = express()
@@ -112,6 +114,12 @@ app.listen(PORT, () => {
 
   // Initialize Commission Table & Backfill
   initCommissionTable().then(() => syncExistingOrders()).catch(err => console.error('[Commissions] Init error:', err))
+
+  // Initialize EmployeeTaskGhost Table
+  initEmployeeTaskGhostTable().catch(err => console.error('[EmployeeTaskGhost] Init error:', err))
+
+  // Initialize ProductionTaskGhost Table
+  initProductionTaskGhostTable().catch(err => console.error('[ProductionTaskGhost] Init error:', err))
 
   // 30 minute cron for Vio Sync using node-cron
   console.log('Starting 30-minute Vio sync cron job (*/30 * * * *)...')

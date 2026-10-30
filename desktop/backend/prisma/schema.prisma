@@ -195,10 +195,12 @@ model Product {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  orderItems         OrderItem[]
-  purchaseOrderItems PurchaseOrderItem[]
-  productionTasks    ProductionTask[]
-  employeeTasks      EmployeeTask[]
+  orderItems           OrderItem[]
+  purchaseOrderItems   PurchaseOrderItem[]
+  productionTasks      ProductionTask[]
+  employeeTasks        EmployeeTask[]
+  employeeTaskGhosts   EmployeeTaskGhost[]
+  productionTaskGhosts ProductionTaskGhost[]
 }
 
 model Employee {
@@ -222,16 +224,18 @@ model Employee {
   supervisor   Employee?  @relation("EmployeeSupervisor", fields: [supervisorId], references: [id])
   subordinates Employee[] @relation("EmployeeSupervisor")
 
-  orders          Order[]
-  reports         Report[]
-  siteVisits      SiteVisit[]      @relation("SiteVisitCreator")
-  assignedVisits  SiteVisit[]      @relation("SiteVisitAssignees")
-  attendances     Attendance[]
-  leaveRequests   LeaveRequest[]
-  productionTasks ProductionTask[]
-  employeeTasks   EmployeeTask[]
-  user            User?
-  siteVisitNotes  SiteVisitNote[]
+  orders               Order[]
+  reports              Report[]
+  siteVisits           SiteVisit[]           @relation("SiteVisitCreator")
+  assignedVisits       SiteVisit[]           @relation("SiteVisitAssignees")
+  attendances          Attendance[]
+  leaveRequests        LeaveRequest[]
+  productionTasks      ProductionTask[]
+  employeeTasks        EmployeeTask[]
+  employeeTaskGhosts   EmployeeTaskGhost[]
+  productionTaskGhosts ProductionTaskGhost[]
+  user                 User?
+  siteVisitNotes       SiteVisitNote[]
 }
 
 model Order {
@@ -248,18 +252,19 @@ model Order {
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  customer   Customer? @relation(fields: [customerId], references: [id])
+  customer   Customer?  @relation(fields: [customerId], references: [id])
   customerId String?
-  employee   Employee? @relation(fields: [employeeId], references: [id])
+  employee   Employee?  @relation(fields: [employeeId], references: [id])
   employeeId String?
-  salesRep   User?     @relation(fields: [salesRepId], references: [id])
+  salesRep   User?      @relation(fields: [salesRepId], references: [id])
   salesRepId String?
   visit      SiteVisit? @relation(fields: [visitId], references: [id])
   visitId    String?
 
-  items          OrderItem[]
-  financeRecords FinanceRecord[]
-  employeeTasks  EmployeeTask[]
+  items              OrderItem[]
+  financeRecords     FinanceRecord[]
+  employeeTasks      EmployeeTask[]
+  employeeTaskGhosts EmployeeTaskGhost[]
 }
 
 model OrderItem {
@@ -285,9 +290,10 @@ model OrderItem {
   cuttingMachineId    Int?
   cuttingOperatorId   String?
 
-  productionTasks ProductionTask[]
-  productionLogs  ProductionLog[]
-  notes           OrderItemNote[]
+  productionTasks      ProductionTask[]
+  productionLogs       ProductionLog[]
+  notes                OrderItemNote[]
+  productionTaskGhosts ProductionTaskGhost[]
 }
 
 model OrderItemNote {
@@ -336,26 +342,28 @@ model StatusPermission {
 }
 
 model Machine {
-  id                  Int                         @id @default(autoincrement())
-  code                String                      @unique
-  name                String
-  type                String                      @default("General") // Extrusion, Cutting, General
-  manufacturer        String                      @default("")
-  manufacturerCountry String                      @default("")
-  manufacturerContact String                      @default("")
-  productionYear      Int?
-  warrantyExpiry      String                      @default("")
-  status              String                      @default("Active")
-  location            String                      @default("")
-  nextMaintenanceDue  String                      @default("")
-  notes               String                      @default("")
-  manualPath          String                      @default("")
-  manualName          String                      @default("")
-  createdAt           DateTime                    @default(now())
-  maintenanceRecords  MachineMaintenanceRecord[]
-  monthlyMaintenance  MachineMonthlyMaintenance[]
-  productionTasks     ProductionTask[]
-  employeeTasks       EmployeeTask[]
+  id                   Int                         @id @default(autoincrement())
+  code                 String                      @unique
+  name                 String
+  type                 String                      @default("General") // Extrusion, Cutting, General
+  manufacturer         String                      @default("")
+  manufacturerCountry  String                      @default("")
+  manufacturerContact  String                      @default("")
+  productionYear       Int?
+  warrantyExpiry       String                      @default("")
+  status               String                      @default("Active")
+  location             String                      @default("")
+  nextMaintenanceDue   String                      @default("")
+  notes                String                      @default("")
+  manualPath           String                      @default("")
+  manualName           String                      @default("")
+  createdAt            DateTime                    @default(now())
+  maintenanceRecords   MachineMaintenanceRecord[]
+  monthlyMaintenance   MachineMonthlyMaintenance[]
+  productionTasks      ProductionTask[]
+  employeeTasks        EmployeeTask[]
+  employeeTaskGhosts   EmployeeTaskGhost[]
+  productionTaskGhosts ProductionTaskGhost[]
 }
 
 model ProductionTask {
@@ -381,15 +389,16 @@ model ProductionTask {
   operator   Employee? @relation(fields: [operatorId], references: [id])
   operatorId String?
 
-  isInvoiced     Boolean          @default(false)
+  isInvoiced     Boolean   @default(false)
   invoicedAt     DateTime?
   invoicedById   String?
   invoicedByName String?
 
-  logs            ProductionLog[]
-  employeeTasks   EmployeeTask[]
-  deliveryRecords DeliveryRecord[]
-  logisticsLogs   LogisticsLog[]
+  logs               ProductionLog[]
+  employeeTasks      EmployeeTask[]
+  employeeTaskGhosts EmployeeTaskGhost[]
+  deliveryRecords    DeliveryRecord[]
+  logisticsLogs      LogisticsLog[]
 }
 
 model MachineMaintenanceRecord {
@@ -651,17 +660,64 @@ model EmployeeTask {
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 
-  taskNotes        EmployeeTaskNote[]
+  taskNotes EmployeeTaskNote[]
 }
 
 model EmployeeTaskNote {
-  id             String       @id @default(cuid())
-  taskId         String
-  task           EmployeeTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
-  fromStatus     String
-  toStatus       String
-  note           String
-  createdAt      DateTime     @default(now())
+  id         String       @id @default(cuid())
+  taskId     String
+  task       EmployeeTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  fromStatus String
+  toStatus   String
+  note       String
+  createdAt  DateTime     @default(now())
+}
+
+model EmployeeTaskGhost {
+  id               String          @id @default(cuid())
+  originalTaskId   String?
+  title            String
+  date             String
+  status           String          @default("open")
+  quantity         Int             @default(0)
+  employeeId       String?
+  employee         Employee?       @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  machineId        Int?
+  machine          Machine?        @relation(fields: [machineId], references: [id], onDelete: SetNull)
+  orderId          String?
+  order            Order?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  productionTaskId String?
+  productionTask   ProductionTask? @relation(fields: [productionTaskId], references: [id], onDelete: SetNull)
+  productId        String?
+  product          Product?        @relation(fields: [productId], references: [id], onDelete: SetNull)
+  targetDate       String?
+  createdAt        DateTime        @default(now())
+
+  @@index([date])
+  @@index([employeeId])
+}
+
+model ProductionTaskGhost {
+  id             String     @id @default(cuid())
+  originalTaskId String?
+  code           String
+  quantity       Int        @default(0)
+  status         String     @default("open")
+  date           String
+  orderItem      OrderItem? @relation(fields: [orderItemId], references: [id], onDelete: SetNull)
+  orderItemId    String?
+  product        Product?   @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productId      String?
+  machine        Machine?   @relation(fields: [machineId], references: [id], onDelete: SetNull)
+  machineId      Int?
+  operator       Employee?  @relation(fields: [operatorId], references: [id], onDelete: SetNull)
+  operatorId     String?
+  targetDate     String?
+  createdAt      DateTime   @default(now())
+
+  @@index([date])
+  @@index([operatorId])
+  @@index([originalTaskId])
 }
 
 model DailyProductionSnapshot {
@@ -685,35 +741,35 @@ model Vehicle {
 }
 
 model DeliveryRecord {
-  id                 String          @id @default(cuid())
-  productionTaskId   String
-  productionTask     ProductionTask  @relation(fields: [productionTaskId], references: [id], onDelete: Cascade)
-  orderItemId        String?
-  isOutsource        Boolean         @default(false)
-  carrierEmployeeId  String?
-  carrierName        String          @default("")
-  vehicleId          String?
-  vehicleInfo        String          @default("")
-  photoUrl           String?
-  notes              String?
-  createdById        String?
-  createdByName      String?
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
+  id                String         @id @default(cuid())
+  productionTaskId  String
+  productionTask    ProductionTask @relation(fields: [productionTaskId], references: [id], onDelete: Cascade)
+  orderItemId       String?
+  isOutsource       Boolean        @default(false)
+  carrierEmployeeId String?
+  carrierName       String         @default("")
+  vehicleId         String?
+  vehicleInfo       String         @default("")
+  photoUrl          String?
+  notes             String?
+  createdById       String?
+  createdByName     String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 }
 
 model LogisticsLog {
-  id               String          @id @default(cuid())
+  id               String         @id @default(cuid())
   productionTaskId String
-  productionTask   ProductionTask  @relation(fields: [productionTaskId], references: [id], onDelete: Cascade)
-  action           String          // STATUS_CHANGE, INVOICE_TOGGLE, DELIVERY_DISPATCH, DELIVERY_DELETE, ROLLBACK
+  productionTask   ProductionTask @relation(fields: [productionTaskId], references: [id], onDelete: Cascade)
+  action           String // STATUS_CHANGE, INVOICE_TOGGLE, DELIVERY_DISPATCH, DELIVERY_DELETE, ROLLBACK
   fromStatus       String?
   toStatus         String?
   isInvoiced       Boolean?
-  description      String          @db.Text
+  description      String         @db.Text
   userId           String?
   userName         String?
-  createdAt        DateTime        @default(now())
+  createdAt        DateTime       @default(now())
 }
 
 model Notification {
@@ -721,8 +777,8 @@ model Notification {
   title     String
   body      String
   type      String   @default("info") // "order", "production", "finance", "system"
-  page      String?  // "orders", "production", "purchasing", "logistics", etc.
-  link      String?  // e.g. "/orders"
+  page      String? // "orders", "production", "purchasing", "logistics", etc.
+  link      String? // e.g. "/orders"
   isRead    Boolean  @default(false)
   userId    String
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
