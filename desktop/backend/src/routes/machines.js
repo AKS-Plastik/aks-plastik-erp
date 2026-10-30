@@ -31,7 +31,20 @@ const include = {
 
 // ── List all machines ──────────────────────────────────────────────────────────
 
+async function ensureSystemSettingTable() {
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS public."SystemSetting" (
+        "key" TEXT PRIMARY KEY,
+        "value" JSONB NOT NULL,
+        "updatedAt" TIMESTAMP DEFAULT NOW()
+      )
+    `)
+  } catch (e) {}
+}
+
 async function getTemplatesForMachine(machineId) {
+  await ensureSystemSettingTable()
   let defaultTemplates = [
     "Mekanik aksam, yataklar ve yağlama seviyesi kontrolü",
     "Elektrik panosu, kablo bağlantıları ve fan temizliği",
@@ -157,6 +170,7 @@ router.get('/settings/monthly-templates', async (req, res) => {
 
 router.put('/settings/monthly-templates', adminOnly, async (req, res) => {
   try {
+    await ensureSystemSettingTable()
     const { templates, machineId, syncYear, resetToGlobal } = req.body
     const targetMachineId = machineId ? parseInt(machineId) : null
     const yearToSync = syncYear ? parseInt(syncYear) : new Date().getFullYear()
