@@ -32,7 +32,7 @@ const adminNavItems = [
 
 export default function Sidebar({ isOpen, setIsOpen }) {
   const { t } = useTranslation()
-  const { logout, isAdmin, user } = useAuth()
+  const { logout, isAdmin, isSales, user } = useAuth()
   const { dark } = useTheme()
   const { permissions, employeePermissions } = useData()
   const navigate = useNavigate()
@@ -56,7 +56,10 @@ export default function Sidebar({ isOpen, setIsOpen }) {
   }
 
   const base = ALL_NAV_ITEMS.filter((item) => item.key === 'dashboard' || canSee(item.key))
-  const items = isAdmin ? [...ALL_NAV_ITEMS, ...adminNavItems] : base
+  const commissionsItem = { to: '/commissions', icon: 'payments', tKey: 'nav.commissions' }
+  const items = isAdmin
+    ? [...ALL_NAV_ITEMS, ...adminNavItems]
+    : (isSales ? [...base, commissionsItem] : base)
 
   return (
     <>

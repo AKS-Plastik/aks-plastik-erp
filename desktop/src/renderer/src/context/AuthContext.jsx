@@ -328,9 +328,24 @@ export function AuthProvider({ children }) {
   }
 
   const isAdmin = user?.role === 'admin'
+  const isSales = (() => {
+    if (!user) return false
+    const depts = [
+      user.department,
+      user.employee?.department,
+      user.employee?.position,
+    ].filter(Boolean).map((s) => String(s).toLowerCase())
+
+    return depts.some((d) =>
+      d.includes('satış') ||
+      d.includes('satis') ||
+      d.includes('sale') ||
+      d.includes('pazarlama')
+    )
+  })()
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, getToken, isAdmin, loading }}>
+    <AuthContext.Provider value={{ user, token, login, logout, getToken, isAdmin, isSales, loading }}>
       {children}
     </AuthContext.Provider>
   )
