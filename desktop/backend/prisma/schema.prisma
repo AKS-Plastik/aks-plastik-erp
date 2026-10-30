@@ -14,9 +14,10 @@ model User {
   name       String
   phone      String?
   role       String   @default("user") // "admin" or "user"
-  department String?
-  employeeId String?  @unique
-  createdAt  DateTime @default(now())
+  department     String?
+  employeeId     String?  @unique
+  commissionRate Float?   @default(3.0)
+  createdAt      DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   passwordResetTokens PasswordResetToken[]
@@ -412,6 +413,7 @@ model MachineMaintenanceRecord {
   cost        Float    @default(0)
   currency    String   @default("USD")
   nextDue     String   @default("")
+  expenses    Json?    @default("[]")
   createdAt   DateTime @default(now())
 }
 
@@ -786,4 +788,29 @@ model Notification {
 
   @@index([userId, isRead])
   @@index([userId, createdAt])
+}
+
+model Commission {
+  id               String    @id @default(cuid())
+  orderId          String
+  orderCode        String
+  userId           String
+  userName         String
+  customerId       String?
+  customerName     String?
+  amount           Float     @default(0)
+  currency         String    @default("TRY")
+  rate             Float     @default(3.0)
+  status           String    @default("pending")
+  orderTotal       Float     @default(0)
+  orderCurrency    String    @default("TRY")
+  orderCreatedAt   DateTime  @default(now())
+  isPaid           Boolean   @default(false)
+  paidAt           DateTime?
+  paidById         String?
+  paidByName       String?
+  notes            String?   @default("")
+  isManualOverride Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @default(now()) @updatedAt
 }

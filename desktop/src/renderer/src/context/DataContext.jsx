@@ -706,20 +706,29 @@ export function DataProvider({ children }) {
       : m))
   }
 
-  async function getMonthlyTemplates() {
-    const res = await fetch(`${API_URL}/machines/settings/monthly-templates`, { headers })
+  async function getMonthlyTemplates(machineId = null) {
+    const q = machineId ? `?machineId=${machineId}` : ''
+    const res = await fetch(`${API_URL}/machines/settings/monthly-templates${q}`, { headers })
     if (!res.ok) throw new Error((await res.json()).error || 'Failed')
-    return (await res.json()).templates
+    return await res.json()
   }
 
-  async function updateMonthlyTemplates(templates) {
+  async function updateMonthlyTemplates(arg1, arg2, arg3) {
+    let payload = {}
+    if (Array.isArray(arg1)) {
+      payload = { templates: arg1, machineId: arg2 || null, syncYear: arg3 || null }
+    } else if (typeof arg1 === 'object' && arg1 !== null) {
+      payload = arg1
+    }
     const res = await fetch(`${API_URL}/machines/settings/monthly-templates`, {
       method: 'PUT',
       headers,
-      body: JSON.stringify({ templates }),
+      body: JSON.stringify(payload),
     })
     if (!res.ok) throw new Error((await res.json()).error || 'Failed')
-    return (await res.json()).templates
+    const data = await res.json()
+    refreshMachines()
+    return data
   }
 
   // ── Commissions (Primler) ──
