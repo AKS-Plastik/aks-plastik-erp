@@ -41,6 +41,7 @@ const vehicleRoutes = require('./routes/vehicles')
 const backupRoutes = require('./routes/backup')
 const notificationRoutes = require('./routes/notifications')
 const { initBackupCron } = require('./jobs/backupCron')
+const { initTaskReminderCron } = require('./jobs/taskReminderCron')
 const app = express()
 const PORT = process.env.PORT || 3001
 
@@ -100,6 +101,9 @@ app.listen(PORT, () => {
 
   // Initialize Automated Backup Cron (4 times a day, 7 days retention)
   initBackupCron()
+
+  // Initialize Task Due Date Reminder Cron (Daily at 09:00)
+  initTaskReminderCron()
 
   // 30 minute cron for Vio Sync using node-cron
   console.log('Starting 30-minute Vio sync cron job (*/30 * * * *)...')

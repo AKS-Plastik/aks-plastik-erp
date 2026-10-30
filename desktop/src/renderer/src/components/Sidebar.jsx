@@ -111,7 +111,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
               {t('nav.logout')}
             </span>
           </button>
-          <div className="text-center text-[9px] text-text-muted opacity-40 mt-2">
+          <div className="text-center text-[13px] text-text-muted opacity-85 mt-2 font-medium tracking-wide">
             v{packageJson.version}
           </div>
         </div>

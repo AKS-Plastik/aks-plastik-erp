@@ -37,6 +37,8 @@ export function AuthProvider({ children }) {
           await OneSignal.init({
             appId,
             allowLocalhostAsSecureOrigin: true,
+            serviceWorkerPath: 'sw.js',
+            serviceWorkerParam: { scope: '/' },
             safari_web_id: import.meta.env.VITE_ONESIGNAL_SAFARI_WEB_ID || undefined,
             notifyButton: {
               enable: true,

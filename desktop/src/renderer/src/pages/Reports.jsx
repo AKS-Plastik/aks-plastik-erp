@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useData } from '../context/DataContext'
+import { useAuth } from '../context/AuthContext'
 import * as XLSX from 'xlsx'
 import SearchableSelect from '../components/SearchableSelect'
 import { searchMatches } from '../utils/search'
@@ -22,9 +23,30 @@ const PRIORITY_STYLES = {
   Critical: 'priority-critical',
 }
 
+function toDatetimeLocal(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return ''
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 function fmtDate(iso) {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return '—'
+  return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })
+}
+
+function fmtDateTime(iso) {
+  if (!iso) return '—'
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return '—'
+  const dateStr = d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })
+  const hours = d.getHours()
+  const minutes = d.getMinutes()
+  const timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+  return `${dateStr} ${timeStr}`
 }
 
 function Field({ label, icon, error, align = 'center', children }) {
@@ -46,11 +68,11 @@ function Field({ label, icon, error, align = 'center', children }) {
 
 const inputCls = 'bg-transparent border-none outline-none text-xs text-on-surface w-full placeholder-slate-400'
 
-function AddCardModal({ defaultColumn, customers, employees, onClose, onSave, isSaving = false }) {
+function AddCardModal({ defaultColumn, customers, employees, availableEmployees, canAssign, currentUser, isAdmin, onClose, onSave, isSaving = false }) {
   const { t } = useTranslation()
   const [form, setForm] = useState({
     title: '', description: '', priority: 'Low',
-    column: defaultColumn || 'open', customerId: '', employeeId: '', dueDate: '',
+    column: defaultColumn || 'open', customerId: '', employeeId: (!isAdmin && currentUser?.employeeId) ? currentUser.employeeId : '', dueDate: '',
   })
   const [errors, setErrors] = useState({})
   const set = (f) => (e) => {
@@ -117,14 +139,23 @@ function AddCardModal({ defaultColumn, customers, employees, onClose, onSave, is
             />
           </Field>
           <Field label={t('common.employee')} icon="badge">
-            <select value={form.employeeId} onChange={set('employeeId')} className={inputCls}>
-              <option value="">{t('common.unassigned')}</option>
-              {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-            </select>
+            {canAssign ? (
+              <select value={form.employeeId} onChange={set('employeeId')} className={inputCls}>
+                <option value="">{t('common.unassigned')}</option>
+                {availableEmployees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+              </select>
+            ) : (
+              <input
+                type="text"
+                readOnly
+                value={employees.find(e => e.id === form.employeeId)?.name || currentUser?.name || ''}
+                className={`${inputCls} cursor-not-allowed opacity-80`}
+              />
+            )}
           </Field>
           <div className="col-span-2">
-            <Field label={t('common.dueDate')} icon="event">
-              <input type="date" value={form.dueDate} onChange={set('dueDate')} className={inputCls} />
+            <Field label={t('common.dueDate')} icon="schedule">
+              <input type="datetime-local" value={form.dueDate} onChange={set('dueDate')} className={inputCls} />
             </Field>
           </div>
         </div>
@@ -167,9 +198,8 @@ function DetailRow({ icon, label, value }) {
   )
 }
 
-function CardDetailModal({ report, customers, employees, onClose, onSave, onDelete, isSaving = false, isDeleting = false }) {
+function CardDetailModal({ report, customers, employees, availableEmployees, canAssign, currentUser, isAdmin, onClose, onSave, onDelete, isSaving = false, isDeleting = false }) {
   const { t } = useTranslation()
-  const { isAdmin } = useData()
   const [editing, setEditing]       = useState(false)
   const [confirming, setConfirming] = useState(false)
   const [form, setForm] = useState({
@@ -179,7 +209,7 @@ function CardDetailModal({ report, customers, employees, onClose, onSave, onDele
     column:      report.column,
     customerId:  report.customerId  || '',
     employeeId:  report.employeeId  || '',
-    dueDate:     report.dueDate ? report.dueDate.slice(0, 10) : '',
+    dueDate:     report.dueDate ? toDatetimeLocal(report.dueDate) : '',
   })
   const [errors, setErrors] = useState({})
   const set = (f) => (e) => setForm((p) => ({ ...p, [f]: e.target.value }))
@@ -199,7 +229,7 @@ function CardDetailModal({ report, customers, employees, onClose, onSave, onDele
       column:      report.column,
       customerId:  report.customerId  || '',
       employeeId:  report.employeeId  || '',
-      dueDate:     report.dueDate ? report.dueDate.slice(0, 10) : '',
+      dueDate:     report.dueDate ? toDatetimeLocal(report.dueDate) : '',
     })
     setErrors({})
     setEditing(false)
@@ -261,7 +291,7 @@ function CardDetailModal({ report, customers, employees, onClose, onSave, onDele
               </span>
             } />
             <DetailRow icon="badge"        label={t('common.employee')}    value={report.employee?.name} />
-            <DetailRow icon="event"        label={t('common.dueDate')}     value={report.dueDate ? fmtDate(report.dueDate) : '—'} />
+            <DetailRow icon="schedule"     label={t('common.dueDate')}     value={report.dueDate ? fmtDateTime(report.dueDate) : '—'} />
             <DetailRow icon="calendar_today" label={t('common.created')}   value={fmtDate(report.createdAt)} />
           </div>
         )}
@@ -299,14 +329,23 @@ function CardDetailModal({ report, customers, employees, onClose, onSave, onDele
               />
             </Field>
             <Field label={t('common.employee')} icon="badge">
-              <select value={form.employeeId} onChange={set('employeeId')} className={inputCls}>
-                <option value="">{t('common.unassigned')}</option>
-                {employees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-              </select>
+              {canAssign ? (
+                <select value={form.employeeId} onChange={set('employeeId')} className={inputCls}>
+                  <option value="">{t('common.unassigned')}</option>
+                  {availableEmployees.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
+                </select>
+              ) : (
+                <input
+                  type="text"
+                  readOnly
+                  value={employees.find(e => e.id === form.employeeId)?.name || report.employee?.name || ''}
+                  className={`${inputCls} cursor-not-allowed opacity-80`}
+                />
+              )}
             </Field>
             <div className="col-span-2">
-              <Field label={t('common.dueDate')} icon="event">
-                <input type="date" value={form.dueDate} onChange={set('dueDate')} className={inputCls} />
+              <Field label={t('common.dueDate')} icon="schedule">
+                <input type="datetime-local" value={form.dueDate} onChange={set('dueDate')} className={inputCls} />
               </Field>
             </div>
           </div>
@@ -432,11 +471,11 @@ function KanbanCard({ report, onClick }) {
 
       <p className="text-[10px] text-on-surface-variant/50 mt-1 font-medium">{t('reports.createdAt')} {fmtDate(report.createdAt)}</p>
       {report.dueDate && report.column !== 'cancelled' && (() => {
-        const overdue = new Date(report.dueDate) < new Date(new Date().toDateString())
+        const overdue = new Date(report.dueDate) < new Date()
         return (
           <div className={`flex items-center gap-1 mt-1 text-[10px] font-medium ${overdue ? 'text-error' : 'text-on-surface-variant'}`}>
-            <span className="material-symbols-outlined text-[12px]">{overdue ? 'warning' : 'event'}</span>
-            <span>{overdue ? t('reports.overdue') : t('reports.due')} {fmtDate(report.dueDate)}</span>
+            <span className="material-symbols-outlined text-[12px]">{overdue ? 'warning' : 'schedule'}</span>
+            <span>{overdue ? t('reports.overdue') : t('reports.due')} {fmtDateTime(report.dueDate)}</span>
           </div>
         )
       })()}
@@ -447,6 +486,41 @@ function KanbanCard({ report, onClick }) {
 export default function Reports() {
   const { t } = useTranslation()
   const { customers, employees, reports, addReport, updateReport, deleteReport, moveReport } = useData()
+  const { user: currentUser, isAdmin } = useAuth()
+  const [selectedEmployee, setSelectedEmployee] = useState('')
+
+  const isManagerRole = (str) => {
+    if (!str) return false
+    const s = String(str).toLowerCase()
+    return (
+      s.includes('manager') ||
+      s.includes('müdür') ||
+      s.includes('mudur') ||
+      s.includes('yönetici') ||
+      s.includes('yonetici')
+    )
+  }
+
+  const userDept = currentUser?.department || currentUser?.employee?.department || null
+  const isDeptManager = Boolean(
+    isAdmin ||
+    currentUser?.employee?.isManager ||
+    isManagerRole(currentUser?.department) ||
+    isManagerRole(currentUser?.employee?.department) ||
+    isManagerRole(currentUser?.employee?.position)
+  )
+
+  const canAssign = isAdmin || isDeptManager
+
+  // Scope available employees for filter & assignment:
+  // Admin: all employees
+  // Dept Manager: only employees of their department
+  // Regular: none
+  const availableEmployees = isAdmin
+    ? employees
+    : isDeptManager && userDept
+      ? employees.filter(e => String(e.department || '').toLowerCase() === userDept.toLowerCase())
+      : []
   const [addModal, setAddModal]         = useState(null)
   const [detailReport, setDetailReport] = useState(null)
   const [dragOverColumn, setDragOverColumn] = useState(null)
@@ -463,7 +537,7 @@ export default function Reports() {
       Priority: r.priority || '',
       Customer: r.customer?.name || '',
       Technician: r.employee?.name || '',
-      'Due Date': r.dueDate ? new Date(r.dueDate).toLocaleDateString() : '',
+      'Due Date': r.dueDate ? fmtDateTime(r.dueDate) : '',
       'Created At': r.createdAt ? new Date(r.createdAt).toLocaleDateString() : '',
       Description: r.description || '',
     }))
@@ -474,6 +548,7 @@ export default function Reports() {
   }
 
   const filtered = activeReports.filter((r) => {
+    if (canAssign && selectedEmployee && r.employeeId !== selectedEmployee) return false
     if (!search.trim()) return true
     return searchMatches([
       r.title,
@@ -508,6 +583,10 @@ export default function Reports() {
           defaultColumn={addModal}
           customers={customers}
           employees={employees}
+          availableEmployees={availableEmployees}
+          canAssign={canAssign}
+          currentUser={currentUser}
+          isAdmin={isAdmin}
           isSaving={isSaving}
           onClose={() => { if (!isSaving) setAddModal(null); }}
           onSave={async (form) => {
@@ -526,6 +605,10 @@ export default function Reports() {
           report={detailReport}
           customers={customers}
           employees={employees}
+          availableEmployees={availableEmployees}
+          canAssign={canAssign}
+          currentUser={currentUser}
+          isAdmin={isAdmin}
           isSaving={isSaving}
           isDeleting={isDeleting}
           onClose={() => { if (!isSaving && !isDeleting) setDetailReport(null); }}
@@ -579,17 +662,38 @@ export default function Reports() {
         </div>
       </div>
 
-      {/* Search */}
-      <div className="flex flex-row items-center justify-between gap-3 mb-6 md:mb-8">
-        <div className="flex items-center gap-2 bg-surface-container-low px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl w-full sm:max-w-xs md:max-w-sm">
-          <span className="material-symbols-outlined text-on-surface-variant text-[18px] md:text-[20px]">search</span>
-          <input
-            type="text"
-            placeholder={t('reports.searchPlaceholder')}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="bg-transparent border-none outline-none text-xs md:text-sm w-full placeholder-slate-400"
-          />
+      {/* Search & Filter */}
+      <div className="flex flex-row items-center justify-between gap-3 mb-6 md:mb-8 flex-wrap">
+        <div className="flex items-center gap-3 flex-1 flex-wrap">
+          <div className="flex items-center gap-2 bg-surface-container-low px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl w-full sm:max-w-xs md:max-w-sm">
+            <span className="material-symbols-outlined text-on-surface-variant text-[18px] md:text-[20px]">search</span>
+            <input
+              type="text"
+              placeholder={t('reports.searchPlaceholder')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="bg-transparent border-none outline-none text-xs md:text-sm w-full placeholder-slate-400"
+            />
+          </div>
+          {canAssign && availableEmployees.length > 0 && (
+            <div className="flex items-center gap-2 bg-surface-container-low px-3 py-1.5 md:px-4 md:py-2 rounded-lg md:rounded-xl">
+              <span className="material-symbols-outlined text-on-surface-variant text-[18px]">person</span>
+              <select
+                value={selectedEmployee}
+                onChange={(e) => setSelectedEmployee(e.target.value)}
+                className="bg-transparent border-none outline-none text-xs md:text-sm text-on-surface cursor-pointer"
+              >
+                <option value="">
+                  {isAdmin
+                    ? t('common.allStaff', 'Tüm Personeller')
+                    : `${userDept || ''} ${t('common.department', 'Departmanı')}`}
+                </option>
+                {availableEmployees.map((emp) => (
+                  <option key={emp.id} value={emp.id}>{emp.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
         <button
           onClick={handleExport}

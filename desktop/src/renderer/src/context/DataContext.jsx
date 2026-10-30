@@ -702,6 +702,22 @@ export function DataProvider({ children }) {
       : m))
   }
 
+  async function getMonthlyTemplates() {
+    const res = await fetch(`${API_URL}/machines/settings/monthly-templates`, { headers })
+    if (!res.ok) throw new Error((await res.json()).error || 'Failed')
+    return (await res.json()).templates
+  }
+
+  async function updateMonthlyTemplates(templates) {
+    const res = await fetch(`${API_URL}/machines/settings/monthly-templates`, {
+      method: 'PUT',
+      headers,
+      body: JSON.stringify({ templates }),
+    })
+    if (!res.ok) throw new Error((await res.json()).error || 'Failed')
+    return (await res.json()).templates
+  }
+
   // ── Production Tasks ──
   async function addProductionTask(form) {
     const res = await fetch(`${API_URL}/production-tasks`, { method: 'POST', headers, body: JSON.stringify(form) })
@@ -872,7 +888,7 @@ export function DataProvider({ children }) {
       machines, addMachine, updateMachine, deleteMachine,
       uploadMachineManual, downloadMachineManual, deleteMachineManual,
       addMaintenanceRecord, deleteMaintenanceRecord,
-      addMonthlyTask, updateMonthlyTask, deleteMonthlyTask,
+      addMonthlyTask, updateMonthlyTask, deleteMonthlyTask, getMonthlyTemplates, updateMonthlyTemplates,
       vehicles, refreshVehicles,
       productionTasks, addProductionTask, updateProductionTask, moveProductionTask, deleteProductionTask, rolloverProductionTask, refreshProductionTasks,
       createProductionTaskDelivery, deleteProductionTaskDelivery, toggleProductionTaskInvoice,
