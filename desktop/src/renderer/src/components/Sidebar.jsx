@@ -25,6 +25,7 @@ const ALL_NAV_ITEMS = [
 
 const adminNavItems = [
   { to: '/finance', icon: 'account_balance_wallet', tKey: 'nav.finance' },
+  { to: '/commissions', icon: 'payments', tKey: 'nav.commissions' },
   { to: '/employees', icon: 'badge', tKey: 'nav.employees' },
   { to: '/settings', icon: 'settings', tKey: 'nav.settings' },
 ]
@@ -111,7 +112,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
               {t('nav.logout')}
             </span>
           </button>
-          <div className="text-center text-[9px] text-text-muted opacity-40 mt-2">
+          <div className="text-center text-[13px] text-text-muted opacity-85 mt-2 font-medium tracking-wide">
             v{packageJson.version}
           </div>
         </div>

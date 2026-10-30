@@ -62,6 +62,30 @@ router.get('/', async (req, res) => {
   }
 })
 
+// Get all production task ghosts (historical snapshots before rollover)
+router.get('/ghosts', async (req, res) => {
+  try {
+    const ghosts = await prisma.productionTaskGhost.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        orderItem: {
+          include: {
+            order: { select: { id: true, code: true, customer: true, salesRep: true, employee: true } },
+            product: true,
+            notes: { orderBy: { createdAt: 'asc' } }
+          }
+        },
+        product: true,
+        machine: true,
+        operator: true
+      }
+    })
+    res.json(ghosts)
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // Create a new production task
 router.post('/', async (req, res) => {
   try {
@@ -336,8 +360,17 @@ router.patch('/:id/move', async (req, res) => {
       const allItems = await prisma.orderItem.findMany({ where: { orderId: task.orderItem.orderId } })
       const allCompleted = allItems.every(i => i.producedQuantity >= i.quantity)
       const order = await prisma.order.findUnique({ where: { id: task.orderItem.orderId } })
-      
-      if (allCompleted && (order.status === 'Draft' || order.status === 'Processing' || order.status === 'Confirmed' || order.status === 'In-Production')) {
+
+      // Check if all production tasks of the entire order are Delivered
+      const allOrderTasks = await prisma.productionTask.findMany({
+        where: { orderItem: { orderId: task.orderItem.orderId } },
+        select: { status: true }
+      })
+      const isAllDelivered = allOrderTasks.length > 0 && allOrderTasks.every(t => t.status === 'Delivered')
+
+      if (isAllDelivered) {
+        await prisma.order.update({ where: { id: task.orderItem.orderId }, data: { status: 'Delivered' } })
+      } else if (allCompleted && (order.status === 'Draft' || order.status === 'Processing' || order.status === 'Confirmed' || order.status === 'In-Production')) {
         await prisma.order.update({ where: { id: task.orderItem.orderId }, data: { status: 'Production Completed' } })
       } else if (!allCompleted && order.status === 'Production Completed') {
         await prisma.order.update({ where: { id: task.orderItem.orderId }, data: { status: 'In-Production' } })
@@ -432,6 +465,34 @@ router.post('/rollover', async (req, res) => {
     const { taskId, action, targetDate, targetStatus, completedQuantity } = req.body
     const task = await prisma.productionTask.findUnique({ where: { id: taskId }, include: { orderItem: true } })
     if (!task) return res.status(404).json({ error: 'Task not found' })
+
+    // Create a ghost record preserving the pre-rollover state on its original date
+    try {
+      const existingGhost = await prisma.productionTaskGhost.findFirst({
+        where: {
+          originalTaskId: task.id,
+          date: task.date
+        }
+      })
+      if (!existingGhost) {
+        await prisma.productionTaskGhost.create({
+          data: {
+            originalTaskId: task.id,
+            code: task.code,
+            quantity: task.quantity,
+            status: task.status,
+            date: task.date,
+            orderItemId: task.orderItemId,
+            productId: task.productId,
+            machineId: task.machineId,
+            operatorId: task.operatorId,
+            targetDate: targetDate
+          }
+        })
+      }
+    } catch (ghostErr) {
+      console.error('[ProductionTasks] Failed to create ghost card:', ghostErr)
+    }
 
     if (action === 'rollover') {
       const newStatus = targetStatus || task.status

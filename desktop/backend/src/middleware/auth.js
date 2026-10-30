@@ -60,7 +60,23 @@ async function authenticate(req, res, next) {
           ...(userEmail === 'admin' ? [{ email: 'admin@fieldhub.com' }] : []),
         ],
       },
-      select: { id: true, email: true, name: true, role: true, department: true, employeeId: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        department: true,
+        employeeId: true,
+        employee: {
+          select: {
+            id: true,
+            name: true,
+            department: true,
+            position: true,
+            isManager: true,
+          },
+        },
+      },
     })
 
     if (!dbUser && (decoded.email || decoded.preferred_username)) {

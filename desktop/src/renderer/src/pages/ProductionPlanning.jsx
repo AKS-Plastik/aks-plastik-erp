@@ -65,7 +65,7 @@ function getPlanningOrderItemId(task, productionTasks, orders) {
 export default function ProductionPlanning() {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { employeeTasks: allTasks, employees, machines, products, isAdmin, moveEmployeeTask, createEmployeeTask, updateEmployeeTask, deleteEmployeeTask, rolloverEmployeeTasks, permissions, employeePermissions, orders, productionTasks, addOrderItemNote, deleteOrderItemNote } = useData()
+  const { employeeTasks: allTasks, employeeTaskGhosts, employees, machines, products, isAdmin, moveEmployeeTask, createEmployeeTask, updateEmployeeTask, deleteEmployeeTask, rolloverEmployeeTasks, permissions, employeePermissions, orders, productionTasks, addOrderItemNote, deleteOrderItemNote } = useData()
   const { user: currentUser } = useAuth()
   
   const empId = currentUser?.employeeId
@@ -164,6 +164,25 @@ export default function ProductionPlanning() {
     if (!filterEmployeeId) return myTasks;
     return myTasks.filter(t => t.employeeId === filterEmployeeId);
   }, [myTasks, filterEmployeeId])
+
+  const myGhosts = useMemo(() => {
+    if (canViewAll) return employeeTaskGhosts || []
+    return (employeeTaskGhosts || []).filter(g => g.employeeId === empId)
+  }, [employeeTaskGhosts, canViewAll, empId])
+
+  const filteredGhosts = useMemo(() => {
+    if (!filterEmployeeId) return myGhosts;
+    return myGhosts.filter(g => g.employeeId === filterEmployeeId);
+  }, [myGhosts, filterEmployeeId])
+
+  const handleGhostCardClick = (ghost) => {
+    const linkedTaskId = ghost.productionTask?.id || ghost.productionTaskId
+    if (linkedTaskId) {
+      navigate('/production-tasks', { state: { openTaskId: linkedTaskId } })
+    } else if (ghost.orderId || ghost.order?.id) {
+      navigate('/orders')
+    }
+  }
 
   const [currentDate, setCurrentDate] = useState(new Date())
   const dateInputRef = useRef(null)
@@ -943,6 +962,7 @@ export default function ProductionPlanning() {
                     const cellKey = `${row.id}_${day.dateString}`
                     const isDragOver = dragOverCell === cellKey
                     const dayTasks = filteredTasks.filter(t => t.status === row.id && t.date === day.dateString)
+                    const dayGhosts = filteredGhosts.filter(g => g.status === row.id && g.date === day.dateString && !dayTasks.some(t => t.id === g.originalTaskId))
                     
                     return (
                       <div 
@@ -1035,6 +1055,90 @@ export default function ProductionPlanning() {
                             </div>
                           </div>
                         ))}
+
+                        {dayGhosts.map(ghost => {
+                          const hasLinkedOrder = Boolean(ghost.order || ghost.productionTask?.orderItem?.order || ghost.orderId || ghost.productionTaskId)
+                          return (
+                            <div 
+                              key={`ghost-${ghost.id}`}
+                              onClick={() => handleGhostCardClick(ghost)}
+                              title={hasLinkedOrder ? 'Geçmiş güne ait aktarılmış görev (Siparişe gitmek için tıklayın)' : 'Geçmiş güne ait aktarılmış görev (Salt okunur)'}
+                              className={`task-card rounded-xl p-3 shadow-sm border-2 border-dashed transition-all ${getStatusColor(ghost.status)} opacity-75 hover:opacity-100 select-none ${hasLinkedOrder ? 'cursor-pointer hover:shadow-md' : 'cursor-default'}`}
+                            >
+                              <div className="flex flex-col gap-2 relative">
+                                <div className="flex items-start justify-between">
+                                  <p className="text-sm font-extrabold leading-tight pr-14">{ghost.title}</p>
+                                  <div className="absolute top-0 right-0 flex items-center gap-1">
+                                    <span
+                                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-black/5 dark:bg-white/10 text-inherit border border-current border-dashed"
+                                      title={`Yeni güne aktarıldı (${ghost.targetDate ? ghost.targetDate.split('-').reverse().join('.') : ''})`}
+                                    >
+                                      <span className="material-symbols-outlined text-[11px]">history</span>
+                                      Aktarıldı
+                                    </span>
+                                    {hasLinkedOrder && (
+                                      <span className="p-0.5 text-primary opacity-80 hover:opacity-100" title="Siparişe Git">
+                                        <span className="material-symbols-outlined text-[15px]">open_in_new</span>
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                {(ghost.product || ghost.quantity > 0) && (
+                                  <div className="flex items-center gap-1.5 opacity-90 mt-1">
+                                    <span className="material-symbols-outlined text-[14px]">inventory_2</span>
+                                    <span className="text-xs font-bold truncate">
+                                      {ghost.product ? ghost.product.name : 'Özel Üretim'}
+                                    </span>
+                                  </div>
+                                )}
+
+                                {canViewAll && ghost.employee && (
+                                  <div className="flex items-center gap-1.5 opacity-80">
+                                    <span className="material-symbols-outlined text-[14px]">person</span>
+                                    <span className="text-[11px] font-medium">{ghost.employee.name}</span>
+                                  </div>
+                                )}
+
+                                <div className="flex items-end justify-between mt-1 min-h-[24px]">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    {ghost.machine && (
+                                      <span className="text-[10px] font-bold opacity-80 flex items-center gap-1">
+                                        <span className="material-symbols-outlined text-[12px]">precision_manufacturing</span>
+                                        {ghost.machine.name}
+                                      </span>
+                                    )}
+                                    {canViewAll && (ghost.order || ghost.productionTask?.orderItem?.order) && (
+                                      <span className="text-[10px] font-bold opacity-80 flex items-center gap-1">
+                                        <span className="material-symbols-outlined text-[12px]">receipt</span>
+                                        {(ghost.order?.customer?.name || ghost.productionTask?.orderItem?.order?.customer?.name || '').substring(0, 10)}...
+                                      </span>
+                                    )}
+                                    {(() => {
+                                      const lineItemNotes = getPlanningTaskNotes(ghost, productionTasks, orders);
+                                      if (lineItemNotes.length === 0) return null;
+                                      return (
+                                        <span
+                                          className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-100 dark:bg-red-950/60 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/50"
+                                          title={`${lineItemNotes.length} sipariş kalemi notu`}
+                                        >
+                                          <span className="material-symbols-outlined text-[12px]">sticky_note_2</span>
+                                          {lineItemNotes.length}
+                                        </span>
+                                      );
+                                    })()}
+                                  </div>
+                                  
+                                  {(ghost.quantity > 0) && (
+                                    <div className="text-xs font-black px-2 py-1 bg-primary/80 text-on-primary rounded-lg shadow-sm whitespace-nowrap ml-2">
+                                      {ghost.quantity} {ghost.product?.unit || 'adet'}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )
                   })}

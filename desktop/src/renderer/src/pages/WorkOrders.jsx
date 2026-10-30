@@ -7,6 +7,17 @@ import * as XLSX from 'xlsx'
 import SearchableSelect from '../components/SearchableSelect'
 import { searchMatches } from '../utils/search'
 
+const isSales = (str) => {
+  if (!str) return false
+  const s = String(str).toLowerCase()
+  return (
+    s.includes('sale') ||
+    s.includes('satış') ||
+    s.includes('satis') ||
+    s.includes('pazarlama')
+  )
+}
+
 const STATUSES = ['Scheduled', 'In Progress', 'Completed', 'Cancelled']
 
 const STATUS_KEYS = {
@@ -64,6 +75,28 @@ function AddVisitModal({ customers, employees, onClose, onSave, initialDate, ini
   const { t } = useTranslation()
   const { user } = useAuth()
   const { isAdmin } = useData()
+  const isManagerRole = (str) => {
+    if (!str) return false
+    const s = String(str).toLowerCase()
+    return (
+      s.includes('manager') ||
+      s.includes('müdür') ||
+      s.includes('mudur') ||
+      s.includes('yönetici') ||
+      s.includes('yonetici')
+    )
+  }
+  const isDeptManager = Boolean(
+    isAdmin ||
+    user?.employee?.isManager ||
+    isManagerRole(user?.department) ||
+    isManagerRole(user?.employee?.department) ||
+    isManagerRole(user?.employee?.position)
+  )
+  const canAssign = isAdmin || isDeptManager
+
+  const salesEmployees = (employees || []).filter(e => isSales(e.department) || isSales(e.position))
+
   const today = new Date().toISOString().split('T')[0]
   const [form, setForm] = useState({
     title: '', customerId: initialCustomer || '', location: '',
@@ -148,12 +181,12 @@ function AddVisitModal({ customers, employees, onClose, onSave, initialDate, ini
             <input type="text" placeholder={t('workOrders.locationPh', 'e.g. Building A')} value={form.location} onChange={set('location')} className={inputCls} />
           </Field>
           <Field label="GÖREVLİLER" icon="group" span2>
-            {isAdmin ? (
+            {canAssign ? (
               <SearchableSelect
-                options={employees.map(e => ({ value: e.id, label: `${e.name} (${e.department || 'Personel'})` }))}
+                options={salesEmployees.map(e => ({ value: e.id, label: `${e.name} (${e.department || 'Satış'})` }))}
                 value={form.assignees}
                 onChange={(val) => setForm(p => ({ ...p, assignees: val }))}
-                placeholder="Görevli Seç..."
+                placeholder={salesEmployees.length > 0 ? "Satış Görevlisi Seç..." : "Satış Departmanı Personeli Bulunamadı"}
                 className="w-full bg-transparent"
               />
             ) : (
@@ -485,12 +518,12 @@ export function VisitDetailModal({ visit, customers, employees, onClose, onSave,
               <input type="text" value={form.location} onChange={set('location')} className={inputCls} />
             </Field>
             <Field label="GÖREVLİLER" icon="group">
-              {isAdmin ? (
+              {canAssign ? (
                 <SearchableSelect
-                  options={employees.map(e => ({ value: e.id, label: `${e.name} (${e.department || 'Personel'})` }))}
+                  options={salesEmployees.map(e => ({ value: e.id, label: `${e.name} (${e.department || 'Satış'})` }))}
                   value={form.assignees}
                   onChange={(val) => setForm(p => ({ ...p, assignees: val }))}
-                  placeholder="Görevli Seç..."
+                  placeholder={salesEmployees.length > 0 ? "Satış Görevlisi Seç..." : "Satış Departmanı Personeli Bulunamadı"}
                   className="w-full bg-transparent"
                 />
               ) : (

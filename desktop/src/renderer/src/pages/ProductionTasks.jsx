@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useLocation, useSearchParams } from 'react-router-dom'
+import { useLocation, useSearchParams, useNavigate } from 'react-router-dom'
 import { useData } from '../context/DataContext'
 import { useAuth } from '../context/AuthContext'
 import CreateProductionTaskModal from '../components/CreateProductionTaskModal'
@@ -631,25 +631,37 @@ const STATUS_STYLES = {
   completed: { bg: 'bg-green-500/5 dark:bg-green-500/10', labelBg: 'bg-green-500/10 dark:bg-green-500/20', border: 'border-green-400/60 dark:border-green-700/60', text: 'text-green-600 dark:text-green-400' }
 }
 
-function KanbanCard({ task, onClick, locked, orders }) {
+function KanbanCard({ task, onClick, locked, orders, isGhost }) {
   const { t } = useTranslation()
   const statusDef = STATUS_STYLES[task.status] || STATUS_STYLES.open
   const statusLabel = t(`productionTasks.col${task.status.charAt(0).toUpperCase() + task.status.slice(1)}`)
   const taskNotes = getTaskNotes(task, orders)
+  const hasLinkedOrder = Boolean(task.orderItem?.order)
 
   return (
     <div
-      draggable={!locked}
+      draggable={!locked && !isGhost}
       onDragStart={(e) => {
-        if (!locked) {
+        if (!locked && !isGhost) {
           e.dataTransfer.setData('text/plain', String(task.id))
         }
       }}
       onClick={onClick}
-      className={`relative ${statusDef.bg} rounded-xl p-3 sm:p-4 shadow-sm border ${statusDef.border} cursor-pointer hover:shadow-md hover:scale-[1.01] transition-all select-none w-full ${locked ? 'opacity-80 grayscale-[20%]' : 'active:scale-[0.98]'}`}
+      title={isGhost ? (hasLinkedOrder ? 'Yeni güne aktarılan görev görüntüsü (Siparişe gitmek için tıklayın)' : 'Yeni güne aktarılan görev görüntüsü (Salt okunur)') : undefined}
+      className={`relative ${statusDef.bg} rounded-xl p-3 sm:p-4 shadow-sm border ${isGhost ? 'border-dashed border-2' : statusDef.border} ${isGhost ? (hasLinkedOrder ? 'cursor-pointer hover:shadow-md' : 'cursor-default') : 'cursor-pointer hover:shadow-md hover:scale-[1.01]'} transition-all select-none w-full ${isGhost ? 'opacity-70 hover:opacity-95' : locked ? 'opacity-80 grayscale-[20%]' : 'active:scale-[0.98]'}`}
     >
-      <div className={`absolute top-0 right-0 rounded-bl-xl rounded-tr-lg px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${statusDef.labelBg} ${statusDef.text}`}>
-        {statusLabel}
+      <div className={`absolute top-0 right-0 rounded-bl-xl rounded-tr-lg px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider ${isGhost ? 'bg-black/10 dark:bg-white/10 text-inherit border-b border-l border-dashed' : statusDef.labelBg + ' ' + statusDef.text} flex items-center gap-1`}>
+        {isGhost ? (
+          <>
+            <span className="material-symbols-outlined text-[11px]">history</span>
+            <span>Aktarıldı</span>
+            {hasLinkedOrder && (
+              <span className="material-symbols-outlined text-[12px] text-primary ml-0.5">open_in_new</span>
+            )}
+          </>
+        ) : (
+          statusLabel
+        )}
       </div>
 
       <div className="flex justify-between items-start mb-2 mt-2">
@@ -692,7 +704,7 @@ function KanbanCard({ task, onClick, locked, orders }) {
       </div>
 
       <div className="flex justify-between items-center mt-2">
-        <p className="text-[9px] text-on-surface-variant/50 font-medium">{t('reports.createdAt')} {fmtDate(task.createdAt)}</p>
+        <p className="text-[9px] text-on-surface-variant/50 font-medium">{isGhost ? (task.targetDate ? `${task.targetDate.split('-').reverse().join('.')} gününe aktarıldı` : 'Aktarıldı') : `${t('reports.createdAt')} ${fmtDate(task.createdAt)}`}</p>
         <div className="flex items-center gap-2">
           {taskNotes.length > 0 && (
             <span
@@ -966,6 +978,7 @@ export default function ProductionTasks() {
     machines,
     employees,
     productionTasks,
+    productionTaskGhosts,
     updateProductionTask,
     moveProductionTask,
     deleteProductionTask,
@@ -981,6 +994,7 @@ export default function ProductionTasks() {
     deleteOrderItemNote,
   } = useData()
   const { user: currentUser, token } = useAuth()
+  const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
 
@@ -1162,6 +1176,30 @@ export default function ProductionTasks() {
     const q = search.toLowerCase()
     return (
       (t.orderItem?.productName || '').toLowerCase().includes(q) ||
+      (t.orderItem?.order?.customer?.name || '').toLowerCase().includes(q) ||
+      (t.operator?.name || '').toLowerCase().includes(q) ||
+      (t.machine?.name || '').toLowerCase().includes(q)
+    )
+  })
+
+  const visibleGhosts = useMemo(() => {
+    if (isAdmin || canAct) return productionTaskGhosts || []
+    return (productionTaskGhosts || []).filter(t => t.operatorId === empId)
+  }, [productionTaskGhosts, isAdmin, empId, canAct])
+
+  const activeGhosts = visibleGhosts.filter(t => {
+    const taskDate = t.date || todayIso
+    if (viewMode === 'kanban') {
+      return taskDate === currentDate
+    }
+    return taskDate >= currentDate && taskDate <= endDateString
+  })
+
+  const filteredGhosts = activeGhosts.filter((t) => {
+    if (!search) return true
+    const q = search.toLowerCase()
+    return (
+      (t.orderItem?.productName || t.product?.name || '').toLowerCase().includes(q) ||
       (t.orderItem?.order?.customer?.name || '').toLowerCase().includes(q) ||
       (t.operator?.name || '').toLowerCase().includes(q) ||
       (t.machine?.name || '').toLowerCase().includes(q)
@@ -1545,6 +1583,7 @@ export default function ProductionTasks() {
           {/* 7-Day Agenda Board */}
           {daysOfWeek.map(day => {
             const dayTasks = filtered.filter(t => (t.date || todayIso) === day.dateString)
+            const dayGhosts = filteredGhosts.filter(t => (t.date || todayIso) === day.dateString && !dayTasks.some(dt => dt.id === t.originalTaskId))
             const isPast = day.dateString < todayIso
 
             return (
@@ -1591,7 +1630,22 @@ export default function ProductionTasks() {
                       />
                     </div>
                   ))}
-                  {dayTasks.length === 0 && (
+                  {dayGhosts.map(ghost => (
+                    <div key={`ghost-${ghost.id}`} className="w-full sm:w-[calc(50%-8px)] lg:w-[calc(33.33%-11px)] xl:w-[calc(25%-12px)]">
+                      <KanbanCard
+                        task={ghost}
+                        orders={orders}
+                        isGhost={true}
+                        locked={true}
+                        onClick={() => {
+                          if (ghost.orderItem?.order?.id) {
+                            navigate('/orders', { state: { openOrderId: ghost.orderItem.order.id } })
+                          }
+                        }}
+                      />
+                    </div>
+                  ))}
+                  {dayTasks.length === 0 && dayGhosts.length === 0 && (
                     <div className="w-full py-6 flex flex-col items-center justify-center text-on-surface-variant/40">
                       <span className="material-symbols-outlined text-3xl mb-1">free_cancellation</span>
                       <p className="text-[10px] font-bold uppercase tracking-wider">Görev Yok</p>
@@ -1607,6 +1661,7 @@ export default function ProductionTasks() {
           {/* Kanban board */}
           {COLUMNS.map((col) => {
             const colTasks = filtered.filter((t) => t.status === col.id)
+            const colGhosts = filteredGhosts.filter((t) => t.status === col.id && (t.date || todayIso) === currentDate && !colTasks.some(ct => ct.id === t.originalTaskId))
             const isPastBoard = currentDate < todayIso
             return (
               <div
@@ -1645,7 +1700,21 @@ export default function ProductionTasks() {
                       }}
                     />
                   ))}
-                  {colTasks.length === 0 && (
+                  {colGhosts.map((ghost) => (
+                    <KanbanCard
+                      key={`ghost-${ghost.id}`}
+                      task={ghost}
+                      orders={orders}
+                      isGhost={true}
+                      locked={true}
+                      onClick={() => {
+                        if (ghost.orderItem?.order?.id) {
+                          navigate('/orders', { state: { openOrderId: ghost.orderItem.order.id } })
+                        }
+                      }}
+                    />
+                  ))}
+                  {colTasks.length === 0 && colGhosts.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-10 text-on-surface-variant/30">
                       <span className="material-symbols-outlined text-3xl">inbox</span>
                       <p className="text-xs font-medium mt-2">{t('productionTasks.noTasks')}</p>

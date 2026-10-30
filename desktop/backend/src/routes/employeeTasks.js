@@ -49,6 +49,49 @@ router.get('/', async (req, res) => {
   }
 })
 
+// Get all ghost tasks (snapshots of rolled-over tasks)
+router.get('/ghosts', async (req, res) => {
+  try {
+    const ghosts = await prisma.employeeTaskGhost.findMany({
+      include: {
+        employee: true,
+        machine: true,
+        order: {
+          select: {
+            id: true,
+            code: true,
+            customer: true
+          }
+        },
+        product: true,
+        productionTask: {
+          select: {
+            id: true,
+            code: true,
+            orderItem: {
+              select: {
+                id: true,
+                order: {
+                  select: { code: true, customer: true }
+                },
+                notes: {
+                  orderBy: { createdAt: 'asc' }
+                }
+              }
+            }
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'asc'
+      }
+    })
+    res.json(ghosts)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
 // Create task
 router.post('/', async (req, res) => {
   try {
@@ -126,6 +169,33 @@ router.patch('/:id/move', async (req, res) => {
     const existing = await prisma.employeeTask.findUnique({ where: { id: req.params.id } })
     if (!existing) return res.status(404).json({ error: 'Task not found' })
 
+    // If date changed to another date, create a ghost card on the previous date
+    if (date && date !== existing.date) {
+      const existingGhost = await prisma.employeeTaskGhost.findFirst({
+        where: {
+          originalTaskId: existing.id,
+          date: existing.date
+        }
+      })
+      if (!existingGhost) {
+        await prisma.employeeTaskGhost.create({
+          data: {
+            originalTaskId: existing.id,
+            title: existing.title,
+            date: existing.date,
+            status: existing.status,
+            quantity: existing.quantity || 0,
+            employeeId: existing.employeeId,
+            machineId: existing.machineId,
+            orderId: existing.orderId,
+            productionTaskId: existing.productionTaskId,
+            productId: existing.productId,
+            targetDate: date
+          }
+        })
+      }
+    }
+
     const updates = {
       ...(date && { date }),
       ...(status && { status })
@@ -179,6 +249,38 @@ router.post('/rollover', async (req, res) => {
     const { taskIds, targetDate } = req.body
     if (!taskIds || !taskIds.length || !targetDate) {
       return res.status(400).json({ error: 'Missing parameters' })
+    }
+
+    const tasksToRollover = await prisma.employeeTask.findMany({
+      where: { id: { in: taskIds } }
+    })
+
+    // Create ghost records for tasks before updating their date
+    for (const task of tasksToRollover) {
+      const existingGhost = await prisma.employeeTaskGhost.findFirst({
+        where: {
+          originalTaskId: task.id,
+          date: task.date
+        }
+      })
+
+      if (!existingGhost) {
+        await prisma.employeeTaskGhost.create({
+          data: {
+            originalTaskId: task.id,
+            title: task.title,
+            date: task.date,
+            status: task.status,
+            quantity: task.quantity || 0,
+            employeeId: task.employeeId,
+            machineId: task.machineId,
+            orderId: task.orderId,
+            productionTaskId: task.productionTaskId,
+            productId: task.productId,
+            targetDate: targetDate
+          }
+        })
+      }
     }
 
     await prisma.employeeTask.updateMany({

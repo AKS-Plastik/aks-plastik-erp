@@ -30,9 +30,72 @@ const include = {
 }
 
 // ── List all machines ──────────────────────────────────────────────────────────
+
+async function ensureMonthlyTasksForMachine(machineId, year) {
+  let templates = [
+    "Mekanik aksam, yataklar ve yağlama seviyesi kontrolü",
+    "Elektrik panosu, kablo bağlantıları ve fan temizliği",
+    "Filtreler, hava hatları ve pnömatik basınç kontrolü",
+    "Acil durdurma butonları, sviçler ve sensör testi"
+  ]
+  try {
+    const s = await prisma.$queryRawUnsafe(`SELECT value FROM "SystemSetting" WHERE "key" = 'monthly_maintenance_template'`)
+    if (s.length && Array.isArray(s[0].value) && s[0].value.length > 0) {
+      templates = s[0].value
+    }
+  } catch (err) {}
+
+  const existing = await prisma.$queryRawUnsafe(
+    `SELECT id, month, description, completed, "isDefault", history, "completedBy"
+     FROM "MachineMonthlyMaintenance"
+     WHERE "machineId" = $1 AND "year" = $2`,
+    machineId,
+    year
+  )
+
+  const existingByMonth = new Map()
+  for (const t of existing) {
+    if (!existingByMonth.has(t.month)) existingByMonth.set(t.month, [])
+    existingByMonth.get(t.month).push(t)
+  }
+
+  for (let m = 1; m <= 12; m++) {
+    const monthTasks = existingByMonth.get(m) || []
+    const defaultTasks = monthTasks.filter(t => t.isDefault)
+
+    if (defaultTasks.length === 0) {
+      for (const desc of templates) {
+        if (!desc.trim()) continue
+        await prisma.$executeRawUnsafe(
+          `INSERT INTO "MachineMonthlyMaintenance"
+           ("machineId", "year", "month", "description", "completed", "isDefault", "history", "completedBy", "createdAt")
+           VALUES ($1, $2, $3, $4, false, true, '[]'::jsonb, '', NOW())`,
+          machineId,
+          year,
+          m,
+          desc.trim()
+        )
+      }
+    }
+  }
+}
+
 router.get('/', async (req, res) => {
   try {
     const machines = await prisma.machine.findMany({ orderBy: { createdAt: 'desc' }, include })
+    try {
+      const records = await prisma.$queryRawUnsafe('SELECT id, expenses FROM "MachineMaintenanceRecord"')
+      const expMap = new Map(records.map(r => [r.id, r.expenses]))
+      for (const m of machines) {
+        if (Array.isArray(m.maintenanceRecords)) {
+          for (const rec of m.maintenanceRecords) {
+            rec.expenses = expMap.get(rec.id) || []
+          }
+        }
+      }
+    } catch (rawErr) {
+      console.warn('Could not fetch maintenance expenses:', rawErr.message)
+    }
     res.json(machines)
   } catch (err) {
     res.status(500).json({ error: err.message })
@@ -162,8 +225,24 @@ router.delete('/:id/manual', adminOnly, async (req, res) => {
 router.post('/:id/maintenance', adminOnly, async (req, res) => {
   try {
     const machineId = parseInt(req.params.id)
-    const { date, type, description, technician, cost, currency, nextDue } = req.body
+    const { date, type, description, technician, cost, currency, nextDue, expenses } = req.body
     if (!date) return res.status(400).json({ error: 'Date is required' })
+
+    const parsedExpenses = Array.isArray(expenses)
+      ? expenses
+          .filter(e => e && (e.title?.trim() || parseFloat(e.cost) > 0))
+          .map(e => ({
+            id: e.id || `exp_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+            title: (e.title || '').trim(),
+            cost: parseFloat(e.cost) || 0,
+            currency: e.currency || currency || 'TRY',
+          }))
+      : []
+
+    const computedCost = parsedExpenses.length > 0
+      ? parsedExpenses.reduce((sum, e) => sum + e.cost, 0)
+      : (cost ? parseFloat(cost) : 0)
+
     const record = await prisma.machineMaintenanceRecord.create({
       data: {
         machineId,
@@ -171,11 +250,25 @@ router.post('/:id/maintenance', adminOnly, async (req, res) => {
         type: type || 'Preventive',
         description: description?.trim() || '',
         technician: technician?.trim() || '',
-        cost: cost ? parseFloat(cost) : 0,
-        currency: currency || 'USD',
+        cost: computedCost,
+        currency: currency || 'TRY',
         nextDue: nextDue || '',
       },
     })
+
+    if (parsedExpenses.length > 0) {
+      try {
+        await prisma.$executeRawUnsafe(
+          'UPDATE "MachineMaintenanceRecord" SET "expenses" = $1::jsonb WHERE "id" = $2',
+          JSON.stringify(parsedExpenses),
+          record.id
+        )
+      } catch (expErr) {
+        console.warn('Could not update expenses on maintenance record:', expErr.message)
+      }
+    }
+    record.expenses = parsedExpenses
+
     if (nextDue) {
       await prisma.machine.update({ where: { id: machineId }, data: { nextMaintenanceDue: nextDue } })
     }
