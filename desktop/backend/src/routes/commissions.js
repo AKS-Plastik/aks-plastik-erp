@@ -135,11 +135,11 @@ router.get('/', async (req, res) => {
 
     // Filter by sales rep (Sales personnel can ONLY see their own commissions!)
     if (req.user.role !== 'admin') {
-      conditions.push(`"userId" = ${pIdx++}`);
-      params.push(req.user.id);
+      conditions.push(`"userId" = $${pIdx++}`);
+      params.push(String(req.user.id));
     } else if (userId && userId !== 'all') {
-      conditions.push(`"userId" = ${pIdx++}`);
-      params.push(userId);
+      conditions.push(`"userId" = $${pIdx++}`);
+      params.push(String(userId));
     }
 
     // Filter by status
